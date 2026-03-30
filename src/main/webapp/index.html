@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <title>Cantinho do Banho — Pet Shop Premium</title>
 
-        <!-- Bootstrap s-->
+        <!-- Bootstrap -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
         <!-- FontAwesome -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -471,68 +471,87 @@
 
                         <form onsubmit="enviarAgendamento(event)">
                             <div class="row g-3">
+
                                 <div class="col-md-3 col-sm-6">
                                     <div class="input-group-custom">
                                         <i class="fas fa-user"></i>
                                         <input id="nome" class="form-input" placeholder="Seu nome" required>
                                     </div>
                                 </div>
+
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="input-group-custom">
+                                        <i class="fab fa-whatsapp"></i>
+                                        <input type="tel" id="tel" class="form-input" placeholder="WhatsApp" required maxlength="15" oninput="mascaraTelefone(this)">
+                                    </div>
+                                </div>
+
                                 <div class="col-md-3 col-sm-6">
                                     <div class="input-group-custom">
                                         <i class="fas fa-paw"></i>
                                         <input id="pet" class="form-input" placeholder="Nome do Pet" required>
                                     </div>
                                 </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="input-group-custom">
-                                        <i class="fab fa-whatsapp"></i>
-                                        <input id="tel" class="form-input" placeholder="WhatsApp" required oninput="detectarCliente(this.value)">
-                                    </div>
-                                </div>
+
                                 <div class="col-md-3 col-sm-6">
                                     <div class="input-group-custom">
                                         <i class="fas fa-dog"></i>
                                         <select id="tipo-pet" class="form-input" required>
-                                            <option value="">Tipo de Pet</option>
+                                            <option value="" disabled selected>Tipo de Pet...</option>
                                             <option value="Cachorro">Cachorro</option>
                                             <option value="Gato">Gato</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-4 col-sm-6">
+
+                                <div class="col-md-3 col-sm-6">
                                     <div class="input-group-custom">
-                                        <i class="fas fa-scissors"></i>
-                                        <select id="servico" class="form-input" required>
-                                            <option value="">Escolha o serviço</option>
-                                            <option>Banho e Tosa</option>
-                                            <option>Banho</option>
-                                            <option>Tosa</option>
-                                            <option>Trimming</option>
-                                            <option>Cronograma Capilar</option>
-                                            <option>Recuperação de Pelagem</option>
-                                            <option>Cromoterapia</option>
-                                            <option>Coloração Pet</option>
+                                        <i class="fas fa-paw"></i>
+                                        <input type="text" id="racaPet" class="form-input" placeholder="Raça do Pet" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="input-group-custom">
+                                        <i class="fas fa-expand-arrows-alt"></i>
+                                        <select id="portePet" class="form-input" required>
+                                            <option value="" disabled selected>Porte do Pet...</option>
+                                            <option value="Pequeno">Pequeno (até 10kg)</option>
+                                            <option value="Medio">Médio (11kg a 25kg)</option>
+                                            <option value="Grande">Grande (acima de 25kg)</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-3 col-sm-6">
+
+                                <div class="col-md-6 col-sm-12">
+                                    <div class="input-group-custom">
+                                        <i class="fas fa-scissors"></i>
+                                        <select id="servico" class="form-input" required>
+                                            <option value="" disabled selected>Escolha o serviço...</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 col-sm-6">
                                     <div class="input-group-custom">
                                         <i class="fas fa-calendar"></i>
                                         <input id="data" type="date" class="form-input" required>
                                     </div>
                                 </div>
-                                <div class="col-md-3 col-sm-6">
+
+                                <div class="col-md-4 col-sm-6">
                                     <div class="input-group-custom">
                                         <i class="fas fa-clock"></i>
                                         <input id="hora" type="time" class="form-input" required>
                                     </div>
                                 </div>
 
-                                <div class="col-md-2 col-sm-12">
-                                    <button type="submit" class="btn-agendar" id="btn-agendar">
+                                <div class="col-md-4 col-sm-12">
+                                    <button type="submit" class="btn-agendar w-100" id="btn-agendar" style="height: 100%;">
                                         <i class="fa fa-paper-plane"></i> Enviar
                                     </button>
                                 </div>
+
                             </div>
                         </form>
                     </div>
@@ -595,7 +614,9 @@
                                 <div class="contato-icon"><i class="fas fa-clock"></i></div>
                                 <div>
                                     <h5>Horário de Funcionamento</h5>
-                                    <p>Seg a Sáb: <strong>08:00 – 17:00</strong><br>Domingo: <strong>Fechado</strong></p>
+                                    <p id="horario-dinamico" style="line-height: 1.6; font-size: 0.95rem;">
+                                        <i class="fas fa-spinner fa-spin" style="color:#C9A96E;"></i> Carregando...
+                                    </p>
                                 </div>
                             </div>
 
@@ -629,112 +650,122 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
         <script>
-                            AOS.init({duration: 900, once: true, easing: 'ease-out-quart', offset: 60});
+                                    window.horariosLoja = [];
 
-                            function cleanTelSite(t) {
-                                return t ? t.replace(/\D/g, '') : '';
-                            }
+                                    AOS.init({duration: 900, once: true, easing: 'ease-out-quart', offset: 60});
 
-                            function detectarCliente(val) {
-                                const tel = cleanTelSite(val);
-                                if (tel.length < 10)
-                                    return;
-                                const clientes = JSON.parse(localStorage.getItem('cb_clientes') || '[]');
-                                const cli = clientes.find(c => cleanTelSite(c.tel) === tel);
-                                if (cli) {
-                                    if (cli.nome)
-                                        document.getElementById('nome').value = cli.nome;
-                                    if (cli.pets)
-                                        document.getElementById('pet').value = cli.pets.split(',')[0].trim();
-                                }
-                            }
-
-                            function enviarAgendamento(e) {
-                                e.preventDefault();
-
-                                // 1. Captura os elementos do DOM
-                                const nome = document.getElementById('nome').value.trim();
-                                const pet = document.getElementById('pet').value.trim();
-                                const tel = document.getElementById('tel').value.trim();
-                                const tipoPet = document.getElementById('tipo-pet').value;
-                                const servico = document.getElementById('servico').value;
-                                const data = document.getElementById('data').value; // Formato: YYYY-MM-DD
-                                const hora = document.getElementById('hora').value; // Formato: HH:MM
-
-                                // 2. Validação simples antes de enviar
-                                if (!nome || !pet || !tel || !tipoPet || !servico || !data || !hora) {
-                                    alert("Por favor, preencha todos os campos obrigatórios.");
-                                    return;
-                                }
-
-                                // 3. Prepara os parâmetros para o padrão que a Servlet Java entende (Form URL Encoded)
-                                const formData = new URLSearchParams();
-                                formData.append('nomeDono', nome);
-                                formData.append('telefone', tel);
-                                formData.append('nomePet', pet);
-                                formData.append('tipo', tipoPet);
-                                formData.append('servico', servico);
-                                formData.append('data', data);
-                                formData.append('hora', hora);
-
-                                // 4. O Fetch: Enviando os dados para o servidor
-                                // ATENÇÃO: Verifique se o nome do projeto no NetBeans/Tomcat é "Cantinho_banho"
-                                fetch('api/agendar', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                                    },
-                                    body: formData
-                                })
-                                        .then(response => {
-                                            if (response.ok) {
-                                                // Se o Java retornou status 200-299
-                                                return response.text();
-                                            } else {
-                                                // Se o Java deu erro (ex: 500 no banco de dados)
-                                                return response.text().then(text => {
-                                                    throw new Error(text)
-                                                });
-                                            }
-                                        })
-                                        .then(resultado => {
-                                            console.log("Sucesso do Java:", resultado);
-
-                                            // Esconde o formulário e mostra a div de sucesso (lógica que você já tinha)
-                                            document.getElementById('form-agendamento').style.display = 'none';
-                                            document.getElementById('agendamento-sucesso').style.display = 'block';
-
-                                            // Limpa o formulário para um próximo uso
-                                            // document.getElementById('form-agendamento').reset();
-                                        })
-                                        .catch(error => {
-                                            // Captura erros de rede ou erros lançados pelo 'throw' acima
-                                            console.error('Erro na requisição:', error);
-                                            alert("Falha ao salvar no MySQL: " + error.message);
+                                    document.addEventListener("DOMContentLoaded", () => {
+                                        window.addEventListener('scroll', () => {
+                                            const navbar = document.querySelector('.navbar');
+                                            if (navbar)
+                                                navbar.classList.toggle('scrolled', window.scrollY > 50);
+                                            const waFloat = document.querySelector('.whatsapp-float');
+                                            if (waFloat)
+                                                waFloat.classList.toggle('visible', window.scrollY > 300);
                                         });
-                            }
 
-                            function novoAgendamento() {
-                                document.getElementById('form-agendamento').style.display = 'block';
-                                document.getElementById('agendamento-sucesso').style.display = 'none';
-                                document.getElementById('form-agendamento').querySelector('form').reset();
-                            }
+                                        document.querySelectorAll('.navbar .nav-link').forEach(link => {
+                                            link.addEventListener('click', () => {
+                                                const navbarCollapse = document.querySelector('.navbar-collapse');
+                                                if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+                                                    bootstrap.Collapse.getOrCreateInstance(navbarCollapse).hide();
+                                                }
+                                            });
+                                        });
 
-                            // Navbar + botão WA no scroll
-                            window.addEventListener('scroll', () => {
-                                document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 50);
-                                document.querySelector('.whatsapp-float').classList.toggle('visible', window.scrollY > 300);
-                            });
+                                        const inputData = document.getElementById('data'); 
+                                        if (inputData) {
+                                            const hoje = new Date().toISOString().split("T")[0];
+                                            inputData.setAttribute('min', hoje);
+                                        }
 
-                            // FECHAR MENU MOBILE AO CLICAR EM UM LINK
-                            document.querySelectorAll('.navbar .nav-link').forEach(link => {
-                                link.addEventListener('click', () => {
-                                    const navbarCollapse = document.querySelector('.navbar-collapse');
-                                    if (navbarCollapse && navbarCollapse.classList.contains('show')) {
-                                        bootstrap.Collapse.getOrCreateInstance(navbarCollapse).hide();
+                                        carregarHorarioDinamico();
+                                    });
+
+                                    async function carregarHorarioDinamico() {
+                                        const divHorario = document.getElementById('horario-dinamico');
+                                        try {
+                                            const resposta = await fetch('api/horarios/listar');
+                                            if (resposta.ok) {
+                                                const horarios = await resposta.json();
+
+                                                window.horariosLoja = horarios;
+                                                aplicarRegrasNoFormulario();
+
+                                                if (divHorario && horarios.length > 0) {
+                                                    let htmlFormatado = '';
+                                                    horarios.forEach(h => {
+                                                        let nomeCurto = h.nomeDia.substring(0, 3);
+                                                        if (h.aberto) {
+                                                            htmlFormatado += `${nomeCurto}: <strong>${h.horaAbertura} – ${h.horaFechamento}</strong><br>`;
+                                                        } else {
+                                                            htmlFormatado += `${nomeCurto}: <strong style="color: #dc3545;">Fechado</strong><br>`;
+                                                        }
+                                                    });
+                                                    divHorario.innerHTML = htmlFormatado;
+                                                } else if (divHorario) {
+                                                    divHorario.innerHTML = "Horários não configurados.";
+                                                }
+                                            }
+                                        } catch (erro) {
+                                            console.error("Erro:", erro);
+                                            if (divHorario)
+                                                divHorario.innerHTML = "Erro ao carregar.";
+                                        }
                                     }
-                                });
-                            });
+
+                                    function aplicarRegrasNoFormulario() {
+                                        const inputData = document.getElementById('data');
+                                        const inputHora = document.getElementById('hora');
+
+                                        if (!inputData || !inputHora || window.horariosLoja.length === 0)
+                                            return;
+
+                                        inputHora.disabled = true;
+
+                                        inputData.addEventListener('change', function () {
+                                            if (!this.value) {
+                                                inputHora.disabled = true;
+                                                inputHora.value = '';
+                                                return;
+                                            }
+
+                                            const dataEscolhida = new Date(this.value + "T00:00:00");
+                                            const diaSemana = dataEscolhida.getDay(); 
+
+                                            const regraDoDia = window.horariosLoja.find(h => h.diaDaSemana === diaSemana);
+
+                                            if (regraDoDia && !regraDoDia.aberto) {
+                                                alert(`Desculpe, nós estamos fechados aos ${regraDoDia.nomeDia}s. Por favor, escolha outra data.`);
+                                                this.value = ''; // Limpa a data errada
+                                                inputHora.value = '';
+                                                inputHora.disabled = true;
+                                                return;
+                                            }
+
+                                            inputHora.disabled = false;
+                                            inputHora.min = regraDoDia.horaAbertura;
+                                            inputHora.max = regraDoDia.horaFechamento;
+                                            inputHora.title = `Nosso horário hoje é das ${regraDoDia.horaAbertura} às ${regraDoDia.horaFechamento}`;
+                                        });
+
+                                        inputHora.addEventListener('change', function () {
+                                            if (!this.value || !inputData.value)
+                                                return;
+
+                                            const dataEscolhida = new Date(inputData.value + "T00:00:00");
+                                            const regraDoDia = window.horariosLoja.find(h => h.diaDaSemana === dataEscolhida.getDay());
+
+                                            if (regraDoDia) {
+                                                if (this.value < regraDoDia.horaAbertura || this.value > regraDoDia.horaFechamento) {
+                                                    alert(`Para este dia, atendemos apenas entre ${regraDoDia.horaAbertura} e ${regraDoDia.horaFechamento}. Por favor, ajuste o horário.`);
+                                                    this.value = ''; // Limpa a hora errada
+                                                }
+                                            }
+                                        });
+                                    }
         </script>
+
+        <script src="js/agendamento.js"></script>
     </body>
 </html>

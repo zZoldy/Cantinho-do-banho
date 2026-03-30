@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.app.cantinho_banho.model;
 
 import java.io.Serializable;
@@ -12,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 
 @Entity
@@ -30,25 +27,29 @@ public class Usuario implements Serializable {
     @Column(nullable = false)
     private String senha;
 
-    private String perfil = "Funcionario";
-
-    @Column(length = 50)
-    private String funcao;
+    @Column(nullable = false)
+    private String perfil;
 
     @Column(unique = true, nullable = false, length = 14)
     private String cpf;
 
-    @Column(unique = true, length = 20)
+    @Column(length = 20)
     private String rg;
-
-    @Column(unique = true, updatable = false, nullable = false)
-    private String matricula;
 
     @Column(name = "data_criacao", updatable = false)
     private LocalDateTime dataCriacao;
 
     @Column(nullable = false)
     private boolean ativo = true;
+
+    @Column(name = "reset_password", columnDefinition = "boolean default true")
+    private boolean reset_password = true;
+
+    @OneToOne(mappedBy = "usuario")
+    private Funcionario funcionario;
+
+    public Usuario() {
+    }
 
     @PrePersist
     public void antesDeSalvar() {
@@ -92,14 +93,6 @@ public class Usuario implements Serializable {
         this.perfil = perfil;
     }
 
-    public String getFuncao() {
-        return funcao;
-    }
-
-    public void setFuncao(String funcao) {
-        this.funcao = funcao;
-    }
-
     public String getCpf() {
         return cpf;
     }
@@ -116,14 +109,6 @@ public class Usuario implements Serializable {
         this.rg = rg;
     }
 
-    public String getMatricula() {
-        return matricula;
-    }
-
-    public void setMatricula(String matricula) {
-        this.matricula = matricula;
-    }
-
     public LocalDateTime getDataCriacao() {
         return dataCriacao;
     }
@@ -136,4 +121,19 @@ public class Usuario implements Serializable {
         this.ativo = ativo;
     }
 
+    public boolean isReset_password() {
+        return reset_password;
+    }
+
+    public void setReset_password(boolean reset_password) {
+        this.reset_password = reset_password;
+    }
+
+    public Funcionario getFuncionario() {
+        return funcionario;
+    }
+
+    public void setFuncionario(Funcionario funcionario) {
+        this.funcionario = funcionario;
+    }
 }

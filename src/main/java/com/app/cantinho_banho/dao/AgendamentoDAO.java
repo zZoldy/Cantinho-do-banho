@@ -10,7 +10,6 @@ import javax.persistence.EntityManager;
 
 public class AgendamentoDAO {
 
-    // Salva um novo agendamento ou atualiza um existente (ex: mudar status)
     public void salvarOuAtualizar(Agendamento agendamento) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
@@ -27,27 +26,41 @@ public class AgendamentoDAO {
         }
     }
 
-    // Busca todos os agendamentos para o Dashboard
     public List<Agendamento> listarTodos() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            // JPQL buscando pela classe Agendamento
-            return em.createQuery("FROM Agendamento", Agendamento.class).getResultList();
-        } finally {
-            em.close();
-        }
-    }
-
-    // Busca apenas agendamentos por status (útil para a aba "Novos Pedidos")
-    public List<Agendamento> buscarPorStatus(String status) {
-        EntityManager em = JPAUtil.getEntityManager();
-        try {
-            return em.createQuery("SELECT a FROM Agendamento a WHERE a.status = :pStatus", Agendamento.class)
-                    .setParameter("pStatus", status)
+            return em.createQuery("SELECT a FROM Agendamento a ORDER BY a.data DESC, a.hora ASC", Agendamento.class)
                     .getResultList();
         } finally {
             em.close();
         }
     }
 
+    public Agendamento buscarPorId(Long id) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.find(Agendamento.class, id);
+        } finally {
+            em.close();
+        }
+    }
+
+    public void remover(Long id) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            Agendamento agendamento = em.find(Agendamento.class, id);
+            if (agendamento != null) {
+                em.remove(agendamento);
+            }
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
 }

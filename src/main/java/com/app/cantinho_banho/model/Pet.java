@@ -1,10 +1,8 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.app.cantinho_banho.model;
 
+import java.io.Serializable;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -13,7 +11,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class Pet {
+public class Pet implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,15 +19,18 @@ public class Pet {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "cliente_id")
     private Cliente dono;
+    @Column(nullable = false)
     private String nome;
+    @Column(nullable = false)
     private String raca;
+    @Column(nullable = false)
     private String porte;
+    @Column(nullable = false)
     private String tipo;
+    private String obs;
 
     public Pet() {
     }
-
-    ;
 
     public Long getId() {
         return id;
@@ -77,6 +78,14 @@ public class Pet {
 
     public void setTipo(String tipo) {
         this.tipo = tipo;
+    }
+
+    public String getObs() {
+        return obs;
+    }
+
+    public void setObs(String obs) {
+        this.obs = obs;
     }
 
 }

@@ -1,19 +1,9 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.app.cantinho_banho.dao;
 
 import com.app.cantinho_banho.model.Usuario;
-import java.util.Random;
+import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import org.mindrot.jbcrypt.BCrypt;
 
-/**
- *
- * @author Z D K
- */
 public class UsuarioDAO {
 
     public void salvar(Usuario usuario) {
@@ -32,56 +22,77 @@ public class UsuarioDAO {
         }
     }
 
-    public String gerarMatriculaUnica() {
+    public void atualizar(Usuario usuario) {
         EntityManager em = JPAUtil.getEntityManager();
-        Random random = new Random();
-        String matriculaGerada;
-        boolean repetida;
-
         try {
-            do {
-                // 1. Sorteia o número
-                int numero = 100000 + random.nextInt(900000);
-                matriculaGerada = "CDB-" + numero;
-
-                // 2. Pergunta ao banco se alguém já tem essa matrícula
-                Long quantidade = em.createQuery(
-                        "SELECT COUNT(u) FROM Usuario u WHERE u.matricula = :pMatricula", Long.class)
-                        .setParameter("pMatricula", matriculaGerada)
-                        .getSingleResult();
-
-                // Se a quantidade for maior que 0, é porque já existe!
-                repetida = (quantidade > 0);
-
-            } while (repetida); // Se for repetida, o loop volta e sorteia outra vez!
-
-            return matriculaGerada; // Quando sair do loop, temos uma matrícula 100% virgem
-
+            em.getTransaction().begin();
+            em.merge(usuario);
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            throw e;
         } finally {
             em.close();
         }
     }
 
-    public Usuario autenticar(String email, String senhaDigitada) {
+    public Usuario buscarPorEmail(String email) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            // 1. Busca APENAS pelo e-mail e verifica se está ativo
-            Usuario usuario = em.createQuery(
-                    "SELECT u FROM Usuario u WHERE u.email = :pEmail AND u.ativo = true",
-                    Usuario.class)
+            return em.createQuery("SELECT u FROM Usuario u WHERE u.email = :pEmail", Usuario.class)
                     .setParameter("pEmail", email)
                     .getSingleResult();
-
-            // 2. Verifica se a senha digitada corresponde ao Hash do banco
-            if (BCrypt.checkpw(senhaDigitada, usuario.getSenha())) {
-                return usuario; // Senha correta! Entra no sistema.
-            } else {
-                return null; // Senha errada!
-            }
-
-        } catch (NoResultException e) {
-            // Se não encontrar ninguém com esse e-mail (ou estiver inativo)
+        } catch (javax.persistence.NoResultException e) {
+            // Retorna null se não encontrar ninguém com esse e-mail
             return null;
+        } finally {
+            em.close();
+        }
+    }
+
+    public boolean existeEmail(String email) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            Long quantidade = em.createQuery("SELECT COUNT(u) FROM Usuario u WHERE u.email = :pEmail", Long.class)
+                    .setParameter("pEmail", email)
+                    .getSingleResult();
+            return quantidade > 0;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    public boolean existeCpf(String cpf) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            Long quantidade = em.createQuery("SELECT COUNT(u) FROM Usuario u WHERE u.cpf = :pCpf", Long.class)
+                    .setParameter("pCpf", cpf)
+                    .getSingleResult();
+            return quantidade > 0;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    // Apenas usuários com a conta Ativada
+    public List<Usuario> buscarTodos() {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery("SELECT u FROM Usuario u WHERE u.ativo = true", Usuario.class)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public Usuario buscarPorId(Long id) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.find(Usuario.class, id);
         } finally {
             em.close();
         }

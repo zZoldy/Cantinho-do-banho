@@ -1,67 +1,199 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login — Cantinho do Banho</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <link rel="stylesheet" href="admin.css"/>
-</head>
-<body class="login-page">
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Login — Cantinho do Banho</title>
+        <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+        <link rel="stylesheet" href="admin.css"/>
+    </head>
+    <body class="login-page">
 
-<div class="login-wrapper">
-  <div class="login-box">
-    <div class="login-logo">
-      <i class="fas fa-paw"></i>
-    </div>
-    <h1>Cantinho do Banho</h1>
-    <p class="login-sub">Acesso ao Sistema Interno</p>
+        <div class="login-wrapper">
+            <div class="login-box">
+                <div class="login-logo">
+                    <i class="fas fa-paw"></i>
+                </div>
+                <h1>Cantinho do Banho</h1>
+                <p class="login-sub">Acesso ao Sistema Interno</p>
 
-    <form id="loginForm">
-      <div class="input-field">
-        <i class="fas fa-user"></i>
-        <input type="text" id="usuario" placeholder="Usuário" required autocomplete="username"/>
-      </div>
-      <div class="input-field">
-        <i class="fas fa-lock"></i>
-        <input type="password" id="senha" placeholder="Senha" required autocomplete="current-password"/>
-      </div>
-      <div id="erro-login" class="erro-msg" style="display:none">
-        <i class="fas fa-exclamation-circle"></i> Usuário ou senha incorretos.
-      </div>
-      <button type="submit" class="btn-login">
-        <i class="fas fa-sign-in-alt"></i> Entrar
-      </button>
-    </form>
+                <form id="loginForm">
+                    <div class="input-field">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="email" placeholder="E-mail" required/>
+                    </div>
+                    <div class="input-field">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="senha" placeholder="Senha" required/>
+                    </div>
+                    <div id="erro-login" class="erro-msg" style="display:none">
+                        <i class="fas fa-exclamation-circle"></i> Email ou senha incorretos.
+                    </div>
 
-    <p class="login-footer">© 2025 Cantinho do Banho</p>
-  </div>
-</div>
+                    <div id="mensagemErro" style="color: red; display: none; margin-bottom: 10px;"></div>
 
-<script>
-  // Usuários padrão — altere como quiser
-  const USUARIOS = [
-    { usuario: 'admin', senha: '1234', nome: 'Administrador', cargo: 'admin' },
-    { usuario: 'anapaula', senha: '1234', nome: 'Ana Paula', cargo: 'funcionario' },
-    { usuario: 'hegly', senha: '1234', nome: 'Hegly', cargo: 'funcionario' },
-  ];
+                    <button type="submit" class="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </button>
+                </form>
 
-  document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const u = document.getElementById('usuario').value.trim();
-    const s = document.getElementById('senha').value;
-    const encontrado = USUARIOS.find(x => x.usuario === u && x.senha === s);
-    if (encontrado) {
-      localStorage.setItem('cb_logado', JSON.stringify(encontrado));
-      window.location.href = 'admin-dashboard.html';
-    } else {
-      document.getElementById('erro-login').style.display = 'flex';
-    }
-  });
+                <form id="resetForm" style="display: none;">
+                    <p style="text-align: center; margin-bottom: 15px; font-size: 0.9em; color: #555;">
+                        É o seu primeiro acesso. Por favor, crie uma nova senha segura.
+                    </p>
+                    <div class="input-field">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="novaSenha" placeholder="Nova Senha" required/>
+                    </div>
+                    <div class="input-field">
+                        <i class="fas fa-check-circle"></i>
+                        <input type="password" id="confirmaSenha" placeholder="Confirme a Senha" required/>
+                    </div>
 
-  // Limpa sessão ao abrir o login
-  localStorage.removeItem('cb_logado');
-</script>
-</body>
+                    <div id="erro-reset" style="color: red; display: none; margin-bottom: 10px;"></div>
+
+                    <button type="submit" class="btn-login">
+                        <i class="fas fa-save"></i> Salvar e Entrar
+                    </button>
+                </form>
+
+                <p class="login-footer">© 2025 Cantinho do Banho</p>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const formLogin = document.getElementById('loginForm');
+                const formReset = document.getElementById('resetForm');
+
+                if (formLogin) {
+                    formLogin.addEventListener('submit', async function (event) {
+                        event.preventDefault();
+                        const btnSubmit = formLogin.querySelector('button[type="submit"]');
+                        const originalContent = btnSubmit.innerHTML;
+
+                        const email = document.getElementById('email').value;
+                        const senha = document.getElementById('senha').value;
+                        const divErro = document.getElementById('mensagemErro');
+
+                        btnSubmit.disabled = true;
+                        btnSubmit.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Autenticando...';
+                        divErro.style.display = 'none';
+                        divErro.textContent = '';
+
+                        try {
+                            const params = new URLSearchParams();
+                            params.append('email', email);
+                            params.append('senha', senha);
+
+
+                            const resposta = await fetch('../api/login', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded'
+                                },
+                                body: params
+                            });
+
+                            const dados = await resposta.json();
+
+                            if (resposta.ok) {
+                                if (dados.requireReset === true) {
+                                    usuarioResetId = dados.id;
+                                    formLogin.style.display = 'none';
+                                    formReset.style.display = 'block';
+
+                                    // Muda o subtítulo da caixinha
+                                    document.querySelector('.login-sub').textContent = 'Defina sua Nova Senha';
+                                    btnSubmit.disabled = false;
+                                    btnSubmit.innerHTML = originalContent;
+
+                                } else {
+                                    // Sucesso
+                                    sessionStorage.setItem('nomeUsuario', dados.nome);
+                                    sessionStorage.setItem('perfilUsuario', dados.perfil);
+
+                                    window.location.href = 'admin-dashboard.html';
+                                }
+                            } else {
+                                mostrarErro(dados.erro || "Erro ao realizar login", 'mensagemErro');
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = originalContent;
+                            }
+
+                        } catch (erro) {
+                            console.error("Erro na requisição:", erro);
+                            mostrarErro("Erro de conexão com o servidor. Tente novamente.");
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = originalContent;
+                        }
+                    });
+                }
+
+                if (formReset) {
+                    formReset.addEventListener('submit', async function (event) {
+                        event.preventDefault();
+
+                        const novaSenha = document.getElementById('novaSenha').value;
+                        const confirmaSenha = document.getElementById('confirmaSenha').value;
+                        const erroReset = document.getElementById('erro-reset');
+
+                        const btnReset = formReset.querySelector('button[type="submit"]');
+                        const originalContent = btnReset.innerHTML;
+
+                        btnReset.disabled = true;
+                        btnReset.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Salvando Nova Senha...';
+
+                        erroReset.style.display = 'none';
+
+                        if (novaSenha !== confirmaSenha) {
+                            mostrarErro("As senhas não coincidem.", 'erro-reset');
+                            return;
+                        }
+                        if (novaSenha.length < 6) {
+                            mostrarErro("A senha deve ter pelo menos 6 caracteres.", 'erro-reset');
+                            return;
+                        }
+
+                        try {
+                            const params = new URLSearchParams();
+                            params.append('id', usuarioResetId);
+                            params.append('novaSenha', novaSenha);
+
+                            const resposta = await fetch('../api/login/reset-senha', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                body: params
+                            });
+
+                            const dados = await resposta.json();
+
+                            if (resposta.ok) {
+                                sessionStorage.setItem('nomeUsuario', dados.nome);
+                                sessionStorage.setItem('perfilUsuario', dados.perfil);
+                                window.location.href = 'admin-dashboard.html';
+                            } else {
+                                mostrarErro(dados.erro, 'erro-reset');
+                                btnReset.disabled = false;
+                                btnReset.innerHTML = originalContent;
+                            }
+                        } catch (erro) {
+                            console.error("Erro no reset:", erro);
+                            mostrarErro("Erro ao comunicar com o servidor.", 'erro-reset');
+                            btnReset.disabled = false;
+                            btnReset.innerHTML = originalContent;
+                        }
+                    });
+                }
+
+                function mostrarErro(mensagem) {
+                    const divErro = document.getElementById('mensagemErro');
+                    divErro.textContent = mensagem;
+                    divErro.style.display = 'block';
+                }
+
+            });
+        </script>
+    </body>
 </html>
