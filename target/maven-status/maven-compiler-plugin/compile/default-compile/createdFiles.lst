@@ -7,7 +7,9 @@ com\app\cantinho_banho\controller\AtualizarHorariosServlet.class
 com\app\cantinho_banho\dao\JPAUtil.class
 com\app\cantinho_banho\JakartaRestConfiguration.class
 com\app\cantinho_banho\model\Agendamento.class
+com\app\cantinho_banho\model\Pacote.class
 com\app\cantinho_banho\controller\ListarFuncionariosServlet.class
+com\app\cantinho_banho\controller\CadastrarPacoteServlet.class
 com\app\cantinho_banho\controller\ListarFuncionariosAdmServlet.class
 com\app\cantinho_banho\websocket\AtualizacaoWebSocket.class
 com\app\cantinho_banho\resources\JakartaEE8Resource.class
@@ -17,6 +19,7 @@ com\app\cantinho_banho\controller\AtualizarObsPetServlet.class
 com\app\cantinho_banho\controller\AtualizarFuncionarioServlet.class
 com\app\cantinho_banho\dao\ServicoDAO.class
 com\app\cantinho_banho\controller\ConfirmarAgendamentoServlet.class
+com\app\cantinho_banho\controller\VincularPacoteServlet.class
 com\app\cantinho_banho\controller\ConcluirAgendamentoServlet.class
 com\app\cantinho_banho\controller\CadastrarClienteServlet.class
 com\app\cantinho_banho\controller\ResetSenhaServlet.class
@@ -27,6 +30,7 @@ com\app\cantinho_banho\dao\ClienteDAO.class
 com\app\cantinho_banho\controller\ListarServicosServlet.class
 com\app\cantinho_banho\controller\AgendamentoServlet.class
 com\app\cantinho_banho\model\Pet.class
+com\app\cantinho_banho\controller\ListarPacotesServlet.class
 com\app\cantinho_banho\dao\AgendamentoDAO.class
 com\app\cantinho_banho\controller\CriarAcessoClienteServlet.class
 com\app\cantinho_banho\controller\CadastroFuncionarioServlet.class
@@ -38,4 +42,5 @@ com\app\cantinho_banho\controller\ListarHorariosServlet.class
 com\app\cantinho_banho\model\Usuario.class
 com\app\cantinho_banho\controller\ExcluirFuncionarioServlet.class
 com\app\cantinho_banho\model\Cliente.class
+com\app\cantinho_banho\dao\PacoteDAO.class
 com\app\cantinho_banho\dao\FuncionarioDAO.class

@@ -511,6 +511,9 @@ function navConfig(aba) {
         carregarServicosDoBanco();
     if (aba === 'horarios')
         carregarHorariosDoBanco();
+    if (aba === 'pacotes') {
+        carregarPacotesAdmin(); 
+    }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

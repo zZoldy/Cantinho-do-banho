@@ -1101,7 +1101,39 @@
 
                         <div id="conf-pacotes" style="display: none;">
                             <h4 style="color: #eee; margin: 0 0 5px 0; font-size: 1.1rem;">Gestão de Pacotes</h4>
-                            <p style="color: #888; font-size: 0.8rem; margin-bottom: 24px;">Esta funcionalidade será migrada para aqui em breve.</p>
+                            <p style="color: #888; font-size: 0.8rem; margin-bottom: 24px;">Crie e gerencie os pacotes promocionais de banho e tosa.</p>
+
+                            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                                <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #2a2a2a;">
+                                    <h5 style="color: #eee; margin-top: 0; margin-bottom: 15px; font-size: 1rem;">Novo Pacote</h5>
+                                    <form id="form-novo-pacote" onsubmit="salvarPacoteAdmin(event)">
+                                        <div style="margin-bottom: 12px;">
+                                            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px; display: block;">Nome do Plano</label>
+                                            <input type="text" id="pacote-nome" class="form-ctrl" style="width: 100%; box-sizing: border-box;" placeholder="Ex: Mensal 4 Banhos" required>
+                                        </div>
+                                        <div style="margin-bottom: 12px;">
+                                            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px; display: block;">Nº de Sessões</label>
+                                            <input type="number" id="pacote-sessoes" class="form-ctrl" style="width: 100%; box-sizing: border-box;" min="1" required>
+                                        </div>
+                                        <div style="margin-bottom: 12px;">
+                                            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px; display: block;">Validade (Dias)</label>
+                                            <input type="number" id="pacote-validade" class="form-ctrl" style="width: 100%; box-sizing: border-box;" value="30" min="1" required>
+                                        </div>
+                                        <div style="margin-bottom: 20px;">
+                                            <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px; display: block;">Valor Total (R$)</label>
+                                            <input type="number" id="pacote-valor" class="form-ctrl" style="width: 100%; box-sizing: border-box;" step="0.01" min="0" placeholder="150.00" required>
+                                        </div>
+                                        <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-plus"></i> Criar Pacote</button>
+                                    </form>
+                                </div>
+
+                                <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #2a2a2a;">
+                                    <h5 style="color: #eee; margin-top: 0; margin-bottom: 15px; font-size: 1rem;">Pacotes Ativos</h5>
+                                    <div id="lista-pacotes-admin" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                                        <span style="color: #888; font-size: 0.9rem;">Carregando pacotes...</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                     </div>
@@ -1506,7 +1538,6 @@
             }
 
             function logout() {
-                // Limpa TUDO o que salvamos
                 sessionStorage.clear();
                 window.location.href = 'login.html';
             }
@@ -1586,7 +1617,7 @@
                     carregarFuncionariosDoBanco(isAdm);
                 }
 
-                if (page == 'clientes') {
+                if (page === 'clientes') {
                     carregarClientesDoBanco();
                 }
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -2169,260 +2200,7 @@
                 salvarTudo();
                 renderDashboard();
             }
-
-            // ═══════════════════════════════════════════════════
-            // CLIENTES CADASTRADOS
-            // ═══════════════════════════════════════════════════
-            let pacotesPainelAberto = false;
-            function toggleVerPacotes() {
-                pacotesPainelAberto = !pacotesPainelAberto;
-                const painel = document.getElementById('painel-pacotes');
-                const btn = document.getElementById('btn-ver-pacotes');
-                if (painel)
-                    painel.style.display = pacotesPainelAberto ? 'block' : 'none';
-                if (btn)
-                    btn.innerHTML = pacotesPainelAberto ? '<i class="fas fa-eye-slash"></i> Ocultar Pacotes' : '<i class="fas fa-box"></i> Ver Pacotes';
-                if (pacotesPainelAberto)
-                    renderPacotesPanel();
-            }
-            function renderPacotesPanel() {
-                const el = document.getElementById('lista-pacotes-painel');
-                if (!el)
-                    return;
-                if (!pacotes.length) {
-                    el.innerHTML = '<p style="color:#555;font-size:.82rem">Nenhum pacote criado ainda.</p>';
-                    return;
-                }
-                el.innerHTML = pacotes.map(p => {
-                    const total = p.servicos ? p.servicos.reduce((s, x) => s + (typeof x === 'string' ? 1 : (x.qtd || 1)), 0) : 0;
-                    const clisComPacote = clientes.filter(c => String(c.pacoteId) === String(p.id)).length;
-                    const servDesc = p.servicos ? p.servicos.map(s => {
-                        const n = typeof s === 'string' ? s : s.nome;
-                        const q = typeof s === 'string' ? 1 : (s.qtd || 1);
-                        return q > 1 ? `${n} ×${q}` : n;
-                    }).join(', ') : '';
-                    return `<div style="background:#161616;border:1px solid #252525;border-radius:12px;padding:14px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-                <div>
-                  <div style="font-size:.9rem;font-weight:700;color:#eee">${p.nome}</div>
-                  ${p.valorSugerido ? `<div style="font-size:.75rem;color:#5ac75a;margin-top:2px">R$ ${parseFloat(p.valorSugerido).toFixed(2)}</div>` : ''}
-                </div>
-                <div style="display:flex;gap:6px">
-                  <button onclick="abrirModalPacote(${p.id})" class="btn-sm-primary" title="Editar"><i class="fas fa-edit"></i></button>
-                  <button onclick="excluirPacote(${p.id})" class="btn-danger-sm" title="Excluir"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>
-              <div style="font-size:.75rem;color:#C9A96E;margin-bottom:6px"><i class="fas fa-star" style="font-size:.65rem;margin-right:4px"></i>${total} crédito${total !== 1 ? 's' : ''}</div>
-              <div style="font-size:.72rem;color:#888;margin-bottom:8px">${servDesc}</div>
-              <div style="font-size:.7rem;color:#555"><i class="fas fa-users" style="margin-right:4px"></i>${clisComPacote} cliente${clisComPacote !== 1 ? 's' : ''} com este pacote</div>
-            </div>`;
-                }).join('');
-            }
-            function excluirPacote(id) {
-                const emUso = clientes.some(c => String(c.pacoteId) === String(id));
-                if (emUso && !confirm('Este pacote está em uso por clientes. Excluir mesmo assim?'))
-                    return;
-                if (!emUso && !confirm('Excluir este pacote?'))
-                    return;
-                pacotes = pacotes.filter(x => x.id !== id);
-                salvarTudo();
-                renderPacotesPanel();
-            }
-
-            function previewPacote() {
-                const pid = document.getElementById('cli-pacote').value;
-                const el = document.getElementById('cli-pacote-preview');
-                if (!pid) {
-                    el.style.display = 'none';
-                    return;
-                }
-                const pac = pacotes.find(p => String(p.id) === String(pid));
-                if (!pac) {
-                    el.style.display = 'none';
-                    return;
-                }
-                el.style.display = 'block';
-                const servList = pac.servicos.map(s => {
-                    const n = typeof s === 'string' ? s : s.nome;
-                    const q = typeof s === 'string' ? 1 : (s.qtd || 1);
-                    return q > 1 ? `${n} ×${q}` : n;
-                });
-                const total = pac.servicos.reduce((sum, s) => sum + (typeof s === 'string' ? 1 : (s.qtd || 1)), 0);
-                el.innerHTML = `<strong style="color:#ccc">${pac.nome}</strong> <span style="color:#C9A96E;font-size:.75rem">(${total} crédito${total > 1 ? 's' : ''})</span><br><span style="color:#888;font-size:.78rem">${servList.join(' · ')}</span>`;
-            }
-
-            function salvarCliente() {
-                const nome = document.getElementById('cli-nome').value.trim();
-                const tel = document.getElementById('cli-tel').value.trim();
-                if (!nome || !tel) {
-                    alert('Nome e telefone são obrigatórios!');
-                    return;
-                }
-                const pacId = document.getElementById('cli-pacote').value || null;
-                const pac = pacId ? pacotes.find(p => String(p.id) === String(pacId)) : null;
-                let servicos = [];
-                if (editCliId) {
-                    const old = clientes.find(x => x.id === editCliId);
-                    // Se trocou de pacote, recria servicos; senão mantém estado
-                    if (pac && String(old?.pacoteId) !== String(pacId)) {
-                        servicos = pac.servicos.flatMap(s => {
-                            const nome = typeof s === 'string' ? s : s.nome;
-                            const qtd = typeof s === 'string' ? 1 : (s.qtd || 1);
-                            return Array.from({length: qtd}, () => ({id: Date.now() + Math.random(), nome, usado: false, dataUso: ''}));
-                        });
-                    } else {
-                        servicos = old?.servicos || [];
-                    }
-                } else {
-                    // Expande servicos do pacote: cada crédito vira uma entrada individual
-                    servicos = pac ? pac.servicos.flatMap(s => {
-                        const nome = typeof s === 'string' ? s : s.nome;
-                        const qtd = typeof s === 'string' ? 1 : (s.qtd || 1);
-                        return Array.from({length: qtd}, () => ({id: Date.now() + Math.random(), nome, usado: false, dataUso: ''}));
-                    }) : [];
-                }
-                const registro = {
-                    id: editCliId || Date.now(),
-                    nome, tel,
-                    pets: document.getElementById('cli-pets').value.trim(),
-                    obs: document.getElementById('cli-obs').value.trim(),
-                    pacoteId: pacId ? parseInt(pacId) || pacId : null,
-                    valorPacote: parseFloat(document.getElementById('cli-valor-pacote').value) || 0,
-                    validadePacote: document.getElementById('cli-validade-pacote').value || '',
-                    servicos
-                };
-                if (editCliId) {
-                    const idx = clientes.findIndex(x => x.id === editCliId);
-                    clientes[idx] = registro;
-                } else
-                    clientes.unshift(registro);
-                salvarTudo();
-                fecharModalCliente();
-                renderClientes();
-            }
-
-            // ═══════════════════════════════════════════════════
-            // PACOTES
-            // servicos = [{nome, qtd}]  — cada crédito gera 1 entrada em servicos do cliente
-            // ═══════════════════════════════════════════════════
-            let editPacId = null;
-            let tempServPac = [];  // [{nome, qtd}]
-
-            document.getElementById('pac-novo-serv')?.addEventListener('change', function () {
-                const wrap = document.getElementById('pac-serv-custom-wrap');
-                if (wrap)
-                    wrap.style.display = this.value === '__custom__' ? 'block' : 'none';
-            });
-
-            function abrirModalPacote(id = null) {
-                editPacId = id;
-                tempServPac = [];
-                document.getElementById('modal-pac-titulo').textContent = id ? 'Editar Pacote' : 'Novo Pacote';
-                if (id) {
-                    const p = pacotes.find(x => x.id === id);
-                    if (!p)
-                        return;
-                    document.getElementById('pac-nome').value = p.nome;
-                    document.getElementById('pac-desc').value = p.desc || '';
-                    document.getElementById('pac-valor').value = p.valorSugerido || '';
-                    // Compatibilidade: servicos pode ser array de strings ou [{nome,qtd}]
-                    tempServPac = p.servicos.map(s => typeof s === 'string' ? {nome: s, qtd: 1} : {nome: s.nome, qtd: s.qtd || 1});
-                } else {
-                    ['pac-nome', 'pac-desc', 'pac-valor'].forEach(i => document.getElementById(i).value = '');
-                    document.getElementById('pac-novo-serv').value = '';
-                    document.getElementById('pac-novo-qtd').value = '1';
-                    const w = document.getElementById('pac-serv-custom-wrap');
-                    if (w)
-                        w.style.display = 'none';
-                }
-                renderServPacTemp();
-                document.getElementById('modalPacote').classList.remove('hidden');
-            }
-            function fecharModalPacote() {
-                document.getElementById('modalPacote').classList.add('hidden');
-                editPacId = null;
-            }
-
-            function renderServPacTemp() {
-                const el = document.getElementById('pac-servicos-lista');
-                if (!el)
-                    return;
-                if (!tempServPac.length) {
-                    el.innerHTML = '<p style="color:#444;font-size:.8rem;padding:8px 0">Nenhum serviço adicionado ainda</p>';
-                    return;
-                }
-                const total = tempServPac.reduce((s, x) => s + x.qtd, 0);
-                el.innerHTML = `<div style="font-size:.72rem;color:#C9A96E;margin-bottom:8px;padding:6px 10px;background:#C9A96E11;border-radius:6px"><i class="fas fa-star" style="margin-right:5px"></i>Total de créditos: <strong>${total}</strong></div>` +
-                        tempServPac.map((s, i) => `
-            <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#111;border-radius:8px;margin-bottom:5px">
-              <i class="fas fa-scissors" style="color:#C9A96E;font-size:.75rem;flex-shrink:0"></i>
-              <span style="flex:1;font-size:.85rem;color:#ccc">${s.nome}</span>
-              <div style="display:flex;align-items:center;gap:6px">
-                <button onclick="ajustarQtdPac(${i},-1)" style="background:#1a1a1a;border:1px solid #333;color:#888;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center">−</button>
-                <span style="font-size:.85rem;font-weight:700;color:#C9A96E;min-width:20px;text-align:center">${s.qtd}</span>
-                <button onclick="ajustarQtdPac(${i},1)" style="background:#1a1a1a;border:1px solid #333;color:#888;border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center">+</button>
-              </div>
-              <button onclick="remServPac(${i})" style="background:none;border:none;color:#c75a5a;cursor:pointer;font-size:.85rem;padding:2px 4px"><i class="fas fa-times"></i></button>
-            </div>`).join('');
-            }
-            function ajustarQtdPac(i, delta) {
-                tempServPac[i].qtd = Math.max(1, tempServPac[i].qtd + delta);
-                renderServPacTemp();
-            }
-            function adicionarServicoPacote() {
-                const sel = document.getElementById('pac-novo-serv');
-                let nome = sel.value;
-                if (nome === '__custom__') {
-                    nome = document.getElementById('pac-novo-serv-custom').value.trim();
-                }
-                if (!nome || nome === '')
-                    return;
-                const qtd = parseInt(document.getElementById('pac-novo-qtd').value) || 1;
-                const existing = tempServPac.findIndex(s => s.nome === nome);
-                if (existing !== -1) {
-                    tempServPac[existing].qtd += qtd;
-                } else {
-                    tempServPac.push({nome, qtd});
-                }
-                sel.value = '';
-                document.getElementById('pac-novo-serv-custom').value = '';
-                document.getElementById('pac-novo-qtd').value = '1';
-                document.getElementById('pac-serv-custom-wrap').style.display = 'none';
-                renderServPacTemp();
-            }
-            function remServPac(i) {
-                tempServPac.splice(i, 1);
-                renderServPacTemp();
-            }
-            function salvarPacote() {
-                const nome = document.getElementById('pac-nome').value.trim();
-                if (!nome) {
-                    alert('Nome do pacote obrigatório!');
-                    return;
-                }
-                if (!tempServPac.length) {
-                    alert('Adicione ao menos um serviço ao pacote!');
-                    return;
-                }
-                const registro = {
-                    id: editPacId || Date.now(),
-                    nome,
-                    desc: document.getElementById('pac-desc').value.trim(),
-                    valorSugerido: parseFloat(document.getElementById('pac-valor').value) || 0,
-                    servicos: tempServPac
-                };
-                if (editPacId) {
-                    const idx = pacotes.findIndex(x => x.id === editPacId);
-                    pacotes[idx] = registro;
-                } else
-                    pacotes.unshift(registro);
-                salvarTudo();
-                fecharModalPacote();
-                const pageCli = document.getElementById('page-clientes');
-                if (pageCli && !pageCli.classList.contains('hidden'))
-                    renderClientes();
-            }
-
+            
             // ═══════════════════════════════════════════════════
             // PAGAMENTOS
             // ═══════════════════════════════════════════════════
