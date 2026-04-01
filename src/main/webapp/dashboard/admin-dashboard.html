@@ -1581,28 +1581,33 @@
                     closeSidebarMobile();
                 });
             });
-            function navigateTo(page) {
+            async function navigateTo(page) {
                 if (!podeAcessar(page)) {
                     alert('Acesso restrito.');
                     return;
                 }
 
                 if (page === 'dashboard') {
-                    carregarAgendaDoBanco(false);
+                    await carregarAgendaDoBanco(false);
+                }
+
+                if (page === 'novos') {
+                    await carregarClientesDoBanco();
+                    await listarHorariosDoBanco();
                 }
 
                 if (page === 'agenda') {
-                    carregarAgendaDoBanco(false);
-                    listarFuncionariosDoBanco(isAdm);
-                    populateFuncSelects();
+                    await carregarAgendaDoBanco(false);
+                    await listarFuncionariosDoBanco(isAdm);
+                    await populateFuncSelects();
                 }
 
                 if (page === 'funcionarios') {
-                    carregarFuncionariosDoBanco(isAdm);
+                    await carregarFuncionariosDoBanco(isAdm);
                 }
 
                 if (page === 'clientes') {
-                    carregarClientesDoBanco();
+                    await carregarClientesDoBanco();
                 }
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
@@ -2250,7 +2255,7 @@
             function renderPagamentos() {
                 const periodo = document.getElementById('filtro-periodo-pag')?.value || 'mes';
                 const ano = hoje.getFullYear().toString();
-                const todosItens = [...historico, ...agenda];
+                const todosItens = [...historico, ...agenda, ...retirada];
 
                 let lista = todosItens.filter(a => {
                     if (periodo === 'mes')

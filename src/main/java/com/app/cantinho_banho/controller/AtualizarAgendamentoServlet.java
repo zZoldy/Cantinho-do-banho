@@ -56,13 +56,14 @@ public class AtualizarAgendamentoServlet extends HttpServlet {
                 } else {
                     a.setFuncionario(null);
                 }
+                
                 dao.salvarOuAtualizar(a);
                 com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
                 response.setStatus(HttpServletResponse.SC_OK);
             } else {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             }
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }

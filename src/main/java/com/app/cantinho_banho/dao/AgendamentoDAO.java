@@ -5,6 +5,7 @@
 package com.app.cantinho_banho.dao;
 
 import com.app.cantinho_banho.model.Agendamento;
+import com.app.cantinho_banho.model.Cliente;
 import java.util.List;
 import javax.persistence.EntityManager;
 
@@ -59,6 +60,28 @@ public class AgendamentoDAO {
                 em.getTransaction().rollback();
             }
             throw e;
+        } finally {
+            em.close();
+        }
+    }
+
+    public void concluirComDesconto(Agendamento agendamento, Cliente cliente) throws Exception {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+
+            if (cliente != null) {
+                em.merge(cliente); 
+            }
+            em.merge(agendamento); 
+
+            em.getTransaction().commit();
+
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            throw new Exception("Erro ao salvar transação conjunta: " + e.getMessage());
         } finally {
             em.close();
         }

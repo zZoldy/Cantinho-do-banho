@@ -24,6 +24,25 @@ async function carregarClientesDoBanco() {
     }
 }
 
+async function listarClientesBD() {
+    try {
+        const resClientes = await fetch('../api/clientes/listar');
+        if (resClientes.ok) {
+            // Atualiza a variável global (não se esqueça de a declarar no topo do arquivo se não existir: let horariosSemana = [];)
+            listaClientes = await resClientes.json();
+        }
+
+        const resPacotes = await fetch('../api/pacotes/listar');
+        if (resPacotes.ok) {
+            window.pacotesCadastrados = await resPacotes.json();
+        } else {
+            window.pacotesCadastrados = [];
+        }
+    } catch (erro) {
+        console.error("Falha ao buscar Clientes/Pacotes para a agenda:", erro);
+    }
+}
+
 function renderClientes() {
     const busca = (document.getElementById('busca-clientes')?.value || '').toLowerCase();
 

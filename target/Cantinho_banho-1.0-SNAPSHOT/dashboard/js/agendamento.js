@@ -1,5 +1,4 @@
 let ultimoHashDados = "";
-
 let horariosSemana = [];
 let servicosCadastrados = [];
 
@@ -378,6 +377,7 @@ function renderNovos() {
     const busca = (document.getElementById('busca-novos')?.value || '').toLowerCase();
     const lista = novos.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
     const el = document.getElementById('lista-novos');
+
     if (!el)
         return;
 
@@ -386,63 +386,88 @@ function renderNovos() {
         return;
     }
 
-    const clientesCadastrados = typeof listaClientes !== 'undefined' ? listaClientes : [];
+    const clientesCadastrados = listaClientes;
 
-    // Lista de horários comerciais padrão para sugerir ao administrador
-    const horariosComerciais = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    // Variáveis de tempo atual para usar dentro do loop
+    const agora = new Date();
+    const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+    const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
 
     el.innerHTML = lista.map(a => {
 
-        // 🐛 1. CORREÇÃO DO BUG DE CADASTRO E PACOTE
         const telContato = cleanTel(a.contato || '');
-        let cli = undefined;
+        let cli = clientesCadastrados.find(c => (telContato.length >= 8 && cleanTel(c.telefone || '') === telContato) || (c.nome === a.dono));
 
-        // Só tenta encontrar o cliente se o telefone digitado tiver pelo menos 8 dígitos
-        if (telContato.length >= 8) {
-            cli = clientesCadastrados.find(c => cleanTel(c.telefone || '') === telContato);
-        }
-
-        if (cli) {
-
-        }
-
-        // Só tem pacote se o ID existir, for diferente de zero e diferente da string "null"
-        const temPacote = cli && cli.pacoteId && String(cli.pacoteId) !== "0" && String(cli.pacoteId).toLowerCase() !== "null";
+        const temPacote = verificarPacoteValido(a.dono, a.servico);
 
         const linkWhats = a.contato
                 ? `<a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none; font-weight: 500;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`
                 : `<span style="opacity: 0.6;"><i class="fas fa-phone-slash"></i> Sem contato</span>`;
 
+        // Normaliza a data do pedido para YYYY-MM-DD
+        let dataReqIso = a.data;
+        if (a.data.includes('/')) {
+            const p = a.data.split('/');
+            dataReqIso = `${p[2]}-${p[1]}-${p[0]}`;
+        }
 
-        // 🟢 2. MÁGICA DA VALIDAÇÃO DE DISPONIBILIDADE
-        const horaPedida = (a.hora || '').substring(0, 5); // Ex: "14:00"
+        const horaPedida = (a.hora || '').substring(0, 5);
 
-        // Pega todas as horas já confirmadas na Agenda para o mesmo dia deste pedido
-        const ocupadosNoDia = agenda.filter(ag => ag.data === a.data).map(ag => (ag.hora || '').substring(0, 5));
+        // Descobre os horários e o que já está ocupado NO DIA DO PEDIDO
+        let horasLojaDiaPedido = obterHorariosDoDia(dataReqIso);
+        const ocupadosNoDiaPedido = agenda.filter(ag => {
+            let agIso = ag.data;
+            if (ag.data && ag.data.includes('/')) {
+                const p = ag.data.split('/');
+                agIso = `${p[2]}-${p[1]}-${p[0]}`;
+            }
+            return agIso === dataReqIso;
+        }).map(ag => (ag.hora || '').substring(0, 5));
 
-        // Verifica se a hora pedida está no meio das ocupadas
-        const isDisponivel = !ocupadosNoDia.includes(horaPedida);
+        // Remove os ocupados e os que já passaram no relógio de hoje
+        let livresValidosNoDia = horasLojaDiaPedido.filter(h => !ocupadosNoDiaPedido.includes(h));
+        if (dataReqIso === hojeIso) {
+            livresValidosNoDia = livresValidosNoDia.filter(h => h > horaAtual);
+        }
 
-        // Acha sugestões livres (ignorando as ocupadas)
-        const livres = horariosComerciais.filter(h => !ocupadosNoDia.includes(h));
+        // Verificações rigorosas: É passado? A loja está fechada? O horário sumiu das opções?
+        const isDataPassada = dataReqIso < hojeIso;
+        const isHoraPassadaHoje = dataReqIso === hojeIso && horaPedida < horaAtual;
+        const lojaFechada = horasLojaDiaPedido.length === 0;
 
-        // Tenta sugerir horários DEPOIS da hora pedida. Se não tiver, sugere os primeiros da manhã.
-        let sugestoes = livres.filter(h => h > horaPedida).slice(0, 3);
-        if (sugestoes.length === 0)
-            sugestoes = livres.slice(0, 3);
+        const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && livresValidosNoDia.includes(horaPedida);
 
-        // Constrói a caixinha visual de aviso
-        const boxDisponibilidade = isDisponivel
-                ? `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(40,167,69,0.1); border-left: 3px solid #28a745; font-size: 0.85rem;">
-                   <strong style="color: #28a745;"><i class="fas fa-check-circle"></i> Horário Livre!</strong> <span style="opacity: 0.8;">Você pode aceitar o pedido.</span>
-               </div>`
-                : `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(220,53,69,0.1); border-left: 3px solid #dc3545; font-size: 0.85rem;">
-                   <strong style="color: #dc3545;"><i class="fas fa-times-circle"></i> Horário Ocupado!</strong>
-                   <div style="margin-top: 4px; opacity: 0.8;">Sugestões livres neste dia: <strong>${sugestoes.length > 0 ? sugestoes.join(', ') : 'Dia totalmente lotado'}</strong></div>
+        // Gera o bloco de aviso e sugestões
+        let boxDisponibilidade = "";
+        if (isDisponivel) {
+            boxDisponibilidade = `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(40,167,69,0.1); border-left: 3px solid #28a745; font-size: 0.85rem;">
+                   <strong style="color: #28a745;"><i class="fas fa-check-circle"></i> Horário Livre!</strong> <span style="opacity: 0.8;">Pode aceitar o pedido sem conflitos.</span>
                </div>`;
+        } else {
+            // Se falhou, o nosso Radar busca as próximas 3 opções garantidas no sistema inteiro!
+            const proximosLivres = buscarProximosHorariosLivres(dataReqIso, 3);
+            let sugestoesTexto = proximosLivres.length > 0
+                    ? proximosLivres.map(s => {
+                        const diaFmt = s.data.split('-').reverse().join('/'); // Formata para DD/MM/YYYY
+                        return `<strong>${diaFmt} às ${s.hora}</strong>`;
+                    }).join(' <span style="opacity:0.5">|</span> ')
+                    : "<strong>Nenhum horário livre nos próximos dias.</strong>";
 
+            let tituloErro = "Horário Indisponível!";
+            if (isDataPassada || isHoraPassadaHoje)
+                tituloErro = "O tempo já passou! 🕰️";
+            else if (lojaFechada)
+                tituloErro = "A loja não abre neste dia!";
 
-        // 🎨 3. DESENHO DO CARTÃO
+            boxDisponibilidade = `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(220,53,69,0.1); border-left: 3px solid #dc3545; font-size: 0.85rem;">
+                   <strong style="color: #dc3545;"><i class="fas fa-times-circle"></i> ${tituloErro}</strong>
+                   <div style="margin-top: 4px; opacity: 0.8;">Sugerimos reagendar para: ${sugestoesTexto}</div>
+               </div>`;
+        }
+
+        // =======================================================================
+        // 🎨 4. HTML DO CARTÃO
+        // =======================================================================
         return `
         <div class="agenda-card cartao-expansivel" style="border-left: 5px solid ${isDisponivel ? '#17a2b8' : '#dc3545'}; padding: 20px; margin-bottom: 20px; transition: all 0.3s ease;">
             
@@ -493,7 +518,6 @@ function renderNovos() {
         </div>`;
     }).join('');
 }
-
 function renderServicos() {
     const lista = document.getElementById('lista-servicos');
     if (!lista)
@@ -772,11 +796,13 @@ async function concluirAtendimento(id, btn) {
         card.querySelector('.sel-func').focus();
         return;
     }
-    if (!valorRaw || valorRaw === "0,00" || valorRaw === "") {
-        alert("⚠️ Erro: O Valor Cobrado não pode ser zero ou vazio.");
+
+    if (forma !== "Pacote" && (!valorRaw || valorRaw === "0,00" || valorRaw === "")) {
+        alert("⚠️ Erro: O Valor Cobrado não pode ser zero ou vazio para pagamentos normais.");
         card.querySelector('.inp-valor').focus();
         return;
     }
+
     if (!forma) {
         alert("⚠️ Erro: Selecione a Forma de Pagamento.");
         card.querySelector('.sel-forma').focus();
@@ -808,13 +834,13 @@ async function concluirAtendimento(id, btn) {
     try {
         const params = new URLSearchParams();
         params.append('id', id);
-        params.append('status', 'Retirada'); 
+        params.append('status', 'Retirada');
         params.append('funcionario', func);
         params.append('valor', valorRaw);
         params.append('formaPag', forma);
         params.append('statusPag', status);
-        params.append('entradaPet', entrada);
-        params.append('saidaPet', saida);
+        params.append('entrada_pet', entrada);
+        params.append('saida_pet', saida);
         params.append('obs', obs);
 
         const resposta = await fetch('../api/agendamentos/concluir', {
@@ -935,6 +961,30 @@ function aplicarMascaraMoeda(input) {
     v = v.replace('.', ','); // Troca o ponto da casa decimal por vírgula
     v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); // Coloca os pontos de milhar
     input.value = v;
+}
+
+// ==========================================
+// VALIDADOR GLOBAL DE PACOTES
+// ==========================================
+function verificarPacoteValido(nomeDono, nomeServicoAgendado) {
+    // 2. Acha o cliente
+    const cli = listaClientes.find(c => c.nome === nomeDono);
+    if (!cli || !cli.pacoteId || String(cli.pacoteId) === "0" || String(cli.pacoteId).toLowerCase() === "null") {
+        return false;
+    }
+
+    // 3. Acha o pacote na base de pacotes
+    const listaDePacotes = window.pacotesCadastrados || [];
+    const pacoteDoCliente = listaDePacotes.find(p => String(p.id) === String(cli.pacoteId));
+    if (!pacoteDoCliente)
+        return false;
+
+    // 4. Bate o serviço do pacote com o serviço agendado
+    const nomeServicoPacote = pacoteDoCliente.nomeServico || (pacoteDoCliente.servico && pacoteDoCliente.servico.nome) || '';
+    const servicoStr = nomeServicoAgendado || '';
+
+    // Retorna TRUE se os nomes forem exatamente iguais
+    return nomeServicoPacote.trim().toLowerCase() === servicoStr.trim().toLowerCase();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1159,6 +1209,17 @@ async function carregarHorariosDoBanco() {
     }
 }
 
+async function listarHorariosDoBanco() {
+    try {
+        const resHorarios = await fetch('../api/horarios/listar');
+        if (resHorarios.ok) {
+            horariosSemana = await resHorarios.json();
+        }
+    } catch (erro) {
+        console.error("Falha ao buscar horários para a agenda:", erro);
+    }
+}
+
 function toggleDia(index, isOpen) {
     horariosSemana[index].aberto = isOpen;
     renderHorarios();
@@ -1210,4 +1271,85 @@ async function salvarHorariosFuncionamento(btn) {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
+}
+
+function obterHorariosDoDia(dataIso) {
+    if (typeof horariosSemana === 'undefined' || !horariosSemana || horariosSemana.length === 0) {
+        return ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    }
+
+    const dataObj = new Date(dataIso + 'T12:00:00');
+    const diaJS = dataObj.getDay();
+    const nomesDias = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+    const nomeDiaCerto = nomesDias[diaJS];
+
+    let configDia = horariosSemana.find(h =>
+        (h.nomeDia && h.nomeDia.toLowerCase().includes(nomeDiaCerto.toLowerCase().substring(0, 3))) ||
+                String(h.diaDaSemana) === String(diaJS === 0 ? 7 : diaJS) ||
+                String(h.diaDaSemana) === String(diaJS + 1)
+    );
+
+    let horas = [];
+    if (configDia && (configDia.aberto === true || String(configDia.aberto).toLowerCase() === 'true')) {
+        const start = parseInt((configDia.horaAbertura || '08:00').split(':')[0]);
+        const end = parseInt((configDia.horaFechamento || '18:00').split(':')[0]);
+        for (let i = start; i < end; i++) {
+            if (i === 12)
+                continue; // Pula o almoço (ajuste se necessário)
+            horas.push(i.toString().padStart(2, '0') + ':00');
+        }
+    }
+    return horas;
+}
+
+// =======================================================================
+// 🔎 RADAR DE DISPONIBILIDADE: Acha os próximos X horários livres reais
+// =======================================================================
+function buscarProximosHorariosLivres(dataInicialIso, qtdDesejada) {
+    let encontrados = [];
+
+    // Descobre o dia e hora exatos de AGORA no navegador
+    const agora = new Date();
+    const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+    const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
+
+    // Se a data pedida for no passado, o radar começa a buscar a partir de HOJE!
+    let dataDeBusca = dataInicialIso < hojeIso ? hojeIso : dataInicialIso;
+    let dataAtualObj = new Date(dataDeBusca + 'T12:00:00');
+
+    // O radar vasculha até 14 dias para a frente para não travar o navegador
+    for (let diaOff = 0; diaOff < 14; diaOff++) {
+        if (encontrados.length >= qtdDesejada)
+            break;
+
+        const iterDate = new Date(dataAtualObj.getTime() + (diaOff * 86400000));
+        const iterIso = `${iterDate.getFullYear()}-${String(iterDate.getMonth() + 1).padStart(2, '0')}-${String(iterDate.getDate()).padStart(2, '0')}`;
+
+        let horasDia = obterHorariosDoDia(iterIso);
+
+        // 🚨 TRAVA DO TEMPO: Se estiver a olhar para os horários de HOJE, apaga os que já passaram!
+        if (iterIso === hojeIso) {
+            horasDia = horasDia.filter(h => h > horaAtual);
+        }
+
+        // Verifica todos os agendamentos já marcados para este dia específico
+        const ocupados = agenda.filter(ag => {
+            let agIso = ag.data;
+            if (ag.data && ag.data.includes('/')) {
+                const p = ag.data.split('/');
+                agIso = `${p[2]}-${p[1]}-${p[0]}`;
+            }
+            return agIso === iterIso;
+        }).map(ag => (ag.hora || '').substring(0, 5));
+
+        // Subtrai os ocupados das horas de funcionamento da loja
+        const livres = horasDia.filter(h => !ocupados.includes(h));
+
+        for (let h of livres) {
+            encontrados.push({data: iterIso, hora: h});
+            if (encontrados.length >= qtdDesejada)
+                break;
+        }
+    }
+    return encontrados;
 }
