@@ -126,10 +126,8 @@ async function carregarAgendaDoBanco(silencioso = false) {
     } catch (erro) {
         if (iconeSync) {
             iconeSync.style.color = '#ff0000';
-            // Repare que NÃO removemos o 'fa-spin' aqui. Ele vai girar pra sempre!
         }
         if (el) {
-            // 🟢 AGORA A TELA VAI MOSTRAR O VERDADEIRO MOTIVO DO ERRO!
             el.innerHTML = `<p style="color:red; text-align:center; font-weight:bold; font-size: 1.1rem; padding: 20px;">
                 🚨 ERRO NO JS: ${erro.message}
             </p>`;
@@ -137,25 +135,76 @@ async function carregarAgendaDoBanco(silencioso = false) {
 }
 }
 
-
 function renderAgenda() {
     const busca = (document.getElementById('busca-agenda')?.value || '').toLowerCase();
     const filData = document.getElementById('filtro-data-agenda')?.value || '';
     const filFunc = document.getElementById('filtro-func-agenda')?.value || '';
+
+    // Identifica o utilizador atual
+    const isFuncionario = (typeof perfil !== 'undefined' && perfil === 'Funcionario');
+    const nomeLogado = (typeof logado !== 'undefined') ? logado : '';
+
     const lista = agenda.filter(a => {
-        return (a.pet + a.dono + a.servico).toLowerCase().includes(busca) && (filData ? a.data === filData : true) && (filFunc ? a.funcionario === filFunc : true);
+        const matchBusca = (a.pet + a.dono + a.servico).toLowerCase().includes(busca);
+        const matchData = filData ? a.data === filData : true;
+
+        let matchFunc = true;
+        if (!isFuncionario && filFunc) {
+            matchFunc = (a.funcionario === filFunc);
+        }
+
+        return matchBusca && matchData && matchFunc;
     }).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+
     const el = document.getElementById('lista-agenda');
     if (!el)
         return;
+
     if (!lista.length) {
-        el.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-check" style="color:#5ac75a"></i><p>Nenhum agendamento confirmado</p></div>`;
+        el.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-check" style="color:#5ac75a; font-size: 2rem; margin-bottom: 10px;"></i><p>Nenhum agendamento encontrado</p></div>`;
         return;
     }
+
     const listaFuncs = (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios)) ? funcionarios : [];
-    const funcOpts = `<option value="">— Selecionar —</option>` + listaFuncs.map(f => `<option>${f.nome}</option>`).join('');
-    el.innerHTML = lista.map(a => `
-            <div class="agenda-card">
+
+    el.innerHTML = lista.map(a => {
+        const statusPag = a.statusPag || a.status_pagamento || 'Pendente';
+        const formaPag = a.formaPag || a.forma_pagamento || '';
+        const entradaPet = a.entrada_pet || a.entradaPet || '';
+        const saidaPet = a.saida_pet || a.saidaPet || '';
+        const observacoes = a.obs || '';
+
+        let funcAtribuido = a.funcionario;
+        if (funcAtribuido === 'null' || funcAtribuido === null || funcAtribuido === undefined) {
+            funcAtribuido = '';
+        }
+        funcAtribuido = funcAtribuido.trim();
+
+        let selectFuncHtml = '';
+
+        if (isFuncionario) {
+            if (funcAtribuido !== '' && funcAtribuido !== '—' && funcAtribuido !== nomeLogado) {
+                selectFuncHtml = `
+                    <select class="sel-func" disabled style="opacity: 0.7; cursor: not-allowed; background: #222;">
+                        <option value="${funcAtribuido}" selected>${funcAtribuido}</option>
+                    </select>`;
+            } else {
+                selectFuncHtml = `
+                    <select class="sel-func" style="border: 1px solid #C9A96E; background: #1a1a1a; color: #fff;">
+                        <option value="">— Pegar Serviço —</option>
+                        <option value="${nomeLogado}" ${funcAtribuido === nomeLogado ? 'selected' : ''}>${nomeLogado}</option>
+                    </select>`;
+            }
+        } else {
+            selectFuncHtml = `
+                <select class="sel-func">
+                    <option value="">— Selecionar —</option>
+                    ${listaFuncs.map(f => `<option value="${f.nome}" ${a.funcionario === f.nome ? 'selected' : ''}>${f.nome}</option>`).join('')}
+                </select>`;
+        }
+
+        return `
+            <div class="agenda-card" style="${a.funcionario === nomeLogado && isFuncionario ? 'border-left: 5px solid #28a745;' : ''}">
               <div class="ac-header">
                 <div>
                   <div class="ac-pet"><i class="fas fa-paw" style="color:#C9A96E;margin-right:6px;font-size:.8rem"></i>${a.pet} <small style="color:#888;font-weight:400">(${a.tipo})</small></div>
@@ -169,50 +218,49 @@ function renderAgenda() {
               <div style="margin-bottom:10px"><span class="badge badge-amarelo">${a.servico}</span></div>
               <div class="ac-grid">
                 
-                <div class="ag-field"><label>Funcionário</label>
-                  <select>${funcOpts.replace(`>${a.funcionario}<`, ` selected>${a.funcionario}<`)}</select>
+                <div class="ag-field"><label>Funcionário Responsável</label>
+                  ${selectFuncHtml}
                 </div>
                 
-                <div class="ag-field"><label>Valor Cobrado (R$)</label>
-                    <input type="text" value="${formatarValorTela(a.valor)}" placeholder="0,00" oninput="aplicarMascaraMoeda(this)"/>
+                <div class="ag-field"><label>Valor (R$)</label>
+                    <input type="text" class="inp-valor" value="${typeof formatarValorTela === 'function' ? formatarValorTela(a.valor) : a.valor}" placeholder="0,00" oninput="if(typeof aplicarMascaraMoeda === 'function') aplicarMascaraMoeda(this)"/>
                 </div>
                 
                 <div class="ag-field"><label>Forma de Pagamento</label>
-                  <select>
-                    <option value="" ${!a.formaPag ? 'selected' : ''}>— Selecionar —</option>
-                    ${['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito'].map(p => `<option ${a.formaPag === p ? 'selected' : ''}>${p}</option>`).join('')}
+                  <select class="sel-forma">
+                    <option value="" ${!formaPag ? 'selected' : ''}>— Selecionar —</option>
+                    ${['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito'].map(p => `<option value="${p}" ${formaPag === p ? 'selected' : ''}>${p}</option>`).join('')}
                   </select>
                 </div>
                 
                 <div class="ag-field"><label>Status Pagamento</label>
-                  <select>
-                    <option ${(a.status_pagamento || 'Pendente') === 'Pendente' ? 'selected' : ''}>Pendente</option>
-                    <option ${a.status_pagamento === 'Pago' ? 'selected' : ''}>Pago</option>
+                  <select class="sel-status">
+                    <option value="Pendente" ${statusPag === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                    <option value="Pago" ${statusPag === 'Pago' ? 'selected' : ''}>Pago</option>
                   </select>
                 </div>
                 
                 <div class="ag-field"><label>Entrada do Pet</label>
-                  <input type="time" value="${a.entrada_pet || ''}" />
+                  <input type="time" class="inp-entrada" value="${entradaPet}" />
                 </div>
                 
                 <div class="ag-field"><label>Saída do Pet</label>
-                  <input type="time" value="${a.saida_pet || ''}" />
+                  <input type="time" class="inp-saida" value="${saidaPet}" />
                 </div>
                 
               </div>
               
               <div class="ac-obs" style="margin-bottom:10px">
-                <label>Observações Internas</label>
-                <textarea rows="2" placeholder="Notas, produtos...">${a.obs || ''}</textarea>
+                <label>Observações</label>
+                <textarea class="txt-obs" rows="2" placeholder="Notas internas...">${observacoes}</textarea>
               </div>
-              
-              ${a.obs ? `<div style="font-size:.78rem;color:#888;margin-bottom:10px"><i class="fas fa-sticky-note" style="color:#C9A96E;margin-right:5px"></i>${a.obs}</div>` : ''}
               
               <div class="ac-footer">
-                <button class="btn-save-agenda" onclick="salvarAgendaManual(${a.id},this)"><i class="fas fa-save"></i> Salvar</button>
-                <button class="btn-concluir" onclick="concluirAtendimento(${a.id}, this)"><i class="fas fa-check-double"></i> Serviço Concluído</button>
+                <button class="btn-save-agenda" onclick="salvarAgendaManual(${a.id}, this)"><i class="fas fa-save"></i> Salvar Alterações</button>
+                <button class="btn-concluir" onclick="concluirAtendimento(${a.id}, this)"><i class="fas fa-check-double"></i> Concluir Serviço</button>
               </div>
-            </div>`).join('');
+            </div>`;
+    }).join('');
 }
 
 function renderPendentes() {
@@ -353,9 +401,9 @@ function renderNovos() {
         if (telContato.length >= 8) {
             cli = clientesCadastrados.find(c => cleanTel(c.telefone || '') === telContato);
         }
-        
-        if(cli){
-            
+
+        if (cli) {
+
         }
 
         // Só tem pacote se o ID existir, for diferente de zero e diferente da string "null"
@@ -410,10 +458,10 @@ function renderNovos() {
                 <div style="text-align:right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
                     <span class="badge" style="background-color: rgba(23, 162, 184, 0.15); color: #17a2b8; border: 1px solid #17a2b8; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;"><i class="fas fa-star"></i> Novo Pedido</span>
                     ${temPacote ? `<span class="badge" style="background-color: rgba(133, 100, 4, 0.15); color: #d39e00; border: 1px solid #ffeeba; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-box-open"></i> Pacote Ativo</span>` : ''}
-                    ${cli && cli.temUsuario 
-                        ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-address-book"></i> Cadastrado</span>` 
-                        : `<span class="badge" style="background-color: rgba(150, 150, 150, 0.1); color: #888; border: 1px dashed #555; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-user-slash"></i> Sem cadastro</span>`
-                    }
+                    ${cli && cli.temUsuario
+                ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-address-book"></i> Cadastrado</span>`
+                : `<span class="badge" style="background-color: rgba(150, 150, 150, 0.1); color: #888; border: 1px dashed #555; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-user-slash"></i> Sem cadastro</span>`
+                }
                 </div>
             </div>
 
@@ -496,23 +544,21 @@ function renderConfiguracoes() {
 }
 
 function navConfig(aba) {
-    // 1. Esconde as 3 áreas
     ['servicos', 'horarios', 'pacotes'].forEach(a => {
         document.getElementById('conf-' + a).style.display = 'none';
         document.getElementById('btn-conf-' + a).classList.remove('active');
     });
 
-    // 2. Mostra a área clicada
     document.getElementById('conf-' + aba).style.display = 'block';
     document.getElementById('btn-conf-' + aba).classList.add('active');
 
-    // 3. Dispara a busca no banco dependendo da aba
     if (aba === 'servicos')
         carregarServicosDoBanco();
     if (aba === 'horarios')
         carregarHorariosDoBanco();
     if (aba === 'pacotes') {
-        carregarPacotesAdmin(); 
+        carregarPacotesAdmin();
+        carregarServicosNoSelect();
     }
 }
 
@@ -712,8 +758,47 @@ async function concluirAtendimento(id, btn) {
     if (!item)
         return;
 
-    if (!confirm(`O serviço de ${item.pet} foi finalizado? O cliente será notificado.`))
+    const card = btn.closest('.agenda-card');
+    const func = card.querySelector('.sel-func').value;
+    const valorRaw = card.querySelector('.inp-valor').value;
+    const forma = card.querySelector('.sel-forma').value;
+    const status = card.querySelector('.sel-status').value;
+    const entrada = card.querySelector('.inp-entrada').value;
+    const saida = card.querySelector('.inp-saida').value;
+    const obs = card.querySelector('.txt-obs').value;
+
+    if (!func || func === "" || func === "null" || func === "— Pegar Serviço —") {
+        alert("⚠️ Erro: Você precisa selecionar o Funcionário Responsável antes de concluir.");
+        card.querySelector('.sel-func').focus();
         return;
+    }
+    if (!valorRaw || valorRaw === "0,00" || valorRaw === "") {
+        alert("⚠️ Erro: O Valor Cobrado não pode ser zero ou vazio.");
+        card.querySelector('.inp-valor').focus();
+        return;
+    }
+    if (!forma) {
+        alert("⚠️ Erro: Selecione a Forma de Pagamento.");
+        card.querySelector('.sel-forma').focus();
+        return;
+    }
+    if (status !== "Pago") {
+        alert("⛔ Bloqueio: Não é possível concluir um serviço com pagamento 'Pendente'. Altere para 'Pago' após receber do cliente.");
+        card.querySelector('.sel-status').focus();
+        return;
+    }
+    if (!entrada || !saida) {
+        alert("⚠️ Erro: Os horários de Entrada e Saída do pet são obrigatórios.");
+        if (!entrada)
+            card.querySelector('.inp-entrada').focus();
+        else
+            card.querySelector('.inp-saida').focus();
+        return;
+    }
+
+    if (!confirm(`O serviço de ${item.pet} foi finalizado? O cliente será notificado.`)) {
+        return;
+    }
 
     const originalHTML = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> A processar...';
@@ -723,7 +808,14 @@ async function concluirAtendimento(id, btn) {
     try {
         const params = new URLSearchParams();
         params.append('id', id);
-        params.append('status', 'Retirada'); // Muda o status para Aguardando Retirada
+        params.append('status', 'Retirada'); 
+        params.append('funcionario', func);
+        params.append('valor', valorRaw);
+        params.append('formaPag', forma);
+        params.append('statusPag', status);
+        params.append('entradaPet', entrada);
+        params.append('saidaPet', saida);
+        params.append('obs', obs);
 
         const resposta = await fetch('../api/agendamentos/concluir', {
             method: 'POST',
@@ -735,14 +827,19 @@ async function concluirAtendimento(id, btn) {
             await carregarAgendaDoBanco(true);
 
             // Redireciona a tela para a aba de Retirada
-            navigateTo('retirada');
+            if (typeof navigateTo === 'function')
+                navigateTo('retirada');
 
             // Manda o WhatsApp avisando o dono!
             const msg = `🐾 *Cantinho do Banho*\n\nOlá, *${item.dono}*!\nO banho do(a) *${item.pet}* terminou! Ele(a) está prontinho(a), cheiroso(a) e aguardando você. 😊\n\nVenha buscar quando puder! 🏠`;
-            openWA(item.contato, msg);
+            if (typeof openWA === 'function')
+                openWA(item.contato, msg);
 
         } else {
             alert("Erro ao concluir o serviço.");
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            btn.style.opacity = '1';
         }
     } catch (erro) {
         console.error("Erro:", erro);
@@ -934,7 +1031,6 @@ async function carregarServicosDoBanco() {
         console.error("Erro:", erro);
     }
 }
-F
 
 // ================= MODAL DE SERVIÇOS (LÓGICA REAL) =================
 
@@ -947,7 +1043,7 @@ function abrirModalServico(id = null) {
     if (id) {
         // Modo Edição: Puxa os dados do array
         const serv = servicosCadastrados.find(s => s.id === id);
-        if(serv) {
+        if (serv) {
             inputId.value = serv.id;
             inputNome.value = serv.nome;
             inputTempo.value = serv.tempo;
@@ -960,7 +1056,7 @@ function abrirModalServico(id = null) {
         inputTempo.value = '';
         titulo.innerHTML = '<i class="fas fa-cut"></i> Novo Serviço';
     }
-    
+
     document.getElementById('modal-servico').classList.remove('hidden');
 }
 
@@ -970,7 +1066,7 @@ function fecharModalServico() {
 
 async function salvarServico(e) {
     e.preventDefault();
-    
+
     const btn = document.getElementById('btn-salvar-servico');
     const originalHTML = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
@@ -979,12 +1075,13 @@ async function salvarServico(e) {
     const id = document.getElementById('id-servico').value;
     const nome = document.getElementById('nome-servico').value;
     const tempo = document.getElementById('tempo-servico').value;
-    
+
     const params = new URLSearchParams();
-    if (id) params.append('id', id); // Só envia o ID se for edição!
+    if (id)
+        params.append('id', id); // Só envia o ID se for edição!
     params.append('nome', nome);
     params.append('tempo', tempo);
-    
+
     // 🟢 ROTEAMENTO INTELIGENTE: Decide qual Servlet chamar baseado na existência do ID
     const url = id ? '../api/servicos/atualizar' : '../api/servicos/cadastrar';
 
@@ -994,7 +1091,7 @@ async function salvarServico(e) {
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: params
         });
-        
+
         if (resposta.ok) {
             fecharModalServico();
             await carregarServicosDoBanco();

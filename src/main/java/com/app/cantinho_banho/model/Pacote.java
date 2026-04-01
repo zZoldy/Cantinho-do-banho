@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 
 @Entity
 public class Pacote implements Serializable {
@@ -13,19 +14,22 @@ public class Pacote implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nome; 
-    
-    private Integer quantidadeSessoes; 
-    
-    private Integer validadeDias; 
-    
+    private String nome;
+
+    private Integer quantidadeSessoes;
+
+    private Integer validadeDias;
+
     private Double valor;
+
+    
+    @OneToOne
+    private Servico servico;
 
     public Pacote() {
     }
 
     // ================= GETTERS E SETTERS =================
-
     public Long getId() {
         return id;
     }
@@ -65,4 +69,13 @@ public class Pacote implements Serializable {
     public void setValor(Double valor) {
         this.valor = valor;
     }
+
+    public Servico getServico() {
+        return servico;
+    }
+
+    public void setServico(Servico servico) {
+        this.servico = servico;
+    }
+
 }

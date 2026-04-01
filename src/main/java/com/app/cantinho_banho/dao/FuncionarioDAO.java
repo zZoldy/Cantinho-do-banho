@@ -103,7 +103,7 @@ public class FuncionarioDAO {
     public List<Funcionario> buscarTodos() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            String jpql = "SELECT f FROM Funcionario f WHERE f.usuario.ativo = true";
+            String jpql = "SELECT f FROM Funcionario f";
 
             return em.createQuery(jpql, Funcionario.class).getResultList();
         } finally {

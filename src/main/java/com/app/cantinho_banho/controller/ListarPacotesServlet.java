@@ -23,20 +23,26 @@ public class ListarPacotesServlet extends HttpServlet {
 
             StringBuilder json = new StringBuilder();
             json.append("[");
-            
+
             for (int i = 0; i < pacotes.size(); i++) {
                 Pacote p = pacotes.get(i);
-                
+
                 String nomeSeguro = p.getNome() != null ? p.getNome().replace("\"", "\\\"") : "";
 
+                String nomeServico = "";
+                if (p.getServico() != null) {
+                    nomeServico = p.getServico().getNome();
+                }
+
                 json.append("{")
-                    .append("\"id\":").append(p.getId()).append(",")
-                    .append("\"nome\":\"").append(nomeSeguro).append("\",")
-                    .append("\"sessoes\":").append(p.getQuantidadeSessoes()).append(",")
-                    .append("\"validade\":").append(p.getValidadeDias()).append(",")
-                    .append("\"valor\":").append(p.getValor())
-                    .append("}");
-                
+                        .append("\"id\":").append(p.getId()).append(",")
+                        .append("\"nome\":\"").append(nomeSeguro).append("\",")
+                        .append("\"sessoes\":").append(p.getQuantidadeSessoes()).append(",")
+                        .append("\"nomeServico\": \"").append(nomeServico).append("\",")
+                        .append("\"validade\":").append(p.getValidadeDias()).append(",")
+                        .append("\"valor\":").append(p.getValor())
+                        .append("}");
+
                 if (i < pacotes.size() - 1) {
                     json.append(",");
                 }

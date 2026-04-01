@@ -22,6 +22,7 @@ public class ListarFuncionariosServlet extends HttpServlet {
 
         try {
             FuncionarioDAO dao = new FuncionarioDAO();
+            
             List<Funcionario> lista = dao.buscarSomenteFuncionarios();
 
             // Montagem manual de um JSON (Array de objetos)

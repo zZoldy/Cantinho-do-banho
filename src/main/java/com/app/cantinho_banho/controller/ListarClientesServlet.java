@@ -17,15 +17,17 @@ public class ListarClientesServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             ClienteDAO dao = new ClienteDAO();
-            List<Cliente> clientes = dao.listarTodos(); 
+            List<Cliente> clientes = dao.listarTodos();
 
             StringBuilder json = new StringBuilder();
             json.append("[");
-            
+
             boolean primeiroCliente = true;
 
             for (Cliente c : clientes) {
-                if (!primeiroCliente) json.append(",");
+                if (!primeiroCliente) {
+                    json.append(",");
+                }
                 primeiroCliente = false;
 
                 boolean temUsuario = (c.getUsuario() != null);
@@ -35,14 +37,30 @@ public class ListarClientesServlet extends HttpServlet {
                 json.append("\"nome\":\"").append(escapeJson(c.getNome())).append("\",");
                 json.append("\"telefone\":\"").append(escapeJson(c.getTelefone())).append("\",");
                 json.append("\"temUsuario\":").append(temUsuario).append(",");
-                
+
+                if (c.getPacoteAtivo() != null) {
+                    json.append("\"pacoteId\":").append(c.getPacoteAtivo().getId()).append(",");
+                    json.append("\"sessoesUsadas\":").append(c.getSessoesUsadas() != null ? c.getSessoesUsadas() : 0).append(",");
+                    if (c.getValidadePacote() != null) {
+                        json.append("\"validadePacote\":\"").append(c.getValidadePacote().toString()).append("\",");
+                    } else {
+                        json.append("\"validadePacote\":null,");
+                    }
+                } else {
+                    json.append("\"pacoteId\":null,");
+                    json.append("\"sessoesUsadas\":0,");
+                    json.append("\"validadePacote\":null,");
+                }
+
                 json.append("\"pets\":[");
                 if (c.getPets() != null && !c.getPets().isEmpty()) {
                     boolean primeiroPet = true;
                     for (Pet p : c.getPets()) {
-                        if (!primeiroPet) json.append(",");
+                        if (!primeiroPet) {
+                            json.append(",");
+                        }
                         primeiroPet = false;
-                        
+
                         json.append("{");
                         json.append("\"id\":").append(p.getId()).append(",");
                         json.append("\"nome\":\"").append(escapeJson(p.getNome())).append("\",");
@@ -59,7 +77,7 @@ public class ListarClientesServlet extends HttpServlet {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(json.toString());
-            
+
         } catch (IOException e) {
             response.setStatus(500);
             response.getWriter().write("Erro no servidor: " + e.getMessage());
@@ -67,7 +85,9 @@ public class ListarClientesServlet extends HttpServlet {
     }
 
     private String escapeJson(String texto) {
-        if (texto == null) return "";
+        if (texto == null) {
+            return "";
+        }
         return texto.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
     }
 }

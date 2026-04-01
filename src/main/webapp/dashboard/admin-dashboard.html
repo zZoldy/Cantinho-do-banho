@@ -833,9 +833,9 @@
                 <a href="#" class="nav-item" data-page="pendentes"><i class="fas fa-clock"></i> Pendentes <span class="nav-badge" id="badge-pend">0</span></a>
                 <a href="#" class="nav-item" data-page="agenda"><i class="fas fa-calendar-check"></i> Agenda Confirmada</a>
                 <a href="#" class="nav-item" data-page="retirada"><i class="fas fa-dog"></i> Retirada do Pet <span class="nav-badge" id="badge-retirada">0</span></a>
+                <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="clientes"><i class="fas fa-star"></i> Clientes Cadastrados</a>
                 <a href="#" class="nav-item" data-page="funcionarios"><i class="fas fa-users"></i> Funcionários</a>
-                <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="config"><i class="fas fa-cogs"></i> Configurações</a>
             </nav>
             <div class="sidebar-footer">
@@ -987,7 +987,6 @@
                     <h3><i class="fas fa-star" style="color:#C9A96E;margin-right:8px"></i>Clientes Cadastrados</h3>
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                         <button class="btn-secundario" onclick="abrirRelatorio()"><i class="fas fa-file-alt"></i> Relatório</button>
-                        <button class="btn-secundario" onclick="toggleVerPacotes()" id="btn-ver-pacotes"><i class="fas fa-box"></i> Ver Pacotes</button>
                         <button class="btn-primary" onclick="abrirModalNovoCliente()"><i class="fas fa-plus"></i> Novo Cliente</button>
                     </div>
                 </div>
@@ -1036,7 +1035,6 @@
                             <option value="mes">Este mês</option><option value="semana">Esta semana</option><option value="ano">Este ano</option><option value="todos">Todos</option>
                         </select>
                         <button onclick="exportarPagamentosPDF()" style="background:none;border:1px solid #333;color:#888;border-radius:6px;padding:6px 12px;font-size:.78rem;cursor:pointer;display:flex;align-items:center;gap:5px;transition:.2s" onmouseover="this.style.borderColor = '#C9A96E';this.style.color = '#C9A96E'" onmouseout="this.style.borderColor = '#333';this.style.color = '#888'"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
-                        <button onclick="limparPagamentos()" class="btn-danger-sm"><i class="fas fa-trash"></i> Limpar</button>
                     </div>
                 </div>
 
@@ -1110,6 +1108,13 @@
                                         <div style="margin-bottom: 12px;">
                                             <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px; display: block;">Nome do Plano</label>
                                             <input type="text" id="pacote-nome" class="form-ctrl" style="width: 100%; box-sizing: border-box;" placeholder="Ex: Mensal 4 Banhos" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Serviço Vinculado ao Pacote <span style="color:red">*</span></label>
+                                            <select id="novo-pacote-servico" class="form-ctrl" required>
+                                                <option value="">— Carregando serviços... —</option>
+                                            </select>
+                                            <small style="color: #888;">Este pacote só descontará sessões deste serviço específico.</small>
                                         </div>
                                         <div style="margin-bottom: 12px;">
                                             <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 4px; display: block;">Nº de Sessões</label>
@@ -1268,57 +1273,6 @@
             </div>
         </div>
 
-        <!-- ═══ MODAL PACOTE ═══ -->
-        <div class="modal-overlay hidden" id="modalPacote">
-            <div class="modal" style="max-width:560px">
-                <div class="modal-header"><h3 id="modal-pac-titulo">Novo Pacote</h3><button onclick="fecharModalPacote()" class="btn-fechar"><i class="fas fa-times"></i></button></div>
-                <div class="modal-body">
-                    <div class="form-row-2" style="gap:12px;margin-bottom:12px">
-                        <div><label class="form-label">Nome do Pacote *</label><input type="text" id="pac-nome" class="form-ctrl" placeholder="Ex: Pacote Banho 5x"/></div>
-                        <div><label class="form-label">Valor sugerido (R$)</label><input type="number" id="pac-valor" class="form-ctrl" step="0.01" placeholder="0,00"/></div>
-                    </div>
-                    <div style="margin-bottom:14px"><label class="form-label">Descrição</label><input type="text" id="pac-desc" class="form-ctrl" placeholder="Breve descrição do pacote"/></div>
-                    <div class="section-lbl">Serviços inclusos no pacote</div>
-                    <p style="font-size:.75rem;color:#555;margin-bottom:8px">Adicione cada tipo de serviço e a quantidade de créditos disponíveis para ele.</p>
-                    <div id="pac-servicos-lista" style="margin-bottom:12px"></div>
-                    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
-                        <div style="flex:2;min-width:140px">
-                            <label class="form-label">Serviço</label>
-                            <select id="pac-novo-serv" class="form-ctrl">
-                                <option value="">— Selecionar —</option>
-                                <option>Banho</option>
-                                <option>Banho e Tosa</option>
-                                <option>Banho + Hidratação</option>
-                                <option>Banho + Tosa Bebê</option>
-                                <option>Tosa</option>
-                                <option>Trimming</option>
-                                <option>Corte de Unha</option>
-                                <option>Escovação de Dentes</option>
-                                <option>Cronograma Capilar</option>
-                                <option>Recuperação de Pelagem</option>
-                                <option>Cromoterapia</option>
-                                <option>Coloração Pet</option>
-                                <option value="__custom__">✏️ Personalizado...</option>
-                            </select>
-                        </div>
-                        <div id="pac-serv-custom-wrap" style="flex:2;min-width:120px;display:none">
-                            <label class="form-label">Nome personalizado</label>
-                            <input type="text" id="pac-novo-serv-custom" class="form-ctrl" placeholder="Digite o serviço..."/>
-                        </div>
-                        <div style="width:80px">
-                            <label class="form-label">Qtd</label>
-                            <input type="number" id="pac-novo-qtd" class="form-ctrl" value="1" min="1" style="text-align:center"/>
-                        </div>
-                        <button onclick="adicionarServicoPacote()" class="btn-sm-primary" style="padding:8px 14px;align-self:flex-end"><i class="fas fa-plus"></i> Add</button>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button onclick="fecharModalPacote()" class="btn-secundario">Cancelar</button>
-                    <button onclick="salvarPacote()" class="btn-primary"><i class="fas fa-save"></i> Salvar Pacote</button>
-                </div>
-            </div>
-        </div>
-
         <!-- ═══ MODAL FUNCIONÁRIO ═══ -->
         <div class="modal-overlay hidden" id="modalFunc">
             <div class="modal modal-sm">
@@ -1467,6 +1421,30 @@
             </div>
         </div>
 
+        <!-- ═══ MODAL PACOTES ═══ -->
+        <div class="modal-overlay hidden" id="modal-vender-pacote">
+            <div class="modal modal-sm" style="border-top: 5px solid #28a745;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-box-open" style="color:#28a745; margin-right: 8px;"></i> Vender Pacote</h3>
+                    <button onclick="fecharModalVenderPacote()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size: 0.9rem; color: #888; margin-bottom: 15px;">Selecione o pacote que o cliente <strong id="nome-cliente-pacote" style="color:#eee;"></strong> está a comprar:</p>
+
+                    <input type="hidden" id="id-cliente-pacote">
+
+                    <div class="field">
+                        <select id="select-pacote-venda" class="form-ctrl">
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="fecharModalVenderPacote()" class="btn-secundario">Cancelar</button>
+                    <button type="button" onclick="confirmarVendaPacote()" class="btn-primary" style="background: #28a745; border-color: #28a745;"><i class="fas fa-check"></i> Confirmar Venda</button>
+                </div>
+            </div>
+        </div>
+
         <script>
             // ═══════════════════════════════════════════════════
             // DADOS
@@ -1609,8 +1587,14 @@
                     return;
                 }
 
-                if (page === 'agenda' || page === 'dashboard') {
+                if (page === 'dashboard') {
                     carregarAgendaDoBanco(false);
+                }
+
+                if (page === 'agenda') {
+                    carregarAgendaDoBanco(false);
+                    listarFuncionariosDoBanco(isAdm);
+                    populateFuncSelects();
                 }
 
                 if (page === 'funcionarios') {
@@ -1625,7 +1609,7 @@
                 document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
                 document.getElementById('page-' + page)?.classList.remove('hidden');
                 document.getElementById('pageTitle').textContent = pageTitles[page] || page;
-                ({dashboard: renderDashboard, novos: renderNovos, agenda: renderAgenda, pendentes: renderPendentes, clientes: renderClientes, funcionarios: renderFuncionarios, pagamentos: renderPagamentos, config: renderConfiguracoes()})[page]?.();
+                ({dashboard: renderDashboard, novos: renderNovos, agenda: renderAgenda, pendentes: renderPendentes, clientes: renderClientes, funcionarios: renderFuncionarios, pagamentos: renderPagamentos, config: renderConfiguracoes})[page]?.();
             }
             function toggleSidebar() {
                 document.getElementById('sidebar').classList.toggle('open');
@@ -1693,19 +1677,62 @@
             function getNomeFuncs() {
                 return funcionarios.map(f => f.nome);
             }
-            function populateFuncSelects() {
-                const opts = `<option value="">— Selecionar —</option>` + funcionarios.map(f => `<option>${f.nome}</option>`).join('');
-                ['filtro-func-agenda'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.innerHTML = `<option value="">Todos os funcionários</option>` + funcionarios.map(f => `<option>${f.nome}</option>`).join('');
-                    }
-                });
-            }
 
             // ═══════════════════════════════════════════════════
-            // DASHBOARD
+            // RENDERIZAÇÃO DO DASHBOARD PRINCIPAL
             // ═══════════════════════════════════════════════════
+            function renderDashboard() {
+                const elNovos = document.getElementById('dash-novos');
+                if (elNovos)
+                    elNovos.textContent = novos.length;
+
+                const elConf = document.getElementById('dash-confirmados');
+                if (elConf)
+                    elConf.textContent = agenda.length;
+
+                const elPend = document.getElementById('dash-pendentes');
+                if (elPend)
+                    elPend.textContent = pendentes.length;
+
+                const retEl = document.getElementById('dash-retirada');
+                if (retEl)
+                    retEl.textContent = retirada.length;
+
+                const elHist = document.getElementById('dash-total-hist');
+                if (elHist)
+                    elHist.textContent = historico.length;
+
+                const todos = [...historico, ...agenda];
+                const fat = todos.filter(a => a.data?.startsWith(mesMes) && a.statusPag === 'Pago')
+                        .reduce((s, a) => s + (a.valor || 0), 0);
+
+                const elFat = document.getElementById('dash-fat');
+                if (elFat)
+                    elFat.textContent = `R$ ${fat.toFixed(2)}`;
+
+                if (typeof renderServChart === 'function')
+                    renderServChart();
+                if (typeof renderFatChart === 'function')
+                    renderFatChart();
+
+                const recentes = [...historico].sort((a, b) => (b.concluidoEm || b.data || '').localeCompare(a.concluidoEm || a.data || '')).slice(0, 30);
+                const hEl = document.getElementById('dash-historico-lista');
+
+                if (hEl) {
+                    hEl.innerHTML = recentes.length ? recentes.map(a => `
+            <div class="hist-row" style="position:relative; display:flex; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="hist-data" style="width: 80px; font-weight:600; font-size: 0.85rem;">${fd(a.data)}</span>
+                <span class="hist-pet" style="width: 100px; font-weight:600;">${a.pet}</span>
+                <span class="hist-serv" style="flex:1; font-size: 0.85rem;">${a.servico} <span style="color:#888; margin-left:6px;">(${a.dono})</span></span>
+                <span class="hist-func" style="width: 120px; color:#555; font-size: 0.85rem;">${a.funcionario || '—'}</span>
+                <span class="hist-val" style="width: 80px; font-weight:600; color:#28a745;">${a.valor > 0 ? 'R$ ' + a.valor.toFixed(2) : '—'}</span>
+                <button onclick="excluirHistorico(${a.id})" title="Excluir do Banco de Dados" style="background:none;border:none;color:#dc3545;cursor:pointer;padding:4px 8px;font-size:1rem;margin-left:10px; transition: 0.2s;" onmouseover="this.style.color='#a71d2a'" onmouseout="this.style.color='#dc3545'">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>`).join('') : '<div style="text-align:center; padding:20px; color:#888;"><i class="fas fa-history" style="font-size:2rem; margin-bottom:10px; color:#ccc;"></i><p>Nenhum serviço concluído ainda</p></div>';
+                }
+            }
+
             let servFiltro = 'dia';
             function setServFiltro(f) {
                 servFiltro = f;
@@ -1866,19 +1893,15 @@
                 const recentes = [...historico].sort((a, b) => (b.concluidoEm || b.data || '').localeCompare(a.concluidoEm || a.data || '')).slice(0, 30);
                 const hEl = document.getElementById('dash-historico-lista');
                 if (hEl) {
-                    hEl.innerHTML = recentes.length ? `
-              <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-                <button onclick="limparHistorico()" style="background:#3a1010;border:1px solid #6a2020;color:#c75a5a;border-radius:6px;padding:4px 12px;font-size:.72rem;cursor:pointer"><i class="fas fa-trash" style="margin-right:4px"></i>Limpar histórico</button>
-              </div>` +
-                            recentes.map(a => `
-              <div class="hist-row" style="position:relative">
-                <span class="hist-data">${fd(a.data)}</span>
-                <span class="hist-pet">${a.pet}</span>
-                <span class="hist-serv">${a.servico}<span style="color:#555;margin-left:6px;font-size:.7rem">${a.dono}</span></span>
-                <span class="hist-func">${a.funcionario || '—'}</span>
-                <span class="hist-val">${a.valor > 0 ? 'R$ ' + a.valor.toFixed(2) : '—'}</span>
-                <button onclick="excluirHistorico(${a.id})" title="Excluir" style="background:none;border:none;color:#6a2020;cursor:pointer;padding:2px 6px;font-size:.75rem;margin-left:4px;border-radius:4px;transition:.2s" onmouseover="this.style.color='#c75a5a'" onmouseout="this.style.color='#6a2020'"><i class="fas fa-times"></i></button>
-              </div>`).join('') : '<div class="empty-state"><i class="fas fa-history"></i><p>Nenhum serviço concluído ainda</p></div>';
+                    hEl.innerHTML = recentes.length ? recentes.map(a => `
+              <div class="hist-row" style="position:relative; display:flex; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span class="hist-data" style="width: 80px; font-weight:600;">${fd(a.data)}</span>
+                <span class="hist-pet" style="width: 100px;">${a.pet}</span>
+                <span class="hist-serv" style="flex:1;">${a.servico} <span style="color:#888; font-size:.8rem; margin-left:6px;">(${a.dono})</span></span>
+                <span class="hist-func" style="width: 120px; color:#555;">${a.funcionario || '—'}</span>
+                <span class="hist-val" style="width: 80px; font-weight:600; color:#28a745;">${a.valor > 0 ? 'R$ ' + a.valor.toFixed(2) : '—'}</span>
+                <button onclick="excluirHistorico(${a.id})" title="Excluir do Banco de Dados" style="background:none;border:none;color:#dc3545;cursor:pointer;padding:4px 8px;font-size:1rem;margin-left:10px; transition: 0.2s;"><i class="fas fa-trash-alt"></i></button>
+              </div>`).join('') : '<div style="text-align:center; padding:20px; color:#888;"><i class="fas fa-history" style="font-size:2rem; margin-bottom:10px; color:#ccc;"></i><p>Nenhum serviço concluído ainda</p></div>';
                 }
                 renderFatChart();
             }
@@ -2107,7 +2130,7 @@
             }
 
             function gerarRelatorioCliente(id) {
-                const c = clientes.find(function (x) {
+                const c = listaClientes.find(function (x) {
                     return x.id === id;
                 });
                 if (!c)
@@ -2188,19 +2211,37 @@
                 pdfWin('Ficha — ' + c.nome, body);
             }
 
-            function excluirHistorico(id) {
-                historico = historico.filter(x => x.id !== id);
-                salvarTudo();
-                renderDashboard();
-            }
-            function limparHistorico() {
-                if (!confirm('Limpar todo o histórico de serviços realizados? Esta ação não pode ser desfeita.'))
+            async function excluirHistorico(id) {
+                if (!confirm('Tem a certeza que deseja excluir permanentemente este registro do histórico da Base de Dados?'))
                     return;
-                historico = [];
-                salvarTudo();
-                renderDashboard();
+
+                const params = new URLSearchParams();
+                params.append('id', id);
+
+                try {
+                    // Chama o mesmo Servlet que apaga agendamentos/registros
+                    const res = await fetch('api/agendamentos/excluir', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: params
+                    });
+
+                    if (res.ok) {
+                        // O registro foi apagado do MySQL! Recarregamos a lista
+                        if (typeof carregarAgendaDoBanco === 'function') {
+                            await carregarAgendaDoBanco(true);
+                        }
+                        renderDashboard(); // Atualiza os gráficos na hora!
+                    } else {
+                        alert('Erro ao excluir o registro no servidor.');
+                    }
+                } catch (e) {
+                    console.error("Erro ao excluir histórico:", e);
+                    alert('Falha na comunicação com o servidor.');
+                }
             }
-            
+
+
             // ═══════════════════════════════════════════════════
             // PAGAMENTOS
             // ═══════════════════════════════════════════════════
@@ -2293,51 +2334,74 @@
                 renderPagamentos();
                 renderDashboard();
             }
-            function limparPagamentos() {
-                const periodo = document.getElementById('filtro-periodo-pag')?.value || 'mes';
-                const labels = {mes: 'este mês', semana: 'esta semana', ano: 'este ano', todos: 'TODOS OS REGISTROS'};
-                if (!confirm(`Limpar pagamentos de ${labels[periodo]}? Esta ação não pode ser desfeita.`))
+
+            async function excluirRegistroPag(id) {
+                if (!confirm('Tem a certeza que deseja excluir este registro de pagamento e o agendamento associado? Esta ação é irreversível no Banco de Dados.'))
                     return;
-                const ano = hoje.getFullYear().toString();
-                function dentroDoPeríodo(a) {
-                    if (periodo === 'todos')
-                        return true;
-                    if (periodo === 'mes')
-                        return a.data?.startsWith(mesMes);
-                    if (periodo === 'ano')
-                        return a.data?.startsWith(ano);
-                    if (periodo === 'semana') {
-                        const seg = new Date(hoje);
-                        seg.setDate(hoje.getDate() - hoje.getDay() + 1);
-                        const dom = new Date(seg);
-                        dom.setDate(seg.getDate() + 6);
-                        return a.data >= seg.toISOString().split('T')[0] && a.data <= dom.toISOString().split('T')[0];
+
+                const params = new URLSearchParams();
+                params.append('id', id);
+
+                try {
+                    const res = await fetch('api/agendamentos/excluir', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: params
+                    });
+
+                    if (res.ok) {
+                        // Recarrega os dados oficiais do Java
+                        if (typeof carregarAgendaDoBanco === 'function') {
+                            await carregarAgendaDoBanco(true);
+                        }
+                        renderPagamentos();
+                        renderDashboard();
+                    } else {
+                        alert('Erro ao excluir o registro no servidor.');
                     }
-                    return false;
+                } catch (e) {
+                    console.error("Erro ao excluir registro:", e);
+                    alert('Falha na comunicação com o servidor.');
                 }
-                historico = historico.filter(a => !dentroDoPeríodo(a));
-                salvarTudo();
-                renderPagamentos();
-                renderDashboard();
             }
-            function salvarPagamento() {
-                let idx = historico.findIndex(x => x.id === editandoPagId);
-                if (idx !== -1) {
-                    historico[idx].valor = parseFloat(document.getElementById('pf-valor').value) || 0;
-                    historico[idx].formaPag = document.getElementById('pf-forma').value;
-                    historico[idx].statusPag = document.getElementById('pf-status').value;
-                } else {
-                    idx = agenda.findIndex(x => x.id === editandoPagId);
-                    if (idx !== -1) {
-                        agenda[idx].valor = parseFloat(document.getElementById('pf-valor').value) || 0;
-                        agenda[idx].formaPag = document.getElementById('pf-forma').value;
-                        agenda[idx].statusPag = document.getElementById('pf-status').value;
+            async function salvarPagamento() {
+                if (!editandoPagId)
+                    return;
+
+                const valor = parseFloat(document.getElementById('pf-valor').value) || 0;
+                const formaPag = document.getElementById('pf-forma').value;
+                const statusPag = document.getElementById('pf-status').value;
+
+                const params = new URLSearchParams();
+                params.append('id', editandoPagId);
+                params.append('valor', valor);
+                params.append('formaPag', formaPag);
+                params.append('statusPag', statusPag);
+                // NOTA: Certifique-se de que o seu AtualizarAgendamentoServlet aceita estes campos!
+
+                try {
+                    const res = await fetch('api/agendamentos/atualizar', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: params
+                    });
+
+                    if (res.ok) {
+                        fecharModalPag();
+                        // Recarrega os dados do banco de dados (que vai popular os arrays historico e agenda novamente)
+                        if (typeof carregarAgendaDoBanco === 'function') {
+                            await carregarAgendaDoBanco(true);
+                        }
+                        renderPagamentos();
+                        renderDashboard();
+                        alert('Pagamento atualizado com sucesso!');
+                    } else {
+                        alert('Erro ao atualizar o pagamento no servidor.');
                     }
+                } catch (e) {
+                    console.error("Erro ao salvar pagamento:", e);
+                    alert('Falha na comunicação com o servidor.');
                 }
-                salvarTudo();
-                fecharModalPag();
-                renderPagamentos();
-                renderDashboard();
             }
 
             // ═══════════════════════════════════════════════════
@@ -2348,24 +2412,27 @@
                 const el = document.getElementById('relatorio-body');
                 if (!el)
                     return;
+
                 el.innerHTML = `
             <div style="margin-bottom:16px">
               <p style="font-size:.72rem;color:#666;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-weight:600">Selecionar cliente</p>
               <div style="display:flex;gap:8px;margin-bottom:12px">
                 <select id="sel-rel-cli" style="flex:1;background:#111;border:1px solid #333;color:#e0dbd4;border-radius:8px;padding:9px 12px;font-size:.85rem;cursor:pointer">
                   <option value="">— Escolha um cliente —</option>
-                  ${clientes.map(c => '<option value="' + c.id + '">' + c.nome + (c.pets ? ' · ' + c.pets : '') + '</option>').join('')}
+                  ${listaClientes.map(c => {
+                    const petsStr = (c.pets && c.pets.length > 0) ? c.pets.map(p => p.nome).join(', ') : 'Sem pets';
+                    return `<option value="${c.id}">${c.nome} · 🐾 ${petsStr}</option>`;
+                }).join('')}
                 </select>
                 <button onclick="gerarPDFClienteSelecionado()" style="background:#1a1510;border:1px solid #C9A96E55;color:#C9A96E;border-radius:8px;padding:9px 20px;font-size:.82rem;cursor:pointer;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px"><i class="fas fa-file-pdf"></i> Gerar PDF</button>
               </div>
               <p style="font-size:.72rem;color:#555">Selecione um cliente e clique em Gerar PDF para abrir o relatório individual.</p>
             </div>`;
             }
+
             function fecharRelatorio() {
                 document.getElementById('modalRelatorio').classList.add('hidden');
             }
-
-            // R@$
 
             function gerarPDFClienteSelecionado() {
                 const sel = document.getElementById('sel-rel-cli');
@@ -2375,15 +2442,79 @@
                 }
                 gerarRelatorioCliente(Number(sel.value) || sel.value);
             }
+
             function renderRelatorio(filtroId) {
-                // kept for compatibility
                 if (filtroId)
                     gerarRelatorioCliente(Number(filtroId) || filtroId);
             }
-            function imprimirRelatorio() {
-                const body = document.getElementById('relatorio-printable');
-                if (!body)
+
+            function gerarRelatorioCliente(id) {
+                const c = listaClientes.find(x => x.id === id);
+                if (!c)
                     return;
+
+                const pacotesLocais = window.pacotesCadastrados || [];
+                const pac = pacotesLocais.find(p => p.id === c.pacoteId);
+
+                const telefoneCli = c.telefone || 'Sem telefone';
+                const nomesPets = (c.pets && c.pets.length > 0) ? c.pets.map(p => p.nome).join(', ') : 'Nenhum pet cadastrado';
+
+                const hists = (typeof historico !== 'undefined' && typeof agenda !== 'undefined')
+                        ? [...historico, ...agenda].filter(a => cleanTel(a.contato) === cleanTel(telefoneCli)).sort((a, b) => b.data.localeCompare(a.data))
+                        : [];
+
+                const totalGasto = hists.filter(a => a.statusPag === 'Pago').reduce((s, a) => s + (a.valor || 0), 0);
+
+                const creditos = c.servicos || [];
+                const usados = creditos.filter(s => s.usado);
+                const pend = creditos.filter(s => !s.usado);
+
+                const hojeStr = new Date().toISOString().split("T")[0];
+                const vencido = c.validadePacote && c.validadePacote < hojeStr;
+
+                let body = '<div class="ph"><div class="pt">🐾 Cantinho do Banho</div><div class="ps">Ficha do Cliente · ' + new Date().toLocaleDateString('pt-BR') + '</div></div>';
+
+                // Dados do cliente
+                body += '<div style="background:#f8f6f2;border-radius:7px;padding:12px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:12.5px">';
+                body += '<div><strong style="display:block;margin-bottom:2px">' + c.nome + '</strong><span style="color:#888">📱 ' + telefoneCli + '</span></div>';
+                body += '<div><strong>Pets:</strong> ' + nomesPets + '</div>';
+                body += '<div><strong>Total gasto:</strong> R$ ' + totalGasto.toFixed(2) + '<br><strong>Atendimentos:</strong> ' + hists.length + '</div></div>';
+
+                // Pacote
+                if (pac) {
+                    body += '<div class="sec">Pacote Ativo: ' + pac.nome + '</div>';
+                    body += '<div class="g3"><div class="bx"><span class="v">' + creditos.length + '</span><span class="l">Total créditos</span></div><div class="bx"><span class="v" style="color:#1a6a2a">' + usados.length + '</span><span class="l">Utilizados</span></div><div class="bx"><span class="v" style="color:#8a6a00">' + pend.length + '</span><span class="l">Disponíveis</span></div></div>';
+                    let infoRow = '';
+                    if (pac.valor)
+                        infoRow += '<span><strong>Valor do Plano:</strong> R$ ' + parseFloat(pac.valor).toFixed(2) + '</span>';
+                    if (c.validadePacote)
+                        infoRow += '<span style="margin-left:16px;color:' + (vencido ? '#c00' : '#555') + '"><strong>Validade:</strong> ' + fd(c.validadePacote) + (vencido ? ' <strong style="color:#c00">⚠ VENCIDO</strong>' : '') + '</span>';
+                    if (infoRow)
+                        body += '<p style="font-size:12px;color:#555;margin-bottom:10px">' + infoRow + '</p>';
+                } else {
+                    body += '<p style="font-size:12px;color:#aaa;margin-bottom:12px">Sem pacote vinculado no momento.</p>';
+                }
+
+                if (c.obs)
+                    body += '<div style="background:#f8f6f2;border-radius:6px;padding:9px 13px;font-size:12px;color:#555;margin:10px 0"><strong>Obs:</strong> ' + c.obs + '</div>';
+
+                // Histórico de atendimentos
+                body += '<div class="sec">Histórico de Atendimentos (' + hists.length + ')</div>';
+                if (hists.length) {
+                    body += '<table><thead><tr><th>Data</th><th>Pet</th><th>Serviço</th><th>Funcionário</th><th>Valor</th><th>Status</th></tr></thead><tbody>';
+                    hists.forEach(a => {
+                        body += '<tr><td>' + fd(a.data) + '</td><td>' + a.pet + '</td><td>' + a.servico + '</td><td>' + (a.funcionario || '—') + '</td><td>R$ ' + (a.valor || 0).toFixed(2) + '</td><td><span class="' + (a.statusPag === 'Pago' ? 'bv' : 'ba') + '">' + (a.statusPag || 'Pendente') + '</span></td></tr>';
+                    });
+                    body += '</tbody></table>';
+                } else {
+                    body += '<p style="color:#aaa;font-size:12px">Nenhum atendimento registrado.</p>';
+                }
+
+                pdfWin('Ficha — ' + c.nome, body);
+            }
+
+            function imprimirRelatorio() {
+                const pacotesLocais = window.pacotesCadastrados || [];
                 const win = window.open('', '_blank');
                 win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório — Cantinho do Banho</title>
             <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
@@ -2405,44 +2536,84 @@
             </style></head><body>
             <h1>🐾 Cantinho do Banho</h1>
             <div class="sub">Relatório de Pacotes de Clientes · ${new Date().toLocaleDateString('pt-BR')}</div>`);
-                // Gera tabela simplificada por cliente
-                clientes.filter(c => c.pacoteId && c.servicos && c.servicos.length > 0).forEach(c => {
-                    const pac = pacotes.find(p => String(p.id) === String(c.pacoteId));
-                    const usados = c.servicos.filter(s => s.usado);
-                    const pend = c.servicos.filter(s => !s.usado);
-                    const pct = c.servicos.length ? Math.round((usados.length / c.servicos.length) * 100) : 0;
-                    const hists = [...historico, ...agenda].filter(a => cleanTel(a.contato) === cleanTel(c.tel));
-                    const vencido = c.validadePacote && c.validadePacote < new Date().toISOString().split('T')[0];
-                    win.document.write(`
-              <div class="bloco">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-                  <div>
-                    <div class="nome-cli">${c.nome}</div>
-                    <div style="font-size:.75rem;color:#444">📱 ${c.tel}${c.pets ? ` · 🐾 ${c.pets}` : ''}</div>
-                  </div>
-                  <div style="text-align:right;font-size:.75rem">
-                    <span class="badge-pac">${pac ? pac.nome : 'Pacote'}</span>
-                    ${c.valorPacote ? `<div style="color:#1a6a1a;margin-top:3px">R$ ${parseFloat(c.valorPacote).toFixed(2)}</div>` : ''}
-                    ${c.validadePacote ? `<div style="color:${vencido ? 'red' : '#888'}">Válido até ${fd(c.validadePacote)}${vencido ? ' ⚠️' : ''}</div>` : ''}
-                  </div>
-                </div>
-                <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
-                <div style="font-size:.72rem;color:#666;margin-bottom:8px">${usados.length}/${c.servicos.length} serviços utilizados</div>
-                ${usados.length ? `<div class="titulo-sec">✅ Realizados</div><div>${usados.map(s => `<span class="badge-verde">${s.nome}${s.dataUso ? ` · ${fd(s.dataUso)}` : ''}</span>`).join('')}</div>` : ''}
-                ${pend.length ? `<div class="titulo-sec" style="margin-top:6px">⏳ Pendentes</div><div>${pend.map(s => `<span class="badge-amar">${s.nome}</span>`).join('')}</div>` : ''}
-                ${hists.length ? `<div class="titulo-sec" style="margin-top:8px">Histórico (${hists.length})</div>${hists.sort((a, b) => b.data.localeCompare(a.data)).slice(0, 5).map(a => `<div class="hist-row"><span style="width:60px;flex-shrink:0">${fd(a.data)}</span><span style="flex:1">${a.servico}</span><span style="color:#888">${a.funcionario || ''}</span></div>`).join('')}` : ''}
-              </div>`);
-                });
+
+                const clientesComPacote = listaClientes.filter(c => c.pacoteId !== null);
+
+                if (clientesComPacote.length === 0) {
+                    win.document.write('<p style="text-align:center; color:#888;">Nenhum pacote ativo encontrado.</p>');
+                } else {
+                    clientesComPacote.forEach(c => {
+                        const pac = pacotesLocais.find(p => p.id === c.pacoteId);
+                        const creditos = c.servicos || [];
+                        const usados = creditos.filter(s => s.usado);
+                        const pend = creditos.filter(s => !s.usado);
+                        const pct = creditos.length ? Math.round((usados.length / creditos.length) * 100) : 0;
+
+                        const hists = [...historico, ...agenda].filter(a => cleanTel(a.contato) === cleanTel(c.telefone));
+                        const vencido = c.validadePacote && c.validadePacote < new Date().toISOString().split('T')[0];
+                        const nomesPets = (c.pets && c.pets.length > 0) ? c.pets.map(p => p.nome).join(', ') : '';
+
+                        win.document.write(`
+                  <div class="bloco">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+                      <div>
+                        <div class="nome-cli">${c.nome}</div>
+                        <div style="font-size:.75rem;color:#444">📱 ${c.telefone || 'Sem telefone'} ${nomesPets ? ` · 🐾 ${nomesPets}` : ''}</div>
+                      </div>
+                      <div style="text-align:right;font-size:.75rem">
+                        <span class="badge-pac">${pac ? pac.nome : 'Pacote'}</span>
+                        ${pac ? `<div style="color:#1a6a1a;margin-top:3px">R$ ${parseFloat(pac.valor).toFixed(2)}</div>` : ''}
+                        ${c.validadePacote ? `<div style="color:${vencido ? 'red' : '#888'}">Válido até ${fd(c.validadePacote)}${vencido ? ' ⚠️' : ''}</div>` : ''}
+                      </div>
+                    </div>
+                    <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+                    <div style="font-size:.72rem;color:#666;margin-bottom:8px">${usados.length}/${creditos.length} serviços utilizados</div>
+                    ${hists.length ? `<div class="titulo-sec" style="margin-top:8px">Histórico Recente</div>${hists.sort((a, b) => b.data.localeCompare(a.data)).slice(0, 3).map(a => `<div class="hist-row"><span style="width:60px;flex-shrink:0">${fd(a.data)}</span><span style="flex:1">${a.servico}</span><span style="color:#888">${a.funcionario || ''}</span></div>`).join('')}` : ''}
+                  </div>`);
+                    });
+                }
+
                 win.document.write('</body></html>');
                 win.document.close();
                 setTimeout(() => win.print(), 600);
+            }
+
+            async function carregarServicosNoSelect() {
+                const select = document.getElementById('novo-pacote-servico');
+                if (!select)
+                    return;
+
+                select.innerHTML = '<option value="">⏳ Carregando serviços do banco...</option>';
+                select.disabled = true;
+
+                try {
+                    const resposta = await fetch('../api/servicos/listar');
+
+                    if (!resposta.ok) {
+                        throw new Error('Falha na resposta do servidor');
+                    }
+
+                    const servicosDoBD = await resposta.json();
+
+                    if (servicosDoBD.length === 0) {
+                        select.innerHTML = '<option value="">⚠️ Nenhum serviço cadastrado no sistema</option>';
+                    } else {
+                        select.innerHTML = '<option value="">— Selecione o Serviço Alvo —</option>' +
+                                servicosDoBD.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+
+                        select.disabled = false;
+                    }
+
+                } catch (erro) {
+                    console.error("Erro ao carregar serviços para o pacote:", erro);
+                    select.innerHTML = '<option value="">❌ Erro de conexão com o banco</option>';
+                }
             }
 
             // ═══════════════════════════════════════════════════
             // INIT
             // ═══════════════════════════════════════════════════
             try {
-                populateFuncSelects();
                 atualizarBadges();
                 renderDashboard();
             } catch (e) {
@@ -2453,5 +2624,6 @@
         <script src="js/funcionario.js"></script>
         <script src="js/agendamento.js"></script>
         <script src="js/cliente.js"></script>
+        <script src="js/pacote.js"></script>
     </body>
 </html>

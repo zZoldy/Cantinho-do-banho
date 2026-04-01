@@ -16,7 +16,7 @@ public class PacoteDAO {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            throw e; 
+            throw e;
         } finally {
             em.close();
         }
@@ -40,20 +40,31 @@ public class PacoteDAO {
         }
     }
 
-    public void remover(Long id) {
+    public void excluir(Long id) throws Exception {
         EntityManager em = JPAUtil.getEntityManager();
         try {
             em.getTransaction().begin();
+
             Pacote pacote = em.find(Pacote.class, id);
-            if (pacote != null) {
-                em.remove(pacote);
+            if (pacote == null) {
+                throw new Exception("Pacote não encontrado.");
             }
+
+            javax.persistence.Query query = em.createQuery(
+                    "UPDATE Cliente c SET c.pacoteAtivo = null, c.sessoesUsadas = 0, c.validadePacote = null WHERE c.pacoteAtivo.id = :pacoteId"
+            );
+            query.setParameter("pacoteId", id);
+            int clientesAfetados = query.executeUpdate(); 
+
+            em.remove(pacote);
+
             em.getTransaction().commit();
+
+            System.out.println("Pacote excluído. " + clientesAfetados + " clientes tiveram seus planos cancelados.");
+
         } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            throw e;
+            em.getTransaction().rollback();
+            throw new Exception("Erro ao tentar excluir o pacote no banco de dados: " + e.getMessage());
         } finally {
             em.close();
         }

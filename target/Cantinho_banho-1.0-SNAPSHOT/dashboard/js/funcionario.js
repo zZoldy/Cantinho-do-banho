@@ -1,4 +1,3 @@
-let lista_funcionarios = [];
 let editFuncId = null;
 
 function carregarFuncionariosDoBanco(isAdm = false) {
@@ -30,8 +29,12 @@ function carregarFuncionariosDoBanco(isAdm = false) {
                 return response.json();
             })
             .then(dadosRecebidos => {
-                lista_funcionarios = dadosRecebidos;
+                funcionarios = dadosRecebidos;
+
                 renderFuncionarios();
+
+                populateFuncSelects();
+
             })
             .catch(error => {
                 console.error("Erro:", error);
@@ -55,13 +58,37 @@ function renderFuncsCadastro() {
     if (!el)
         return;
 
-    if (!lista_funcionarios.length) {
+    if (!funcionarios.length) {
         el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-users" style="color:#555"></i><p>Nenhum funcionário cadastrado</p></div>`;
         return;
     }
 
-    // Mapeia usando a variável certa (lista_funcionarios)
-    el.innerHTML = lista_funcionarios.map(f => `
+    el.innerHTML = funcionarios.map(f => {
+        // Verifica se a conta do funcionário está ativa. 
+        // Lida com várias formas que o Java pode ter enviado o JSON (f.conta_ativa ou f.usuario.ativo)
+        const isAtivo = (f.conta_ativa === true || f.conta_ativa === "true") ||
+                (f.usuario && f.usuario.ativo === true) ||
+                (f.ativo === true);
+
+        if (!isAtivo) {
+            return `
+            <div class="func-cad-card" style="background: #111; border-color: #222; opacity: 0.65; transition: 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.65'">
+              <div class="func-avatar" style="background: #1a1a1a; border-color: #333; color: #555;">
+                <i class="fas fa-user-slash" style="font-size: 1.1rem;"></i>
+              </div>
+              <div class="func-cad-info">
+                <div class="func-cad-nome" style="color: #666; text-decoration: line-through;">${f.nome}</div>
+                <div class="func-cad-cargo" style="color: #dc3545; font-weight: 700; font-size: 0.7rem; margin-top: 4px; letter-spacing: 1px;">
+                  <i class="fas fa-ban" style="margin-right: 3px;"></i> DESATIVADO
+                </div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn-sm-primary" style="background: #1a1a1a; border-color: #333; color: #888;" onclick="abrirModalFunc(${f.id})" title="Ver / Reativar"><i class="fas fa-edit"></i></button>
+              </div>
+            </div>`;
+        }
+
+        return `
             <div class="func-cad-card">
               <div class="func-avatar">${f.nome.charAt(0).toUpperCase()}</div>
               <div class="func-cad-info">
@@ -70,21 +97,21 @@ function renderFuncsCadastro() {
               </div>
               <div style="display:flex;gap:6px">
                 <button class="btn-sm-primary" onclick="abrirModalFunc(${f.id})" title="Editar"><i class="fas fa-edit"></i></button>
-                <button class="btn-danger-sm" onclick="excluirFunc(${f.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                <button class="btn-danger-sm" onclick="excluirFunc(${f.id})" title="Desativar Acesso"><i class="fas fa-trash"></i></button>
               </div>
-            </div>`).join('');
+            </div>`;
+    }).join('');
 }
-
 function renderPerformance() {
     const mes = document.getElementById('filtro-mes-func')?.value || mesMes;
     const el = document.getElementById('lista-performance');
     if (!el)
         return;
-    if (!lista_funcionarios.length) {
+    if (!funcionarios.length) {
         el.innerHTML = '';
         return;
     }
-    el.innerHTML = lista_funcionarios.map(f => {
+    el.innerHTML = funcionarios.map(f => {
         const concl = historico.filter(a => a.funcionario === f.nome && a.data?.startsWith(mes));
         const agnd = agenda.filter(a => a.funcionario === f.nome && a.data?.startsWith(mes));
         const fat = concl.reduce((s, a) => s + (a.valor || 0), 0);
@@ -140,7 +167,7 @@ function abrirModalFunc(id = null) {
     const divDadosEdicao = document.getElementById('divDadosEdicao');
 
     if (id) {
-        const f = lista_funcionarios.find(x => x.id === id);
+        const f = funcionarios.find(x => x.id === id);
         if (!f)
             return;
 
@@ -319,7 +346,7 @@ function cadastrarUsuario(event) {
                     document.getElementById('modalInfoNovoFunc').classList.remove('hidden');
                 }
 
-                carregarFuncionariosDoBanco(false);
+                carregarFuncionariosDoBanco(isAdm);
             })
             .catch(error => {
                 restaurarBotaoSalvar(btnSalvar, textoOriginalBotao);
@@ -511,4 +538,26 @@ function restaurarBotaoSalvar(botao, textoOriginal) {
     botao.disabled = false;
     botao.style.cursor = 'pointer';
     botao.style.opacity = '1';
+}
+
+function populateFuncSelects() {
+    const isFuncionario = (perfil === 'Funcionario');
+    ['filtro-func-agenda'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (isFuncionario) {
+                el.innerHTML = `<option value="${logado}">${logado}</option>`;
+                el.value = logado;
+                el.disabled = true;
+                el.style.opacity = '0.8';
+                el.style.cursor = 'not-allowed';
+            } else {
+                el.innerHTML = `<option value="">Todos os funcionários</option>` +
+                        funcionarios.map(f => `<option value="${f.nome}">${f.nome}</option>`).join('');
+                el.disabled = false;
+                el.style.opacity = '1';
+                el.style.cursor = 'pointer';
+            }
+        }
+    });
 }
