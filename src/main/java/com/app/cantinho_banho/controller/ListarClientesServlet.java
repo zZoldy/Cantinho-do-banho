@@ -1,8 +1,10 @@
 package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.ClienteDAO;
+import com.app.cantinho_banho.dao.VendaPacoteDAO;
 import com.app.cantinho_banho.model.Cliente;
 import com.app.cantinho_banho.model.Pet;
+import com.app.cantinho_banho.model.VendaPacote;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.annotation.WebServlet;
@@ -17,6 +19,7 @@ public class ListarClientesServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             ClienteDAO dao = new ClienteDAO();
+            VendaPacoteDAO vendaDao = new VendaPacoteDAO();
             List<Cliente> clientes = dao.listarTodos();
 
             StringBuilder json = new StringBuilder();
@@ -38,19 +41,25 @@ public class ListarClientesServlet extends HttpServlet {
                 json.append("\"telefone\":\"").append(escapeJson(c.getTelefone())).append("\",");
                 json.append("\"temUsuario\":").append(temUsuario).append(",");
 
-                if (c.getPacoteAtivo() != null) {
-                    json.append("\"pacoteId\":").append(c.getPacoteAtivo().getId()).append(",");
-                    json.append("\"sessoesUsadas\":").append(c.getSessoesUsadas() != null ? c.getSessoesUsadas() : 0).append(",");
-                    if (c.getValidadePacote() != null) {
-                        json.append("\"validadePacote\":\"").append(c.getValidadePacote().toString()).append("\",");
-                    } else {
-                        json.append("\"validadePacote\":null,");
+                List<VendaPacote> pacotesAtivos = vendaDao.listarAtivosPorCliente(c.getId());
+
+                json.append("\"pacotes\":[");
+                for (int j = 0; j < pacotesAtivos.size(); j++) {
+                    VendaPacote vp = pacotesAtivos.get(j);
+                    json.append("{");
+                    json.append("\"idVenda\":").append(vp.getId()).append(",");
+                    json.append("\"pacoteNome\":\"").append(escapeJson(vp.getPacote().getNome())).append("\",");
+                    json.append("\"servicoNome\":\"").append(escapeJson(vp.getPacote().getServico().getNome())).append("\",");
+                    json.append("\"sessoesRestantes\":").append(vp.getSessoesRestantes()).append(",");
+                    json.append("\"sessoesTotais\":").append(vp.getPacote().getQuantidadeSessoes()).append(",");
+                    // Calcula a validade com base na data da venda + validade do pacote
+                    json.append("\"validade\":\"").append(vp.getDataVenda().toLocalDate().plusDays(vp.getPacote().getValidadeDias())).append("\"");
+                    json.append("}");
+                    if (j < pacotesAtivos.size() - 1) {
+                        json.append(",");
                     }
-                } else {
-                    json.append("\"pacoteId\":null,");
-                    json.append("\"sessoesUsadas\":0,");
-                    json.append("\"validadePacote\":null,");
                 }
+                json.append("],");
 
                 json.append("\"pets\":[");
                 if (c.getPets() != null && !c.getPets().isEmpty()) {

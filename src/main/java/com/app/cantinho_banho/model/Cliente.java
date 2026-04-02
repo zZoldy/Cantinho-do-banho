@@ -35,14 +35,6 @@ public class Cliente implements Serializable {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "usuario_id", nullable = true)
     private Usuario usuario;
-    
-    @ManyToOne
-    @JoinColumn(name = "pacote_id", nullable = true)
-    private Pacote pacoteAtivo;
-    
-    private Integer sessoesUsadas = 0;
-    
-    private LocalDate validadePacote;
 
     public Cliente() {
     }
@@ -86,30 +78,6 @@ public class Cliente implements Serializable {
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
-    }
-
-    public Pacote getPacoteAtivo() {
-        return pacoteAtivo;
-    }
-
-    public void setPacoteAtivo(Pacote pacoteAtivo) {
-        this.pacoteAtivo = pacoteAtivo;
-    }
-
-    public Integer getSessoesUsadas() {
-        return sessoesUsadas;
-    }
-
-    public void setSessoesUsadas(Integer sessoesUsadas) {
-        this.sessoesUsadas = sessoesUsadas;
-    }
-
-    public LocalDate getValidadePacote() {
-        return validadePacote;
-    }
-
-    public void setValidadePacote(LocalDate validadePacote) {
-        this.validadePacote = validadePacote;
     }
 
 }

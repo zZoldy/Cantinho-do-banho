@@ -106,23 +106,36 @@ function renderClientes() {
                 ? `<a href="https://wa.me/55${cleanTel(c.telefone)}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none; font-weight: 500; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"><i class="fab fa-whatsapp" style="font-size: 1.1rem; margin-right: 4px;"></i> ${telefoneFormatado}</a>`
                 : `<span style="color: #999;"><i class="fas fa-phone-slash"></i> Sem telefone</span>`;
 
-        const pacoteHtml = pac ? `
-            <div style="background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
-                <div style="font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #444;"><i class="fas fa-box-open" style="color: #C9A96E; margin-right: 5px;"></i> ${pac.nome}</span>
-                    <span style="font-weight:bold; background: ${pendServ > 0 ? '#fff3cd' : '#d4edda'}; color: ${pendServ > 0 ? '#856404' : '#155724'}; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem;">
-                        ${pendServ > 0 ? pendServ + ' restantes' : '<i class="fas fa-check"></i> Concluído'}
-                    </span>
-                </div>
-                <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 6px; overflow: hidden;">
-                    <div style="width: ${pct}%; background-color: ${pct === 100 ? '#28a745' : '#C9A96E'}; height: 100%; border-radius: 10px; transition: width 0.5s ease;"></div>
-                </div>
-                <div style="font-size: 0.75rem; color: #888; display: flex; justify-content: space-between;">
-                    <span>${usadoServ} de ${totalServ} utilizados</span>
-                    ${c.validadePacote ? `<span style="color: #dc3545;"><i class="far fa-calendar-times"></i> Vence em: ${fd(c.validadePacote)}</span>` : ''}
-                </div>
-            </div>
-        ` : `<div style="margin-bottom: 15px; font-size: 0.9rem; color: #777; padding: 10px; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px;"><i class="fas fa-box" style="color:#ccc; margin-right: 5px;"></i> <strong>Pacote:</strong> Sem pacote ativo</div>`;
+        let pacoteHtml = `<div style="margin-bottom: 15px; font-size: 0.9rem; color: #777; padding: 10px; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px;"><i class="fas fa-box" style="color:#ccc; margin-right: 5px;"></i> <strong>Pacote:</strong> Sem pacote ativo</div>`;
+
+        if (c.pacotes && c.pacotes.length > 0) {
+            // Mapeia todos os pacotes ativos do cliente e junta num único HTML
+            pacoteHtml = c.pacotes.map(pac => {
+                const pendServ = pac.sessoesRestantes || 0;
+                const totalServ = pac.sessoesTotais || 0;
+                const usadoServ = totalServ - pendServ;
+                // A percentagem agora é o que JÁ FOI USADO para encher a barra
+                const pct = totalServ > 0 ? Math.round((usadoServ / totalServ) * 100) : 0;
+
+                return `
+                <div style="background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+                    <div style="font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600; color: #444;"><i class="fas fa-box-open" style="color: #C9A96E; margin-right: 5px;"></i> ${pac.pacoteNome || pac.servicoNome}</span>
+                        <span style="font-weight:bold; background: ${pendServ > 0 ? '#fff3cd' : '#d4edda'}; color: ${pendServ > 0 ? '#856404' : '#155724'}; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem;">
+                            ${pendServ > 0 ? pendServ + ' restantes' : '<i class="fas fa-check"></i> Concluído'}
+                        </span>
+                    </div>
+                    <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 6px; overflow: hidden;">
+                        <div style="width: ${pct}%; background-color: ${pct === 100 ? '#28a745' : '#C9A96E'}; height: 100%; border-radius: 10px; transition: width 0.5s ease;"></div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #888; display: flex; justify-content: space-between;">
+                        <span>${usadoServ} de ${totalServ} utilizados</span>
+                        ${pac.validade ? `<span style="color: #dc3545;"><i class="far fa-calendar-times"></i> Vence: ${fd(pac.validade)}</span>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
         return `
         <div class="cliente-card cartao-expansivel" onclick="abrirModalCliente(${c.id})" style="border: none; border-left: 5px solid #C9A96E; padding: 20px; border-radius: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; height: 100%;">
             
@@ -149,7 +162,7 @@ function renderClientes() {
                 </div>
             </div>
 
-            <div class="scroll-interno" style="max-height: 120px; overflow-y: auto; padding-right: 5px; margin-bottom: 10px;">
+            <div class="scroll-interno" style="max-height: 140px; overflow-y: auto; padding-right: 5px; margin-bottom: 10px;">
                 ${pacoteHtml}
             </div>
 

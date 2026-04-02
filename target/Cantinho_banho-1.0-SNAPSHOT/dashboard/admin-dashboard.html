@@ -1147,25 +1147,44 @@
         </main>
 
         <!-- ═══ MODAL PAGAMENTO ═══ -->
-        <div class="modal-overlay hidden" id="modalPagamento">
-            <div class="modal modal-sm">
-                <div class="modal-header"><h3>Atualizar Pagamento</h3><button onclick="fecharModalPag()" class="btn-fechar"><i class="fas fa-times"></i></button></div>
+        <div class="modal-overlay hidden" id="modal-visualizar-pagamento">
+            <div class="modal modal-md" style="border-top: 5px solid #C9A96E;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-file-invoice-dollar" style="color:#C9A96E; margin-right: 8px;"></i> Detalhes do Pagamento</h3>
+                    <button onclick="fecharModalVisualizacaoPag()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+
                 <div class="modal-body">
-                    <div class="form-grid">
-                        <div class="form-group"><label>Valor (R$)</label><input type="number" id="pf-valor" step="0.01" class="form-input-admin"/></div>
-                        <div class="form-group"><label>Forma de Pagamento</label>
-                            <select id="pf-forma" class="form-input-admin">
-                                <option value="">Não informado</option><option>Pix</option><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option>
-                            </select>
+                    <div style="background: rgba(201, 169, 110, 0.08); padding: 15px; border-radius: 6px; border: 1px solid rgba(201, 169, 110, 0.2); margin-bottom: 20px;">
+                        <h4 id="vp-descricao-titulo" style="margin: 0 0 10px 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            Descrição do Item
+                        </h4>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #bbb;">
+                            <span><i class="fas fa-user" style="color:#C9A96E;"></i> <strong id="vp-cliente" style="color: #eee;">Nome do Cliente</strong></span>
+                            <span><i class="far fa-calendar-alt" style="color:#C9A96E;"></i> <strong id="vp-data" style="color: #eee;">00/00/0000</strong></span>
                         </div>
-                        <div class="form-group full"><label>Status</label>
-                            <select id="pf-status" class="form-input-admin"><option value="Pendente">Pendente</option><option value="Pago">Pago</option></select>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label style="color: #888;">Valor Cobrado</label>
+                            <input type="text" id="vp-valor" class="form-input-admin" readonly style="background-color: rgba(0,0,0,0.2); color: #fff; cursor: default; border: 1px dashed #555;" />
+                        </div>
+
+                        <div class="form-group">
+                            <label style="color: #888;">Forma de Pagamento</label>
+                            <input type="text" id="vp-forma" class="form-input-admin" readonly style="background-color: rgba(0,0,0,0.2); color: #fff; cursor: default; border: 1px dashed #555;" />
+                        </div>
+
+                        <div class="form-group full">
+                            <label style="color: #888;">Status Financeiro</label>
+                            <input type="text" id="vp-status" class="form-input-admin" readonly style="background-color: rgba(0,0,0,0.2); font-weight: bold; cursor: default; border: 1px dashed #555;" />
                         </div>
                     </div>
                 </div>
+
                 <div class="modal-footer">
-                    <button onclick="fecharModalPag()" class="btn-secundario">Cancelar</button>
-                    <button onclick="salvarPagamento()" class="btn-primary"><i class="fas fa-save"></i> Salvar</button>
+                    <button onclick="fecharModalVisualizacaoPag()" class="btn-secundario" style="width: 100%;">Fechar Detalhes</button>
                 </div>
             </div>
         </div>
@@ -1429,18 +1448,33 @@
                     <button onclick="fecharModalVenderPacote()" class="btn-fechar"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body">
-                    <p style="font-size: 0.9rem; color: #888; margin-bottom: 15px;">Selecione o pacote que o cliente <strong id="nome-cliente-pacote" style="color:#eee;"></strong> está a comprar:</p>
+                    <p style="font-size: 0.9rem; color: #888; margin-bottom: 15px;">
+                        Selecione o pacote e o pagamento para <strong id="nome-cliente-pacote" style="color:#eee;"></strong>:
+                    </p>
 
                     <input type="hidden" id="id-cliente-pacote">
 
+                    <div class="field" style="margin-bottom: 15px;">
+                        <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Pacote</label>
+                        <select id="select-pacote-venda" class="form-ctrl"></select>
+                    </div>
+
                     <div class="field">
-                        <select id="select-pacote-venda" class="form-ctrl">
+                        <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Forma de Pagamento</label>
+                        <select id="forma-pagamento-pacote" class="form-ctrl">
+                            <option value="">— Selecionar —</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="Cartão de Débito">Cartão de Débito</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="fecharModalVenderPacote()" class="btn-secundario">Cancelar</button>
-                    <button type="button" onclick="confirmarVendaPacote()" class="btn-primary" style="background: #28a745; border-color: #28a745;"><i class="fas fa-check"></i> Confirmar Venda</button>
+                    <button type="button" onclick="confirmarVendaPacote()" class="btn-primary" style="background: #28a745; border-color: #28a745;">
+                        <i class="fas fa-check"></i> Confirmar Venda
+                    </button>
                 </div>
             </div>
         </div>
@@ -1596,10 +1630,16 @@
                     await listarHorariosDoBanco();
                 }
 
+                if (page === 'pendentes') {
+                    await listarClientesBD();
+                    await listarHorariosDoBanco();
+                }
+
                 if (page === 'agenda') {
                     await carregarAgendaDoBanco(false);
                     await listarFuncionariosDoBanco(isAdm);
                     await populateFuncSelects();
+                    await listarClientesBD();
                 }
 
                 if (page === 'funcionarios') {
@@ -1609,6 +1649,11 @@
                 if (page === 'clientes') {
                     await carregarClientesDoBanco();
                 }
+
+                if (page === 'pagamentos') {
+                    await carregarVendasPacotes();
+                }
+
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
                 document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
@@ -2251,44 +2296,62 @@
             // PAGAMENTOS
             // ═══════════════════════════════════════════════════
             let editandoPagId = null;
+            let listaVendasPacotes = [];
 
             function renderPagamentos() {
                 const periodo = document.getElementById('filtro-periodo-pag')?.value || 'mes';
                 const ano = hoje.getFullYear().toString();
-                const todosItens = [...historico, ...agenda, ...retirada];
+
+                // 🟢 1. União de dados: Agendamentos + Vendas de Pacotes
+                const vendas = typeof listaVendasPacotes !== 'undefined' ? listaVendasPacotes : [];
+                const todosItens = [...historico, ...agenda, ...retirada, ...vendas];
 
                 let lista = todosItens.filter(a => {
+                    let dataRef = a.data || a.dataVenda;
+                    if (!dataRef)
+                        return false;
+
+                    if (dataRef.includes('T'))
+                        dataRef = dataRef.split('T')[0];
+
                     if (periodo === 'mes')
-                        return a.data?.startsWith(mesMes);
+                        return dataRef.startsWith(mesMes);
                     if (periodo === 'semana') {
                         const seg = new Date(hoje);
                         seg.setDate(hoje.getDate() - hoje.getDay() + 1);
                         const dom = new Date(seg);
                         dom.setDate(seg.getDate() + 6);
-                        return a.data >= seg.toISOString().split('T')[0] && a.data <= dom.toISOString().split('T')[0];
+                        return dataRef >= seg.toISOString().split('T')[0] && dataRef <= dom.toISOString().split('T')[0];
                     }
                     if (periodo === 'ano')
-                        return a.data?.startsWith(ano);
+                        return dataRef.startsWith(ano);
                     return true;
                 });
 
-                // Totais por método
-                const metodos = {Pix: 0, Dinheiro: 0, 'Cartão de Crédito': 0, 'Cartão de Débito': 0};
-                lista.filter(a => a.statusPag === 'Pago').forEach(a => {
-                    const k = a.formaPag || '';
-                    if (metodos[k] !== undefined)
-                        metodos[k] += (a.valor || 0);
-                });
-                const metIcons = {Pix: '<i class="fas fa-qrcode"></i>', Dinheiro: '<i class="fas fa-money-bill-wave"></i>', 'Cartão de Crédito': '<i class="fas fa-credit-card"></i>', 'Cartão de Débito': '<i class="fas fa-credit-card"></i>'};
-                document.getElementById('metodos-grid').innerHTML = Object.entries(metodos).map(([m, v]) => `
-            <div class="metodo-box">
-              <span class="metodo-icon">${metIcons[m] || '<i class="fas fa-dollar-sign"></i>'}</span>
-              <span class="metodo-val">R$ ${v.toFixed(2)}</span>
-              <span class="metodo-lbl">${m}</span>
-            </div>`).join('');
+                // 🟢 2. Cálculo de Totais
+                const metodos = {Pix: 0, Dinheiro: 0, 'Cartão de Crédito': 0, 'Cartão de Débito': 0, 'Pacote': 0};
 
-                const pago = lista.filter(a => a.statusPag === 'Pago').reduce((s, a) => s + (a.valor || 0), 0);
-                const pend = lista.filter(a => a.statusPag !== 'Pago').reduce((s, a) => s + (a.valor || 0), 0);
+                lista.forEach(a => {
+                    // Normaliza o status e forma para ambos os tipos de objeto
+                    const status = a.statusPag || a.status_pagamento || (a.dataVenda ? 'Pago' : 'Pendente');
+                    const valor = a.valor || a.valorPago || 0;
+                    const forma = a.formaPag || a.forma_pagamento || a.formaPagamento || '';
+
+                    if (status === 'Pago' && metodos[forma] !== undefined) {
+                        metodos[forma] += valor;
+                    }
+                });
+
+                const pago = lista.reduce((s, a) => {
+                    const status = a.statusPag || a.status_pagamento || (a.dataVenda ? 'Pago' : 'Pendente');
+                    return status === 'Pago' ? s + (a.valor || a.valorPago || 0) : s;
+                }, 0);
+
+                const pend = lista.reduce((s, a) => {
+                    const status = a.statusPag || a.status_pagamento || (a.dataVenda ? 'Pago' : 'Pendente');
+                    return status !== 'Pago' ? s + (a.valor || a.valorPago || 0) : s;
+                }, 0);
+
                 document.getElementById('pag-total-pago').textContent = `R$ ${pago.toFixed(2)}`;
                 document.getElementById('pag-total-pendente').textContent = `R$ ${pend.toFixed(2)}`;
                 document.getElementById('pag-total-geral').textContent = `R$ ${(pago + pend).toFixed(2)}`;
@@ -2297,118 +2360,119 @@
                 if (!tbody)
                     return;
                 if (!lista.length) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="vazio">Nenhum registro.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>`;
                     return;
                 }
-                tbody.innerHTML = lista.sort((a, b) => b.data.localeCompare(a.data)).map(a => `
-            <tr>
-              <td><strong>${a.pet}</strong><br><small>${a.dono}</small></td>
-              <td>${a.servico}</td>
-              <td>${a.funcionario || '—'}</td>
-              <td>R$ ${(a.valor || 0).toFixed(2)}</td>
-              <td>${a.formaPag ? `<span class="badge badge-azul">${a.formaPag}</span>` : '—'}</td>
-              <td>${fd(a.data)}</td>
-              <td><span class="badge badge-${a.statusPag === 'Pago' ? 'verde' : 'amarelo'}">${a.statusPag || 'Pendente'}</span></td>
-              <td class="acoes">
-                <button onclick="abrirModalPag(${a.id})" title="Editar"><i class="fas fa-edit"></i></button>
-                <button onclick="excluirRegistroPag(${a.id})" title="Excluir" style="background:#3a1010;border:1px solid #6a2020;color:#c75a5a;border-radius:6px;padding:4px 8px;font-size:.75rem;cursor:pointer;margin-left:4px"><i class="fas fa-trash"></i></button>
+
+                // 🟢 3. Renderização da Tabela (Ajustada para o seu ListarVendasServlet manual)
+                tbody.innerHTML = lista.sort((a, b) => {
+                    const d1 = a.data || a.dataVenda;
+                    const d2 = b.data || b.dataVenda;
+                    return d2.localeCompare(d1);
+                }).map(a => {
+                    const isVenda = !!a.dataVenda;
+                    const statusFinanceiro = a.statusPag || a.status_pagamento || (isVenda ? 'Pago' : 'Pendente');
+                    const statusServico = isVenda ? 'VENDA' : (a.status || '—');
+
+                    // 🟢 AJUSTE DE MAPEAMENTO:
+                    // No Servlet você usou "pacoteNome" e "clienteNome"
+                    const nomePrincipal = isVenda ? `📦 Pacote: ${a.pacoteNome || 'Personalizado'}` : (a.pet || '—');
+                    const cliente = isVenda ? (a.clienteNome || '—') : (a.dono || '—');
+
+                    const descricao = isVenda ? 'Aquisição de Pacote' : (a.servico || '—');
+                    const valor = a.valor || a.valorPago || 0;
+                    const forma = a.formaPag || a.forma_pagamento || a.formaPagamento || '—';
+
+                    // Limpa o "T" da data de venda para o formatador 'fd' não bugar
+                    let dataLimpa = a.data || a.dataVenda;
+                    if (dataLimpa.includes('T'))
+                        dataLimpa = dataLimpa.split('T')[0];
+                    const dataExibicao = fd(dataLimpa);
+
+                    return `
+            <tr ${isVenda ? 'style="background: rgba(201, 169, 110, 0.08);"' : ''}>
+              <td><strong>${nomePrincipal}</strong><br><small style="color:#888">${cliente}</small></td>
+              <td>${descricao}</td>
+              <td>${a.funcionario || (isVenda ? 'Sistema' : '—')}</td>
+              <td>R$ ${valor.toFixed(2)}</td>
+              <td>${forma}</td>
+              <td>${dataExibicao}</td>
+              <td><span class="badge-status-${statusServico.toLowerCase()}">${statusServico}</span></td>
+              <td style="color: ${statusFinanceiro === 'Pago' ? '#5ac75a' : '#c77a7a'}; font-weight: bold;">
+                ${statusFinanceiro}
               </td>
-            </tr>`).join('');
+              <td style="text-align:right">
+                <button class="btn-visualizar" onclick="abrirModalVisualizacaoPag(${a.id}, ${isVenda})" title="Ver Detalhes">
+                    <i class="fas fa-eye"></i>
+                </button>
+              </td>
+            </tr>
+        `;
+                }).join('');
             }
 
-            function abrirModalPag(id) {
-                editandoPagId = id;
-                const a = [...historico, ...agenda].find(x => x.id === id);
-                if (!a)
-                    return;
-                document.getElementById('pf-valor').value = a.valor || '';
-                document.getElementById('pf-forma').value = a.formaPag || '';
-                document.getElementById('pf-status').value = a.statusPag || 'Pendente';
-                document.getElementById('modalPagamento').classList.remove('hidden');
-            }
-            function fecharModalPag() {
-                document.getElementById('modalPagamento').classList.add('hidden');
-                editandoPagId = null;
-            }
-            function excluirRegistroPag(id) {
-                if (!confirm('Excluir este registro de pagamento?'))
-                    return;
-                historico = historico.filter(x => x.id !== id);
-                agenda = agenda.filter(x => x.id !== id);
-                salvarTudo();
-                renderPagamentos();
-                renderDashboard();
-            }
+            function abrirModalVisualizacaoPag(id, isVenda = false) {
+                let item;
 
-            async function excluirRegistroPag(id) {
-                if (!confirm('Tem a certeza que deseja excluir este registro de pagamento e o agendamento associado? Esta ação é irreversível no Banco de Dados.'))
-                    return;
-
-                const params = new URLSearchParams();
-                params.append('id', id);
-
-                try {
-                    const res = await fetch('api/agendamentos/excluir', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: params
-                    });
-
-                    if (res.ok) {
-                        // Recarrega os dados oficiais do Java
-                        if (typeof carregarAgendaDoBanco === 'function') {
-                            await carregarAgendaDoBanco(true);
-                        }
-                        renderPagamentos();
-                        renderDashboard();
-                    } else {
-                        alert('Erro ao excluir o registro no servidor.');
-                    }
-                } catch (e) {
-                    console.error("Erro ao excluir registro:", e);
-                    alert('Falha na comunicação com o servidor.');
+                if (isVenda) {
+                    // Busca na lista de vendas de pacotes
+                    // Certifique-se que 'listaVendasPacotes' é a variável global que contém o retorno do seu Servlet
+                    item = listaVendasPacotes.find(v => v.id == id);
+                } else {
+                    // Busca na união de agendamentos (agenda + historico + retirada)
+                    const todosAgendamentos = [...agenda, ...historico, ...retirada];
+                    item = todosAgendamentos.find(a => a.id == id);
                 }
-            }
-            async function salvarPagamento() {
-                if (!editandoPagId)
+
+                if (!item) {
+                    console.error("Item não encontrado para o ID:", id);
                     return;
-
-                const valor = parseFloat(document.getElementById('pf-valor').value) || 0;
-                const formaPag = document.getElementById('pf-forma').value;
-                const statusPag = document.getElementById('pf-status').value;
-
-                const params = new URLSearchParams();
-                params.append('id', editandoPagId);
-                params.append('valor', valor);
-                params.append('formaPag', formaPag);
-                params.append('statusPag', statusPag);
-                // NOTA: Certifique-se de que o seu AtualizarAgendamentoServlet aceita estes campos!
-
-                try {
-                    const res = await fetch('api/agendamentos/atualizar', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: params
-                    });
-
-                    if (res.ok) {
-                        fecharModalPag();
-                        // Recarrega os dados do banco de dados (que vai popular os arrays historico e agenda novamente)
-                        if (typeof carregarAgendaDoBanco === 'function') {
-                            await carregarAgendaDoBanco(true);
-                        }
-                        renderPagamentos();
-                        renderDashboard();
-                        alert('Pagamento atualizado com sucesso!');
-                    } else {
-                        alert('Erro ao atualizar o pagamento no servidor.');
-                    }
-                } catch (e) {
-                    console.error("Erro ao salvar pagamento:", e);
-                    alert('Falha na comunicação com o servidor.');
                 }
+
+                // --- Preenchimento do Cabeçalho ---
+                const titulo = document.getElementById('vp-descricao-titulo');
+                const clienteField = document.getElementById('vp-cliente');
+                const dataField = document.getElementById('vp-data');
+
+                if (isVenda) {
+                    titulo.innerHTML = `<i class="fas fa-box-open" style="color:#C9A96E;"></i> Pacote: ${item.pacoteNome || 'Personalizado'}`;
+                    clienteField.textContent = item.clienteNome || '—';
+                    // Trata a data da venda (remove o T se houver)
+                    let dVenda = item.dataVenda || '';
+                    dataField.textContent = fd(dVenda.includes('T') ? dVenda.split('T')[0] : dVenda);
+                } else {
+                    titulo.innerHTML = `<i class="fas fa-paw" style="color:#17a2b8;"></i> Serviço: ${item.servico || '—'} (${item.pet || 'Pet'})`;
+                    clienteField.textContent = item.dono || '—';
+                    dataField.textContent = fd(item.data || '');
+                }
+
+                // --- Preenchimento dos Dados Financeiros ---
+                const valorTotal = item.valor || item.valorPago || 0;
+                const formaPg = item.formaPag || item.forma_pagamento || item.formaPagamento || '—';
+                const statusPg = item.statusPag || item.status_pagamento || (isVenda ? 'Pago' : 'Pendente');
+
+                document.getElementById('vp-valor').value = `R$ ${valorTotal.toFixed(2)}`;
+                document.getElementById('vp-forma').value = formaPg;
+
+                const statusBox = document.getElementById('vp-status');
+                statusBox.value = statusPg;
+
+                // Cor do status
+                if (statusPg === 'Pago') {
+                    statusBox.style.color = '#5ac75a';
+                    statusBox.style.borderColor = '#5ac75a';
+                } else {
+                    statusBox.style.color = '#c77a7a';
+                    statusBox.style.borderColor = '#c77a7a';
+                }
+
+                // Mostra o modal
+                document.getElementById('modal-visualizar-pagamento').classList.remove('hidden');
             }
 
+            function fecharModalVisualizacaoPag() {
+                document.getElementById('modal-visualizar-pagamento').classList.add('hidden');
+            }
             // ═══════════════════════════════════════════════════
             // RELATÓRIO DE PACOTES
             // ═══════════════════════════════════════════════════
@@ -2612,6 +2676,17 @@
                 } catch (erro) {
                     console.error("Erro ao carregar serviços para o pacote:", erro);
                     select.innerHTML = '<option value="">❌ Erro de conexão com o banco</option>';
+                }
+            }
+
+            async function carregarVendasPacotes() {
+                try {
+                    const res = await fetch('../api/pacotes/vendas/listar');
+                    if (res.ok) {
+                        listaVendasPacotes = await res.json();
+                    }
+                } catch (e) {
+                    console.error("Erro ao carregar vendas de pacotes", e);
                 }
             }
 

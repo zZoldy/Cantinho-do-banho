@@ -134,245 +134,6 @@ async function carregarAgendaDoBanco(silencioso = false) {
 }
 }
 
-function renderAgenda() {
-    const busca = (document.getElementById('busca-agenda')?.value || '').toLowerCase();
-    const filData = document.getElementById('filtro-data-agenda')?.value || '';
-    const filFunc = document.getElementById('filtro-func-agenda')?.value || '';
-
-    // Identifica o utilizador atual
-    const isFuncionario = (typeof perfil !== 'undefined' && perfil === 'Funcionario');
-    const nomeLogado = (typeof logado !== 'undefined') ? logado : '';
-
-    const lista = agenda.filter(a => {
-        const matchBusca = (a.pet + a.dono + a.servico).toLowerCase().includes(busca);
-        const matchData = filData ? a.data === filData : true;
-
-        let matchFunc = true;
-        if (!isFuncionario && filFunc) {
-            matchFunc = (a.funcionario === filFunc);
-        }
-
-        return matchBusca && matchData && matchFunc;
-    }).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
-
-    const el = document.getElementById('lista-agenda');
-    if (!el)
-        return;
-
-    if (!lista.length) {
-        el.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-check" style="color:#5ac75a; font-size: 2rem; margin-bottom: 10px;"></i><p>Nenhum agendamento encontrado</p></div>`;
-        return;
-    }
-
-    const listaFuncs = (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios)) ? funcionarios : [];
-
-    el.innerHTML = lista.map(a => {
-        const statusPag = a.statusPag || a.status_pagamento || 'Pendente';
-        const formaPag = a.formaPag || a.forma_pagamento || '';
-        const entradaPet = a.entrada_pet || a.entradaPet || '';
-        const saidaPet = a.saida_pet || a.saidaPet || '';
-        const observacoes = a.obs || '';
-
-        let funcAtribuido = a.funcionario;
-        if (funcAtribuido === 'null' || funcAtribuido === null || funcAtribuido === undefined) {
-            funcAtribuido = '';
-        }
-        funcAtribuido = funcAtribuido.trim();
-
-        let selectFuncHtml = '';
-
-        if (isFuncionario) {
-            if (funcAtribuido !== '' && funcAtribuido !== '—' && funcAtribuido !== nomeLogado) {
-                selectFuncHtml = `
-                    <select class="sel-func" disabled style="opacity: 0.7; cursor: not-allowed; background: #222;">
-                        <option value="${funcAtribuido}" selected>${funcAtribuido}</option>
-                    </select>`;
-            } else {
-                selectFuncHtml = `
-                    <select class="sel-func" style="border: 1px solid #C9A96E; background: #1a1a1a; color: #fff;">
-                        <option value="">— Pegar Serviço —</option>
-                        <option value="${nomeLogado}" ${funcAtribuido === nomeLogado ? 'selected' : ''}>${nomeLogado}</option>
-                    </select>`;
-            }
-        } else {
-            selectFuncHtml = `
-                <select class="sel-func">
-                    <option value="">— Selecionar —</option>
-                    ${listaFuncs.map(f => `<option value="${f.nome}" ${a.funcionario === f.nome ? 'selected' : ''}>${f.nome}</option>`).join('')}
-                </select>`;
-        }
-
-        return `
-            <div class="agenda-card" style="${a.funcionario === nomeLogado && isFuncionario ? 'border-left: 5px solid #28a745;' : ''}">
-              <div class="ac-header">
-                <div>
-                  <div class="ac-pet"><i class="fas fa-paw" style="color:#C9A96E;margin-right:6px;font-size:.8rem"></i>${a.pet} <small style="color:#888;font-weight:400">(${a.tipo})</small></div>
-                  <div class="ac-dono">${a.dono} · <a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" style="color:#25d366"><i class="fab fa-whatsapp"></i> ${a.contato}</a></div>
-                </div>
-                <div style="text-align:right">
-                  <span class="badge-confirmado">Confirmado</span>
-                  <div style="font-size:.75rem;color:#C9A96E;margin-top:4px">${fd(a.data)} às ${a.hora}</div>
-                </div>
-              </div>
-              <div style="margin-bottom:10px"><span class="badge badge-amarelo">${a.servico}</span></div>
-              <div class="ac-grid">
-                
-                <div class="ag-field"><label>Funcionário Responsável</label>
-                  ${selectFuncHtml}
-                </div>
-                
-                <div class="ag-field"><label>Valor (R$)</label>
-                    <input type="text" class="inp-valor" value="${typeof formatarValorTela === 'function' ? formatarValorTela(a.valor) : a.valor}" placeholder="0,00" oninput="if(typeof aplicarMascaraMoeda === 'function') aplicarMascaraMoeda(this)"/>
-                </div>
-                
-                <div class="ag-field"><label>Forma de Pagamento</label>
-                  <select class="sel-forma">
-                    <option value="" ${!formaPag ? 'selected' : ''}>— Selecionar —</option>
-                    ${['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito'].map(p => `<option value="${p}" ${formaPag === p ? 'selected' : ''}>${p}</option>`).join('')}
-                  </select>
-                </div>
-                
-                <div class="ag-field"><label>Status Pagamento</label>
-                  <select class="sel-status">
-                    <option value="Pendente" ${statusPag === 'Pendente' ? 'selected' : ''}>Pendente</option>
-                    <option value="Pago" ${statusPag === 'Pago' ? 'selected' : ''}>Pago</option>
-                  </select>
-                </div>
-                
-                <div class="ag-field"><label>Entrada do Pet</label>
-                  <input type="time" class="inp-entrada" value="${entradaPet}" />
-                </div>
-                
-                <div class="ag-field"><label>Saída do Pet</label>
-                  <input type="time" class="inp-saida" value="${saidaPet}" />
-                </div>
-                
-              </div>
-              
-              <div class="ac-obs" style="margin-bottom:10px">
-                <label>Observações</label>
-                <textarea class="txt-obs" rows="2" placeholder="Notas internas...">${observacoes}</textarea>
-              </div>
-              
-              <div class="ac-footer">
-                <button class="btn-save-agenda" onclick="salvarAgendaManual(${a.id}, this)"><i class="fas fa-save"></i> Salvar Alterações</button>
-                <button class="btn-concluir" onclick="concluirAtendimento(${a.id}, this)"><i class="fas fa-check-double"></i> Concluir Serviço</button>
-              </div>
-            </div>`;
-    }).join('');
-}
-
-function renderPendentes() {
-    const busca = (document.getElementById('busca-pend')?.value || '').toLowerCase();
-    const lista = pendentes.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
-    const el = document.getElementById('lista-pendentes');
-    if (!el)
-        return;
-    if (!lista.length) {
-        el.innerHTML = `<div class="empty-state"><i class="fas fa-clock" style="color:#555"></i><p>Nenhum pedido pendente</p></div>`;
-        return;
-    }
-
-    const dataAtual = new Date();
-    dataAtual.setMinutes(dataAtual.getMinutes() - dataAtual.getTimezoneOffset());
-    const dataMinima = dataAtual.toISOString().split('T')[0];
-
-    el.innerHTML = lista.map(a => `
-            <div class="pendente-card">
-              <div class="pc-header">
-                <div><div class="pc-pet"><i class="fas fa-paw" style="color:#c77a7a;margin-right:6px;font-size:.8rem"></i>${a.pet} <small>(${a.tipo})</small></div><div class="pc-dono">${a.dono} · ${a.contato}</div></div>
-                <span class="badge-pend-red">Pendente</span>
-              </div>
-              <div class="pc-info">
-                <span><i class="fas fa-scissors"></i> ${a.servico}</span>
-                <span><i class="fas fa-calendar"></i> Data original: ${fd(a.data)} às ${a.hora}</span>
-                ${a.obs ? `<span><i class="fas fa-sticky-note"></i> ${a.obs}</span>` : ''}
-              </div>
-            <div class="section-lbl">Reagendar</div>
-              <div class="pc-reagen">
-                <div class="field">
-                    <label>Nova Data</label>
-                    <input type="date" id="pnd-data-${a.id}" value="${a.data}" min="${dataMinima} onchange="verificarDisponibilidade(${a.id}, this.value)"/>
-                </div>
-                <div class="field">
-                    <label>Nova Hora</label>
-                    <input type="time" id="pnd-hora-${a.id}" value="${a.hora}"/>
-                </div>
-                <div id="pnd-disp-${a.id}" style="width: 100%; font-size: 0.72rem; margin-top: 4px;"></div>
-              </div>
-              <div class="pc-actions">
-                <button class="btn-confirmar-pend" onclick="confirmarPendente(${a.id})">
-                    <i class="fas fa-check"></i> Confirmar
-                </button>
-                
-                <button class="btn-wpp-pend" onclick="sugerirReagendamento(${a.id}, '${a.contato}', '${a.dono}', '${a.pet}')">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                </button>
-                
-                <button class="btn-excluir-pend" onclick="excluirPendente(${a.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </div>`).join('');
-
-    lista.forEach(a => {
-        verificarDisponibilidade(a.id, a.data);
-    });
-}
-
-function renderRetirada() {
-    // 1. Pega o valor da barra de busca (se você tiver uma na aba de retirada)
-    const busca = (document.getElementById('busca-retirada')?.value || '').toLowerCase();
-
-    // 2. Filtra a lista 'retirada' (que o nosso carregarAgendaDoBanco já alimenta automaticamente)
-    const lista = retirada.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
-
-    // 3. Acha a div principal onde os cards vão aparecer
-    const el = document.getElementById('lista-retirada');
-    if (!el)
-        return;
-
-    if (!lista.length) {
-        el.innerHTML = `<div class="empty-state"><i class="fas fa-home" style="color:#5ac75a; font-size: 2rem; margin-bottom: 10px;"></i><p>Nenhum pet aguardando o dono no momento.</p></div>`;
-        return;
-    }
-
-    // 4. Desenha os cards
-    el.innerHTML = lista.map(a => {
-        // Formata o valor cobrado para mostrar bonitinho (ex: 150.5 -> 150,50)
-        const valorFormatado = a.valor ? parseFloat(a.valor).toFixed(2).replace('.', ',') : '0,00';
-        // Define a cor do texto do pagamento (Vermelho se pendente, Verde se pago)
-        const corPagamento = (a.status_pagamento === 'Pago') ? '#5ac75a' : '#c77a7a';
-
-        return `
-            <div class="agenda-card" style="border-left: 5px solid #17a2b8;">
-                <div class="ac-header">
-                    <div>
-                        <div class="ac-pet"><i class="fas fa-paw" style="color:#17a2b8;margin-right:6px;font-size:.8rem"></i>${a.pet} <small style="color:#888;font-weight:400">(${a.tipo})</small></div>
-                        <div class="ac-dono">${a.dono} · <a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" style="color:#25d366"><i class="fab fa-whatsapp"></i> ${a.contato}</a></div>
-                    </div>
-                    <div style="text-align:right">
-                        <span class="badge" style="background-color: #17a2b8; color: white;">Aguardando Dono</span>
-                    </div>
-                </div>
-                
-                <div style="margin-bottom:15px; font-size: 0.95rem; line-height: 1.6;">
-                    <div><strong>Serviço:</strong> <span class="badge badge-amarelo">${a.servico}</span></div>
-                    <div><strong>Valor Final:</strong> R$ ${valorFormatado}</div>
-                    <div><strong>Status do Pagamento:</strong> <span style="color: ${corPagamento}; font-weight: bold;">${a.status_pagamento || 'Pendente'}</span></div>
-                </div>
-                
-                ${a.obs ? `<div style="font-size:.85rem;color:#888;margin-bottom:15px; background: #f9f9f9; padding: 8px; border-radius: 4px;"><i class="fas fa-info-circle" style="color:#C9A96E;margin-right:5px"></i>${a.obs}</div>` : ''}
-                
-                <div class="ac-footer" style="display: flex; justify-content: flex-end;">
-                    <button class="btn-concluir" onclick="finalizarRetirada(${a.id}, this)" style="background-color: #5ac75a; color: #000; padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;">
-                        <i class="fas fa-flag-checkered"></i> Entregar Pet (Finalizar)
-                    </button>
-                </div>
-            </div>`;
-    }).join('');
-}
-
 function renderNovos() {
     const busca = (document.getElementById('busca-novos')?.value || '').toLowerCase();
     const lista = novos.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
@@ -518,6 +279,333 @@ function renderNovos() {
         </div>`;
     }).join('');
 }
+
+function renderAgenda() {
+    const busca = (document.getElementById('busca-agenda')?.value || '').toLowerCase();
+    const filData = document.getElementById('filtro-data-agenda')?.value || '';
+    const filFunc = document.getElementById('filtro-func-agenda')?.value || '';
+
+    const isFuncionario = (perfil);
+    const nomeLogado = (logado);
+
+    const lista = agenda.filter(a => {
+        const matchBusca = (a.pet + a.dono + a.servico).toLowerCase().includes(busca);
+        const matchData = filData ? a.data === filData : true;
+
+        let matchFunc = true;
+        if (!isFuncionario && filFunc) {
+            matchFunc = (a.funcionario === filFunc);
+        }
+
+        return matchBusca && matchData && matchFunc;
+    }).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+
+    const el = document.getElementById('lista-agenda');
+    if (!el)
+        return;
+
+    if (!lista.length) {
+        el.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-check" style="color:#5ac75a; font-size: 2rem; margin-bottom: 10px;"></i><p>Nenhum agendamento encontrado</p></div>`;
+        return;
+    }
+
+    const listaFuncs = (Array.isArray(funcionarios)) ? funcionarios : [];
+
+    const clientesCadastrados = (listaClientes);
+
+    el.innerHTML = lista.map(a => {
+
+        const telContato = cleanTel(a.contato || '');
+        const donoAgendamento = (a.dono || '').trim().toLowerCase();
+
+        let cli = clientesCadastrados.find(c => {
+            const telCli = cleanTel(c.telefone || '');
+            const nomeCli = (c.nome || '').trim().toLowerCase();
+            return (telContato.length >= 8 && telCli === telContato) || (nomeCli === donoAgendamento && nomeCli !== '');
+        });
+
+
+        const temPacote = verificarPacoteValido(a.dono, a.servico);
+
+        // =====================================================================
+        // 💰 3. AUTOMAÇÃO FINANCEIRA
+        // =====================================================================
+        const statusPag = temPacote ? 'Pago' : (a.statusPag || a.status_pagamento || 'Pendente');
+        const formaPag = temPacote ? 'Pacote' : (a.formaPag || a.forma_pagamento || '');
+        // Se tiver pacote o valor é "0,00", caso contrário usa a função de formatar máscara ou deixa como veio
+        const valorExibicao = temPacote ? "0,00" : (typeof formatarValorTela === 'function' ? formatarValorTela(a.valor) : a.valor || '');
+
+        const entradaPet = a.entrada_pet || a.entradaPet || '';
+        const saidaPet = a.saida_pet || a.saidaPet || '';
+        const observacoes = a.obs || '';
+
+        let funcAtribuido = a.funcionario;
+        if (funcAtribuido === 'null' || funcAtribuido === null || funcAtribuido === undefined)
+            funcAtribuido = '';
+        funcAtribuido = funcAtribuido.trim();
+
+        let selectFuncHtml = '';
+        if (isFuncionario && !isAdm) {
+            if (funcAtribuido !== '' && funcAtribuido !== '—' && funcAtribuido !== nomeLogado) {
+                selectFuncHtml = `
+                    <select class="sel-func" disabled style="opacity: 0.7; cursor: not-allowed; background: #222;">
+                        <option value="${funcAtribuido}" selected>${funcAtribuido}</option>
+                    </select>`;
+            } else {
+                selectFuncHtml = `
+                    <select class="sel-func" style="border: 1px solid #C9A96E; background: #1a1a1a; color: #fff;">
+                        <option value="">— Pegar Serviço —</option>
+                        <option value="${nomeLogado}" ${funcAtribuido === nomeLogado ? 'selected' : ''}>${nomeLogado}</option>
+                    </select>`;
+            }
+        } else {
+            selectFuncHtml = `
+                <select class="sel-func" style="border: 1px solid #C9A96E; background: #1a1a1a; color: #fff;">
+                    <option value="">— Selecionar —</option>
+                    ${listaFuncs.map(f => `<option value="${f.nome}" ${funcAtribuido === f.nome ? 'selected' : ''}>${f.nome}</option>`).join('')}
+                </select>`;
+        }
+
+        // =======================================================================
+        // 🎨 4. HTML DO CARTÃO DA AGENDA
+        // =======================================================================
+        return `
+            <div class="agenda-card" style="${funcAtribuido === nomeLogado && isFuncionario ? 'border-left: 5px solid #28a745;' : 'border-left: 5px solid #C9A96E;'}">
+              <div class="ac-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <div>
+                  <div class="ac-pet" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">
+                    <i class="fas fa-paw" style="color:#C9A96E;margin-right:6px;font-size:.9rem"></i>${a.pet} <small style="font-weight: normal; opacity: 0.7;">(${a.tipo})</small>
+                  </div>
+                  <div class="ac-dono" style="font-size: 0.9rem;">
+                    <i class="fas fa-user" style="color:#C9A96E; margin-right: 4px;"></i> ${a.dono} · <a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" style="color:#25d366"><i class="fab fa-whatsapp"></i> ${a.contato}</a>
+                  </div>
+                </div>
+                
+                <div style="text-align:right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                  <span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Confirmado</span>
+                  ${cli
+                ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-address-book"></i> Cadastrado</span>`
+                : `<span class="badge" style="background-color: rgba(150, 150, 150, 0.1); color: #888; border: 1px dashed #555; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-user-slash"></i> S/ Cad.</span>`
+                }
+                                  ${temPacote ? `<span class="badge" style="background-color: rgba(133, 100, 4, 0.15); color: #d39e00; border: 1px solid #ffeeba; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-box-open"></i> Pacote Ativo</span>` : ''}
+                  <div style="font-size:.75rem;color:#C9A96E;margin-top:4px"><i class="far fa-calendar-alt"></i> ${fd(a.data)} às ${a.hora}</div>
+                </div>
+              </div>
+              
+              <div style="margin-bottom:10px">
+                <strong>Serviço:</strong> <span class="badge badge-amarelo">${a.servico}</span>
+              </div>
+              
+              <div class="ac-grid" style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 6px; border: 1px solid #eee; margin-bottom: 15px;">
+                
+                <div class="ag-field"><label>Funcionário Responsável</label>
+                  ${selectFuncHtml}
+                </div>
+                
+                <div class="ag-field"><label>Valor (R$)</label>
+                    <input type="text" class="inp-valor" value="${valorExibicao}" placeholder="0,00" 
+                       <input type="text" class="inp-valor" value="${valorExibicao}" placeholder="0,00" 
+                        ${temPacote ? 'readonly style="background-color: #222; border-color: #444; cursor: not-allowed; color: #888; font-weight: bold;"' : 'oninput="if(typeof aplicarMascaraMoeda === \'function\') aplicarMascaraMoeda(this)"'}/>
+                </div>
+                
+                <div class="ag-field"><label>Forma de Pagamento</label>
+                 <select class="sel-forma" ${temPacote ? 'style="background-color: #222; border-color: #444; pointer-events: none; color: #888; font-weight: bold;"' : ''}>
+                    <option value="" ${!formaPag ? 'selected' : ''}>— Selecionar —</option>
+                    ${['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito'].map(p => `<option value="${p}" ${formaPag === p ? 'selected' : ''}>${p}</option>`).join('')}
+                    <option value="Pacote" ${formaPag === 'Pacote' ? 'selected' : ''}>Desconto de Pacote</option>
+                  </select>
+                </div>
+                
+                <div class="ag-field"><label>Status Pagamento</label>
+                 <select class="sel-status" ${temPacote ? 'style="background-color: #222; border-color: #444; pointer-events: none; color: #888; font-weight: bold;"' : ''}>
+                    <option value="Pendente" ${statusPag === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                    <option value="Pago" ${statusPag === 'Pago' ? 'selected' : ''}>Pago</option>
+                  </select>
+                </div>
+                
+                <div class="ag-field"><label>Entrada do Pet</label>
+                  <input type="time" class="inp-entrada" value="${entradaPet}" />
+                </div>
+                
+                <div class="ag-field"><label>Saída do Pet</label>
+                  <input type="time" class="inp-saida" value="${saidaPet}" />
+                </div>
+                
+              </div>
+              
+              <div class="ac-obs" style="margin-bottom:15px">
+                <label>Observações</label>
+                <textarea class="txt-obs" rows="2" placeholder="Notas internas...">${observacoes}</textarea>
+              </div>
+              
+              <div class="ac-footer" style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid rgba(150, 150, 150, 0.2); padding-top: 15px;">
+                <button class="btn-save-agenda" onclick="salvarAgendaManual(${a.id}, this)" style="background: transparent; color: #17a2b8; border: 1px solid #17a2b8; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;"><i class="fas fa-save"></i> Salvar</button>
+                <button class="btn-concluir" onclick="concluirAtendimento(${a.id}, this)" style="background: #28a745; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 600; cursor: pointer;"><i class="fas fa-check-double"></i> Concluir Serviço</button>
+              </div>
+            </div>`;
+    }).join('');
+}
+
+function renderPendentes() {
+    const busca = (document.getElementById('busca-pend')?.value || '').toLowerCase();
+    const lista = pendentes.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
+    const el = document.getElementById('lista-pendentes');
+
+    if (!el)
+        return;
+    if (!lista.length) {
+        el.innerHTML = `<div class="empty-state"><i class="fas fa-clock" style="color:#555"></i><p>Nenhum pedido pendente</p></div>`;
+        return;
+    }
+
+    // Pega a lista de clientes para os crachás
+    const clientesCadastrados = listaClientes;
+
+    // Bloqueia as datas anteriores a hoje no calendário input="date"
+    const agora = new Date();
+    const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+
+    el.innerHTML = lista.map(a => {
+        const telContato = cleanTel(a.contato || '');
+        const donoAgendamento = (a.dono || '').trim().toLowerCase();
+
+        let cli = clientesCadastrados.find(c => {
+            const telCli = cleanTel(c.telefone || '');
+            const nomeCli = (c.nome || '').trim().toLowerCase();
+            return (telContato.length >= 8 && telCli === telContato) || (nomeCli === donoAgendamento && nomeCli !== '');
+        });
+
+        const temPacote = verificarPacoteValido(a.dono, a.servico);
+
+        const linkWhats = a.contato
+                ? `<a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`
+                : `<span style="opacity: 0.6;"><i class="fas fa-phone-slash"></i> Sem contato</span>`;
+
+        let dataIso = a.data;
+        if (a.data && a.data.includes('/')) {
+            const p = a.data.split('/');
+            dataIso = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+
+        return `
+            <div class="pendente-card" style="border-left: 5px solid #dc3545;">
+              <div class="pc-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div class="pc-pet" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">
+                        <i class="fas fa-paw" style="color:#dc3545;margin-right:6px;font-size:.9rem"></i>${a.pet} <small style="font-weight: normal; opacity: 0.7;">(${a.tipo})</small>
+                    </div>
+                    <div class="pc-dono" style="font-size: 0.9rem;">
+                        <i class="fas fa-user" style="color:#C9A96E; margin-right: 4px;"></i> ${a.dono} · ${linkWhats}
+                    </div>
+                </div>
+                
+                <div style="text-align:right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                    <span class="badge" style="background-color: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid #dc3545; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Pendente</span>
+                    ${temPacote ? `<span class="badge" style="background-color: rgba(133, 100, 4, 0.15); color: #d39e00; border: 1px solid #ffeeba; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-box-open"></i> Pacote</span>` : ''}
+                    ${cli
+                ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-address-book"></i> Cadastrado</span>`
+                : `<span class="badge" style="background-color: rgba(150, 150, 150, 0.1); color: #888; border: 1px dashed #555; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-user-slash"></i> S/ Cad.</span>`
+                }
+                </div>
+              </div>
+              
+              <div class="pc-info" style="margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.02); border-radius: 6px; border: 1px solid #eee;">
+                <div style="margin-bottom: 5px;"><strong><i class="fas fa-cut" style="color:#C9A96E;"></i> Serviço:</strong> ${a.servico}</div>
+                <div><strong><i class="fas fa-calendar-times" style="color:#dc3545;"></i> Data original:</strong> ${fd(a.data)} às ${a.hora}</div>
+                ${a.obs ? `<div style="margin-top: 8px; font-size: 0.85rem; border-left: 3px solid #C9A96E; padding-left: 6px;"><em>${a.obs}</em></div>` : ''}
+              </div>
+              
+              <div class="section-lbl" style="font-weight: 600; margin-bottom: 8px; color: #555;">Reagendar Serviço</div>
+              <div class="pc-reagen" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                <div class="field" style="flex: 1; min-width: 130px;">
+                    <label style="font-size: 0.8rem; color: #666;">Nova Data</label>
+                    <input type="date" id="pnd-data-${a.id}" value="${dataIso}" min="${hojeIso}" onchange="verificarDisponibilidade(${a.id}, this.value)" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
+                </div>
+                <div class="field" style="flex: 1; min-width: 100px;">
+                    <label style="font-size: 0.8rem; color: #666;">Nova Hora</label>
+                    <input type="time" id="pnd-hora-${a.id}" value="${a.hora}" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
+                </div>
+              </div>
+              
+              <div id="pnd-disp-${a.id}" style="width: 100%; font-size: 0.8rem; margin-bottom: 15px; min-height: 20px;"></div>
+              
+              <div class="pc-actions" style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 15px;">
+                <button class="btn-excluir-pend" onclick="excluirPendente(${a.id})" style="background: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="btn-wpp-pend" onclick="sugerirReagendamento(${a.id}, '${a.contato}', '${a.dono}', '${a.pet}')" style="background: #25d366; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+                    <i class="fab fa-whatsapp"></i> Conversar
+                </button>
+                <button class="btn-confirmar-pend" onclick="confirmarPendente(${a.id})" style="background: #007bff; color: #fff; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    <i class="fas fa-calendar-check"></i> Agendar
+                </button>
+              </div>
+            </div>`;
+    }).join('');
+
+    lista.forEach(a => {
+        let dataIso = a.data;
+        if (a.data && a.data.includes('/')) {
+            const p = a.data.split('/');
+            dataIso = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        verificarDisponibilidade(a.id, dataIso);
+    });
+}
+
+function renderRetirada() {
+    // 1. Pega o valor da barra de busca (se você tiver uma na aba de retirada)
+    const busca = (document.getElementById('busca-retirada')?.value || '').toLowerCase();
+
+    // 2. Filtra a lista 'retirada' (que o nosso carregarAgendaDoBanco já alimenta automaticamente)
+    const lista = retirada.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
+
+    // 3. Acha a div principal onde os cards vão aparecer
+    const el = document.getElementById('lista-retirada');
+    if (!el)
+        return;
+
+    if (!lista.length) {
+        el.innerHTML = `<div class="empty-state"><i class="fas fa-home" style="color:#5ac75a; font-size: 2rem; margin-bottom: 10px;"></i><p>Nenhum pet aguardando o dono no momento.</p></div>`;
+        return;
+    }
+
+    // 4. Desenha os cards
+    el.innerHTML = lista.map(a => {
+        // Formata o valor cobrado para mostrar bonitinho (ex: 150.5 -> 150,50)
+        const valorFormatado = a.valor ? parseFloat(a.valor).toFixed(2).replace('.', ',') : '0,00';
+        // Define a cor do texto do pagamento (Vermelho se pendente, Verde se pago)
+        const corPagamento = (a.status_pagamento === 'Pago') ? '#5ac75a' : '#c77a7a';
+
+        return `
+            <div class="agenda-card" style="border-left: 5px solid #17a2b8;">
+                <div class="ac-header">
+                    <div>
+                        <div class="ac-pet"><i class="fas fa-paw" style="color:#17a2b8;margin-right:6px;font-size:.8rem"></i>${a.pet} <small style="color:#888;font-weight:400">(${a.tipo})</small></div>
+                        <div class="ac-dono">${a.dono} · <a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" style="color:#25d366"><i class="fab fa-whatsapp"></i> ${a.contato}</a></div>
+                    </div>
+                    <div style="text-align:right">
+                        <span class="badge" style="background-color: #17a2b8; color: white;">Aguardando Dono</span>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:15px; font-size: 0.95rem; line-height: 1.6;">
+                    <div><strong>Serviço:</strong> <span class="badge badge-amarelo">${a.servico}</span></div>
+                    <div><strong>Valor Final:</strong> R$ ${valorFormatado}</div>
+                    <div><strong>Status do Pagamento:</strong> <span style="color: ${corPagamento}; font-weight: bold;">${a.status_pagamento || 'Pendente'}</span></div>
+                </div>
+                
+                ${a.obs ? `<div style="font-size:.85rem;color:#888;margin-bottom:15px; background: #f9f9f9; padding: 8px; border-radius: 4px;"><i class="fas fa-info-circle" style="color:#C9A96E;margin-right:5px"></i>${a.obs}</div>` : ''}
+                
+                <div class="ac-footer" style="display: flex; justify-content: flex-end;">
+                    <button class="btn-concluir" onclick="finalizarRetirada(${a.id}, this)" style="background-color: #5ac75a; color: #000; padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-flag-checkered"></i> Entregar Pet (Finalizar)
+                    </button>
+                </div>
+            </div>`;
+    }).join('');
+}
+
 function renderServicos() {
     const lista = document.getElementById('lista-servicos');
     if (!lista)
@@ -620,15 +708,41 @@ function verificarDisponibilidade(id, dataSelecionada) {
         return;
     }
 
-    const horariosOcupados = agenda
-            .filter(a => a.data === dataSelecionada)
-            .map(a => a.hora)
-            .sort();
+    let horasDoDia = obterHorariosDoDia(dataSelecionada);
 
-    if (horariosOcupados.length === 0) {
-        elDisp.innerHTML = `<span style="color:#5ac75a"><i class="fas fa-check-circle"></i> Dia totalmente livre!</span>`;
+    if (horasDoDia.length === 0) {
+        elDisp.innerHTML = `<span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-store-slash"></i> Loja fechada neste dia.</span>`;
+        return;
+    }
+
+    const agora = new Date();
+    const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+    const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
+
+    if (dataSelecionada < hojeIso) {
+        elDisp.innerHTML = `<span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-history"></i> Data no passado. Impossível agendar.</span>`;
+        return;
+    }
+
+    if (dataSelecionada === hojeIso) {
+        horasDoDia = horasDoDia.filter(h => h > horaAtual);
+    }
+
+    const ocupados = agenda.filter(ag => {
+        let agIso = ag.data;
+        if (ag.data && ag.data.includes('/')) {
+            const p = ag.data.split('/');
+            agIso = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        return agIso === dataSelecionada;
+    }).map(ag => (ag.hora || '').substring(0, 5));
+
+    const livres = horasDoDia.filter(h => !ocupados.includes(h));
+
+    if (livres.length === 0) {
+        elDisp.innerHTML = `<span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-times-circle"></i> Dia totalmente lotado (ou horas já passaram)!</span>`;
     } else {
-        elDisp.innerHTML = `<span style="color:#C9A96E"><i class="fas fa-exclamation-circle"></i> Ocupados: <strong>${horariosOcupados.join(', ')}</strong></span>`;
+        elDisp.innerHTML = `<span style="color:#28a745; background: rgba(40,167,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-check-circle"></i> Livres: <strong>${livres.join(', ')}</strong></span>`;
     }
 }
 
@@ -797,6 +911,24 @@ async function concluirAtendimento(id, btn) {
         return;
     }
 
+    if (forma === "Pacote") {
+        // Usa a sua lista global de clientes (ajuste o nome da variável se for 'listaClientes' ou 'clientesCadastrados')
+        const clientesGlobais = listaClientes;
+        const clienteObj = clientesGlobais.find(c => c.nome === item.dono);
+
+        // Procura se ele tem algum pacote ativo para este serviço exato
+        const temSaldoParaOServico = clienteObj?.pacotes?.some(p =>
+            p.servicoNome.trim().toLowerCase() === item.servico.trim().toLowerCase() &&
+                    p.sessoesRestantes > 0
+        );
+
+        if (!temSaldoParaOServico) {
+            alert(`❌ Erro: O cliente ${item.dono} não possui pacote de "${item.servico}" com saldo disponível. Selecione outra forma de pagamento.`);
+            card.querySelector('.sel-forma').focus();
+            return;
+        }
+    }
+
     if (forma !== "Pacote" && (!valorRaw || valorRaw === "0,00" || valorRaw === "")) {
         alert("⚠️ Erro: O Valor Cobrado não pode ser zero ou vazio para pagamentos normais.");
         card.querySelector('.inp-valor').focus();
@@ -851,6 +983,7 @@ async function concluirAtendimento(id, btn) {
 
         if (resposta.ok) {
             await carregarAgendaDoBanco(true);
+            await listarClientesBD();
 
             // Redireciona a tela para a aba de Retirada
             if (typeof navigateTo === 'function')
@@ -967,26 +1100,24 @@ function aplicarMascaraMoeda(input) {
 // VALIDADOR GLOBAL DE PACOTES
 // ==========================================
 function verificarPacoteValido(nomeDono, nomeServicoAgendado) {
-    // 2. Acha o cliente
+    // 1. Acha o cliente na base global
     const cli = listaClientes.find(c => c.nome === nomeDono);
-    if (!cli || !cli.pacoteId || String(cli.pacoteId) === "0" || String(cli.pacoteId).toLowerCase() === "null") {
+
+    // 2. Se não achou o cliente, ou se ele não possui o array de pacotes, retorna falso
+    if (!cli || !cli.pacotes || cli.pacotes.length === 0) {
         return false;
     }
 
-    // 3. Acha o pacote na base de pacotes
-    const listaDePacotes = window.pacotesCadastrados || [];
-    const pacoteDoCliente = listaDePacotes.find(p => String(p.id) === String(cli.pacoteId));
-    if (!pacoteDoCliente)
-        return false;
+    const servicoProcurado = (nomeServicoAgendado || '').trim().toLowerCase();
 
-    // 4. Bate o serviço do pacote com o serviço agendado
-    const nomeServicoPacote = pacoteDoCliente.nomeServico || (pacoteDoCliente.servico && pacoteDoCliente.servico.nome) || '';
-    const servicoStr = nomeServicoAgendado || '';
+    // 3. Verifica se ALGUM dos pacotes do cliente cobre o serviço agendado E tem saldo
+    const temPacoteValido = cli.pacotes.some(p => {
+        const servicoDoPacote = (p.servicoNome || '').trim().toLowerCase();
+        return servicoDoPacote === servicoProcurado && p.sessoesRestantes > 0;
+    });
 
-    // Retorna TRUE se os nomes forem exatamente iguais
-    return nomeServicoPacote.trim().toLowerCase() === servicoStr.trim().toLowerCase();
+    return temPacoteValido;
 }
-
 // ═══════════════════════════════════════════════════
 // NOVOS PEDIDOS
 // ═══════════════════════════════════════════════════

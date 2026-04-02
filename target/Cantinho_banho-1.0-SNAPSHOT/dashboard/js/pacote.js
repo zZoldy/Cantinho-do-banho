@@ -198,20 +198,23 @@ function fecharModalVenderPacote() {
 async function confirmarVendaPacote() {
     const clienteId = document.getElementById('id-cliente-pacote').value;
     const pacoteId = document.getElementById('select-pacote-venda').value;
+    // 🟢 Captura a forma de pagamento selecionada no modal
+    const formaPagamento = document.getElementById('forma-pagamento-pacote')?.value;
 
     if (!pacoteId)
         return alert("Por favor, selecione um pacote!");
+    if (!formaPagamento)
+        return alert("Por favor, selecione a forma de pagamento!");
 
-    // Efeito visual de carregamento no botão
     const btn = document.querySelector('#modal-vender-pacote .btn-primary');
     const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Vinculando...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Venda...';
     btn.disabled = true;
 
-    // Monta os dados para a sua VincularPacoteServlet
     const params = new URLSearchParams();
     params.append('clienteId', clienteId);
     params.append('pacoteId', pacoteId);
+    params.append('formaPagamento', formaPagamento);
 
     try {
         const res = await fetch('../api/clientes/vincular-pacote', {
@@ -221,11 +224,17 @@ async function confirmarVendaPacote() {
         });
 
         if (res.ok) {
+
             fecharModalVenderPacote();
-            alert('Pacote vendido e vinculado com sucesso!');
-            carregarClientesDoBanco(); // Atualiza a tela instantaneamente com a barra de progresso!
+
+            await listarClientesBD();
+            renderClientes();
+
+            alert('Venda registrada e pacote vinculado com sucesso!');
+
         } else {
-            alert('Erro ao vincular pacote. Verifique a conexão.');
+            const erro = await res.json();
+            alert('Erro: ' + (erro.erro || 'Erro ao vincular pacote.'));
         }
     } catch (e) {
         console.error(e);
