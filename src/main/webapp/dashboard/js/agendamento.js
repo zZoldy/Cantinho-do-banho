@@ -1405,8 +1405,8 @@ async function salvarHorariosFuncionamento(btn) {
 }
 
 function obterHorariosDoDia(dataIso) {
-    if (typeof horariosSemana === 'undefined' || !horariosSemana || horariosSemana.length === 0) {
-        return ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+    if (!horariosSemana || horariosSemana.length === 0) {
+        return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
     }
 
     const dataObj = new Date(dataIso + 'T12:00:00');
@@ -1423,32 +1423,24 @@ function obterHorariosDoDia(dataIso) {
     let horas = [];
     if (configDia && (configDia.aberto === true || String(configDia.aberto).toLowerCase() === 'true')) {
         const start = parseInt((configDia.horaAbertura || '08:00').split(':')[0]);
-        const end = parseInt((configDia.horaFechamento || '18:00').split(':')[0]);
+        const end = parseInt((configDia.horaFechamento || '17:00').split(':')[0]);
         for (let i = start; i < end; i++) {
-            if (i === 12)
-                continue; // Pula o almoço (ajuste se necessário)
             horas.push(i.toString().padStart(2, '0') + ':00');
         }
     }
     return horas;
 }
 
-// =======================================================================
-// 🔎 RADAR DE DISPONIBILIDADE: Acha os próximos X horários livres reais
-// =======================================================================
 function buscarProximosHorariosLivres(dataInicialIso, qtdDesejada) {
     let encontrados = [];
 
-    // Descobre o dia e hora exatos de AGORA no navegador
     const agora = new Date();
     const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
     const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
 
-    // Se a data pedida for no passado, o radar começa a buscar a partir de HOJE!
     let dataDeBusca = dataInicialIso < hojeIso ? hojeIso : dataInicialIso;
     let dataAtualObj = new Date(dataDeBusca + 'T12:00:00');
 
-    // O radar vasculha até 14 dias para a frente para não travar o navegador
     for (let diaOff = 0; diaOff < 14; diaOff++) {
         if (encontrados.length >= qtdDesejada)
             break;
@@ -1458,12 +1450,10 @@ function buscarProximosHorariosLivres(dataInicialIso, qtdDesejada) {
 
         let horasDia = obterHorariosDoDia(iterIso);
 
-        // 🚨 TRAVA DO TEMPO: Se estiver a olhar para os horários de HOJE, apaga os que já passaram!
         if (iterIso === hojeIso) {
             horasDia = horasDia.filter(h => h > horaAtual);
         }
 
-        // Verifica todos os agendamentos já marcados para este dia específico
         const ocupados = agenda.filter(ag => {
             let agIso = ag.data;
             if (ag.data && ag.data.includes('/')) {
@@ -1473,7 +1463,6 @@ function buscarProximosHorariosLivres(dataInicialIso, qtdDesejada) {
             return agIso === iterIso;
         }).map(ag => (ag.hora || '').substring(0, 5));
 
-        // Subtrai os ocupados das horas de funcionamento da loja
         const livres = horasDia.filter(h => !ocupados.includes(h));
 
         for (let h of livres) {
