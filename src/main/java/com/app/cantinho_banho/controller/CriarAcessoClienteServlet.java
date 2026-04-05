@@ -78,7 +78,8 @@ public class CriarAcessoClienteServlet extends HttpServlet {
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(json);
-
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
+            
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

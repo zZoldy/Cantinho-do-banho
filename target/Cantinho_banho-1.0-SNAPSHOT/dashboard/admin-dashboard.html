@@ -833,8 +833,8 @@
                 <a href="#" class="nav-item" data-page="pendentes"><i class="fas fa-clock"></i> Pendentes <span class="nav-badge" id="badge-pend">0</span></a>
                 <a href="#" class="nav-item" data-page="agenda"><i class="fas fa-calendar-check"></i> Agenda Confirmada</a>
                 <a href="#" class="nav-item" data-page="retirada"><i class="fas fa-dog"></i> Retirada do Pet <span class="nav-badge" id="badge-retirada">0</span></a>
-                <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="clientes"><i class="fas fa-star"></i> Clientes Cadastrados</a>
+                <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="funcionarios"><i class="fas fa-users"></i> Funcionários</a>
                 <a href="#" class="nav-item" data-page="config"><i class="fas fa-cogs"></i> Configurações</a>
             </nav>
@@ -1483,13 +1483,6 @@
             // ═══════════════════════════════════════════════════
             // DADOS
             // ═══════════════════════════════════════════════════
-            function loadData(k) {
-                return JSON.parse(localStorage.getItem(k) || '[]');
-            }
-            function saveData(k, v) {
-                localStorage.setItem(k, JSON.stringify(v));
-            }
-
             let novos = [];
             let agenda = [];
             let pendentes = [];
@@ -1498,14 +1491,6 @@
             let clientes = [];
             let pacotes = [];
             let funcionarios = [];
-
-            function salvarTudo() {
-                // Por enquanto, apenas atualiza os números na tela
-                if (typeof atualizarBadges === 'function') {
-                    atualizarBadges();
-                }
-                console.log("Referência local atualizada (Memória)");
-            }
 
             // ═══════════════════════════════════════════════════
             // AUTH
@@ -1554,11 +1539,10 @@
                 window.location.href = 'login.html';
             }
             // Protege navegação por URL
-            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'usuarios': ['Admin'], 'config': ['Admin']};
+            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'config': ['Admin']};
 
             function podeAcessar(page) {
                 const permitidos = paginasRestritas[page];
-                // Se a página não está na lista, qualquer um acessa. Se está, checa o perfil.
                 return !permitidos || permitidos.includes(perfil);
             }
 
@@ -1578,12 +1562,35 @@
                     console.log("Conectado ao servidor de atualizações em tempo real!");
                 };
 
-                ws.onmessage = function (event) {
+                ws.onmessage = async function (event) {
                     if (event.data === "ATUALIZAR_TELA") {
-                        console.log("Alguém alterou o banco de dados! Atualizando...");
-                        carregarAgendaDoBanco(true);
-                        carregarFuncionariosDoBanco(isAdm);
-                        carregarClientesDoBanco();
+                        await carregarFuncionariosDoBanco(isAdm);
+                        await carregarClientesDoBanco();
+                        
+                        await carregarAgendaDoBanco(true);
+                    }
+
+                    if (event.data === "ATUALIZAR_HORARIO") {
+                        await listarHorariosDoBanco();
+
+                        if (typeof renderNovos === 'function')
+                            renderNovos();
+
+                        if (typeof renderPendentes === 'function')
+                            renderPendentes();
+                    }
+
+                    if (event.data === "ATUALIZAR_CADASTRO") {
+                        await listarClientesBD();
+
+                        if (typeof renderNovos === 'function')
+                            renderNovos();
+
+                        if (typeof renderPendentes === 'function')
+                            renderPendentes();
+
+                        if (typeof renderAgenda === 'function')
+                            renderAgenda();
                     }
                 };
 
@@ -1626,7 +1633,7 @@
                 }
 
                 if (page === 'novos') {
-                    await carregarClientesDoBanco();
+                    await listarClientesBD();
                     await listarHorariosDoBanco();
                 }
 
@@ -1723,9 +1730,6 @@
             }
             function msgRecusar(a) {
                 return `😔 *Cantinho do Banho*\n\nOlá, *${a.dono}*!\n\nInfelizmente o horário de *${fd(a.data)} às ${a.hora}* não está disponível.\n\nPodemos reagendar? 🐾`;
-            }
-            function getNomeFuncs() {
-                return funcionarios.map(f => f.nome);
             }
 
             // ═══════════════════════════════════════════════════
@@ -1937,9 +1941,6 @@
 
                 renderServChart();
 
-
-
-                // Histórico de serviços realizados
                 const recentes = [...historico].sort((a, b) => (b.concluidoEm || b.data || '').localeCompare(a.concluidoEm || a.data || '')).slice(0, 30);
                 const hEl = document.getElementById('dash-historico-lista');
                 if (hEl) {
@@ -2179,88 +2180,6 @@
                 pdfWin('Pagamentos — ' + (lbl[periodo] || periodo), body);
             }
 
-            function gerarRelatorioCliente(id) {
-                const c = listaClientes.find(function (x) {
-                    return x.id === id;
-                });
-                if (!c)
-                    return;
-                const pac = pacotes.find(function (p) {
-                    return p.id === c.pacoteId;
-                });
-                const hists = [...historico, ...agenda].filter(function (a) {
-                    return cleanTel(a.contato) === cleanTel(c.tel);
-                }).sort(function (a, b) {
-                    return b.data.localeCompare(a.data);
-                });
-                const totalGasto = hists.filter(function (a) {
-                    return a.statusPag === 'Pago';
-                }).reduce(function (s, a) {
-                    return s + (a.valor || 0);
-                }, 0);
-                const creditos = c.servicos || [];
-                const usados = creditos.filter(function (s) {
-                    return s.usado;
-                });
-                const pend = creditos.filter(function (s) {
-                    return !s.usado;
-                });
-                const vencido = c.validadePacote && c.validadePacote < hojeStr;
-
-                let body = '<div class="ph"><div class="pt">🐾 Cantinho do Banho</div><div class="ps">Ficha do Cliente · ' + new Date().toLocaleDateString('pt-BR') + '</div></div>';
-
-                // Dados do cliente
-                body += '<div style="background:#f8f6f2;border-radius:7px;padding:12px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:12.5px">';
-                body += '<div><strong style="display:block;margin-bottom:2px">' + c.nome + '</strong><span style="color:#888">📱 ' + c.tel + '</span></div>';
-                body += '<div><strong>Pets:</strong> ' + (c.pets || '—') + '</div>';
-                body += '<div><strong>Total gasto:</strong> R$ ' + totalGasto.toFixed(2) + '<br><strong>Atendimentos:</strong> ' + hists.length + '</div></div>';
-
-                // Pacote
-                if (pac) {
-                    body += '<div class="sec">Pacote: ' + pac.nome + '</div>';
-                    body += '<div class="g3"><div class="bx"><span class="v">' + creditos.length + '</span><span class="l">Total créditos</span></div><div class="bx"><span class="v" style="color:#1a6a2a">' + usados.length + '</span><span class="l">Utilizados</span></div><div class="bx"><span class="v" style="color:#8a6a00">' + pend.length + '</span><span class="l">Disponíveis</span></div></div>';
-                    let infoRow = '';
-                    if (c.valorPacote)
-                        infoRow += '<span><strong>Valor pago:</strong> R$ ' + parseFloat(c.valorPacote).toFixed(2) + '</span>';
-                    if (c.validadePacote)
-                        infoRow += '<span style="margin-left:16px;color:' + (vencido ? '#c00' : '#555') + '"><strong>Validade:</strong> ' + fd(c.validadePacote) + (vencido ? ' <strong style="color:#c00">⚠ VENCIDO</strong>' : '') + '</span>';
-                    if (infoRow)
-                        body += '<p style="font-size:12px;color:#555;margin-bottom:10px">' + infoRow + '</p>';
-
-                    // Tabela de créditos do pacote
-                    if (creditos.length) {
-                        body += '<table><thead><tr><th>Serviço do Pacote</th><th style="text-align:center">Situação</th><th>Data de Uso</th></tr></thead><tbody>';
-                        creditos.forEach(function (s) {
-                            var status = s.usado
-                                    ? '<span class="bv">✓ Realizado</span>'
-                                    : '<span class="ba">⏳ Disponível</span>';
-                            var dataUso = s.usado && s.dataUso ? fd(s.dataUso) : '—';
-                            body += '<tr><td><strong>' + s.nome + '</strong></td><td style="text-align:center">' + status + '</td><td>' + dataUso + '</td></tr>';
-                        });
-                        body += '</tbody></table>';
-                    }
-                } else {
-                    body += '<p style="font-size:12px;color:#aaa;margin-bottom:12px">Sem pacote vinculado.</p>';
-                }
-
-                if (c.obs)
-                    body += '<div style="background:#f8f6f2;border-radius:6px;padding:9px 13px;font-size:12px;color:#555;margin:10px 0"><strong>Obs:</strong> ' + c.obs + '</div>';
-
-                // Histórico de atendimentos
-                body += '<div class="sec">Histórico de Atendimentos (' + hists.length + ')</div>';
-                if (hists.length) {
-                    body += '<table><thead><tr><th>Data</th><th>Pet</th><th>Serviço</th><th>Funcionário</th><th>Valor</th><th>Status</th></tr></thead><tbody>';
-                    hists.forEach(function (a) {
-                        body += '<tr><td>' + fd(a.data) + '</td><td>' + a.pet + '</td><td>' + a.servico + '</td><td>' + (a.funcionario || '—') + '</td><td>R$ ' + (a.valor || 0).toFixed(2) + '</td><td><span class="' + (a.statusPag === 'Pago' ? 'bv' : 'ba') + '">' + (a.statusPag || 'Pendente') + '</span></td></tr>';
-                    });
-                    body += '</tbody></table>';
-                } else {
-                    body += '<p style="color:#aaa;font-size:12px">Nenhum atendimento registrado.</p>';
-                }
-
-                pdfWin('Ficha — ' + c.nome, body);
-            }
-
             async function excluirHistorico(id) {
                 if (!confirm('Tem a certeza que deseja excluir permanentemente este registro do histórico da Base de Dados?'))
                     return;
@@ -2269,7 +2188,6 @@
                 params.append('id', id);
 
                 try {
-                    // Chama o mesmo Servlet que apaga agendamentos/registros
                     const res = await fetch('api/agendamentos/excluir', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -2277,11 +2195,10 @@
                     });
 
                     if (res.ok) {
-                        // O registro foi apagado do MySQL! Recarregamos a lista
                         if (typeof carregarAgendaDoBanco === 'function') {
                             await carregarAgendaDoBanco(true);
                         }
-                        renderDashboard(); // Atualiza os gráficos na hora!
+                        renderDashboard();
                     } else {
                         alert('Erro ao excluir o registro no servidor.');
                     }
@@ -2328,11 +2245,9 @@
                     return true;
                 });
 
-                // 🟢 2. Cálculo de Totais
                 const metodos = {Pix: 0, Dinheiro: 0, 'Cartão de Crédito': 0, 'Cartão de Débito': 0, 'Pacote': 0};
 
                 lista.forEach(a => {
-                    // Normaliza o status e forma para ambos os tipos de objeto
                     const status = a.statusPag || a.status_pagamento || (a.dataVenda ? 'Pago' : 'Pendente');
                     const valor = a.valor || a.valorPago || 0;
                     const forma = a.formaPag || a.forma_pagamento || a.formaPagamento || '';
@@ -2364,7 +2279,6 @@
                     return;
                 }
 
-                // 🟢 3. Renderização da Tabela (Ajustada para o seu ListarVendasServlet manual)
                 tbody.innerHTML = lista.sort((a, b) => {
                     const d1 = a.data || a.dataVenda;
                     const d2 = b.data || b.dataVenda;
@@ -2374,8 +2288,6 @@
                     const statusFinanceiro = a.statusPag || a.status_pagamento || (isVenda ? 'Pago' : 'Pendente');
                     const statusServico = isVenda ? 'VENDA' : (a.status || '—');
 
-                    // 🟢 AJUSTE DE MAPEAMENTO:
-                    // No Servlet você usou "pacoteNome" e "clienteNome"
                     const nomePrincipal = isVenda ? `📦 Pacote: ${a.pacoteNome || 'Personalizado'}` : (a.pet || '—');
                     const cliente = isVenda ? (a.clienteNome || '—') : (a.dono || '—');
 
@@ -2415,13 +2327,10 @@
                 let item;
 
                 if (isVenda) {
-                    // Busca na lista de vendas de pacotes
-                    // Certifique-se que 'listaVendasPacotes' é a variável global que contém o retorno do seu Servlet
-                    item = listaVendasPacotes.find(v => v.id == id);
+                    item = listaVendasPacotes.find(v => v.id === id);
                 } else {
-                    // Busca na união de agendamentos (agenda + historico + retirada)
                     const todosAgendamentos = [...agenda, ...historico, ...retirada];
-                    item = todosAgendamentos.find(a => a.id == id);
+                    item = todosAgendamentos.find(a => a.id === id);
                 }
 
                 if (!item) {
@@ -2437,7 +2346,6 @@
                 if (isVenda) {
                     titulo.innerHTML = `<i class="fas fa-box-open" style="color:#C9A96E;"></i> Pacote: ${item.pacoteNome || 'Personalizado'}`;
                     clienteField.textContent = item.clienteNome || '—';
-                    // Trata a data da venda (remove o T se houver)
                     let dVenda = item.dataVenda || '';
                     dataField.textContent = fd(dVenda.includes('T') ? dVenda.split('T')[0] : dVenda);
                 } else {
@@ -2457,7 +2365,6 @@
                 const statusBox = document.getElementById('vp-status');
                 statusBox.value = statusPg;
 
-                // Cor do status
                 if (statusPg === 'Pago') {
                     statusBox.style.color = '#5ac75a';
                     statusBox.style.borderColor = '#5ac75a';
@@ -2466,7 +2373,6 @@
                     statusBox.style.borderColor = '#c77a7a';
                 }
 
-                // Mostra o modal
                 document.getElementById('modal-visualizar-pagamento').classList.remove('hidden');
             }
 

@@ -60,6 +60,8 @@ public class VincularPacoteServlet extends HttpServlet {
 
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().write("{\"sucesso\": true, \"mensagem\": \"Pacote vinculado e venda registrada!\"}");
+                
+                com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
             } else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.getWriter().write("{\"sucesso\": false, \"erro\": \"Cliente ou Pacote não encontrado.\"}");

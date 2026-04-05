@@ -501,7 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
         inputSalario.addEventListener('input', mascaraMoeda);
 });
 
-
 // 🎭 MÁSCARAS DE INPUT
 
 function mascaraCPF(evento) {

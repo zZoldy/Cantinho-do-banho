@@ -34,4 +34,28 @@ public class AtualizacaoWebSocket {
             }
         }
     }
+
+    public static void notificarTodosHorario() {
+        for (Session s : sessoes) {
+            if (s.isOpen()) {
+                try {
+                    s.getBasicRemote().sendText("ATUALIZAR_HORARIO");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void notificarTodosCadCliente() {
+        for (Session s : sessoes) {
+            if (s.isOpen()) {
+                try {
+                    s.getBasicRemote().sendText("ATUALIZAR_CADASTRO");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }

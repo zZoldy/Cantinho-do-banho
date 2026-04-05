@@ -147,78 +147,90 @@ function renderNovos() {
         return;
     }
 
-    const clientesCadastrados = listaClientes;
+    const clientesCadastrados = typeof listaClientes !== 'undefined' ? listaClientes : [];
 
-    // Variáveis de tempo atual para usar dentro do loop
     const agora = new Date();
     const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
     const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
 
     el.innerHTML = lista.map(a => {
-
         const telContato = cleanTel(a.contato || '');
         let cli = clientesCadastrados.find(c => (telContato.length >= 8 && cleanTel(c.telefone || '') === telContato) || (c.nome === a.dono));
-
         const temPacote = verificarPacoteValido(a.dono, a.servico);
 
         const linkWhats = a.contato
                 ? `<a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none; font-weight: 500;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`
                 : `<span style="opacity: 0.6;"><i class="fas fa-phone-slash"></i> Sem contato</span>`;
 
-        // Normaliza a data do pedido para YYYY-MM-DD
         let dataReqIso = a.data;
         if (a.data.includes('/')) {
             const p = a.data.split('/');
             dataReqIso = `${p[2]}-${p[1]}-${p[0]}`;
         }
-
         const horaPedida = (a.hora || '').substring(0, 5);
 
-        // Descobre os horários e o que já está ocupado NO DIA DO PEDIDO
-        let horasLojaDiaPedido = obterHorariosDoDia(dataReqIso);
-        const ocupadosNoDiaPedido = agenda.filter(ag => {
+        // ==========================================================
+        // 🟢 VALIDAÇÃO PADRONIZADA (Limite da Loja + Choque de Hora)
+        // ==========================================================
+        let horasLoja = obterHorariosDoDia(dataReqIso);
+        const lojaFechada = horasLoja.length === 0;
+
+        // Limites do expediente
+        let abertura = "00:00";
+        let fechamento = "23:59";
+        let foraDoHorario = false;
+
+        if (!lojaFechada) {
+            abertura = horasLoja[0];
+            fechamento = horasLoja[horasLoja.length - 1];
+            if (horaPedida < abertura || horaPedida > fechamento) {
+                foraDoHorario = true;
+            }
+        }
+
+        // Verifica se JÁ TEM alguém Confirmado/Retirada nesse dia/hora
+        const jaTemAgendamento = agenda.some(ag => {
             let agIso = ag.data;
             if (ag.data && ag.data.includes('/')) {
                 const p = ag.data.split('/');
                 agIso = `${p[2]}-${p[1]}-${p[0]}`;
             }
-            return agIso === dataReqIso;
-        }).map(ag => (ag.hora || '').substring(0, 5));
+            const agHora = (ag.hora || '').substring(0, 5);
+            return agIso === dataReqIso && agHora === horaPedida && (ag.status === 'Confirmado' || ag.status === 'Retirada');
+        });
 
-        // Remove os ocupados e os que já passaram no relógio de hoje
-        let livresValidosNoDia = horasLojaDiaPedido.filter(h => !ocupadosNoDiaPedido.includes(h));
-        if (dataReqIso === hojeIso) {
-            livresValidosNoDia = livresValidosNoDia.filter(h => h > horaAtual);
-        }
-
-        // Verificações rigorosas: É passado? A loja está fechada? O horário sumiu das opções?
         const isDataPassada = dataReqIso < hojeIso;
         const isHoraPassadaHoje = dataReqIso === hojeIso && horaPedida < horaAtual;
-        const lojaFechada = horasLojaDiaPedido.length === 0;
 
-        const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && livresValidosNoDia.includes(horaPedida);
+        // O Veredito final
+        const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && !foraDoHorario && !jaTemAgendamento;
 
-        // Gera o bloco de aviso e sugestões
+        // ==========================================================
+        // 🟢 LAYOUT ORIGINAL DA CAIXA (Avisos e Radar)
+        // ==========================================================
         let boxDisponibilidade = "";
         if (isDisponivel) {
             boxDisponibilidade = `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(40,167,69,0.1); border-left: 3px solid #28a745; font-size: 0.85rem;">
                    <strong style="color: #28a745;"><i class="fas fa-check-circle"></i> Horário Livre!</strong> <span style="opacity: 0.8;">Pode aceitar o pedido sem conflitos.</span>
                </div>`;
         } else {
-            // Se falhou, o nosso Radar busca as próximas 3 opções garantidas no sistema inteiro!
             const proximosLivres = buscarProximosHorariosLivres(dataReqIso, 3);
             let sugestoesTexto = proximosLivres.length > 0
                     ? proximosLivres.map(s => {
-                        const diaFmt = s.data.split('-').reverse().join('/'); // Formata para DD/MM/YYYY
+                        const diaFmt = s.data.split('-').reverse().join('/');
                         return `<strong>${diaFmt} às ${s.hora}</strong>`;
                     }).join(' <span style="opacity:0.5">|</span> ')
                     : "<strong>Nenhum horário livre nos próximos dias.</strong>";
 
             let tituloErro = "Horário Indisponível!";
-            if (isDataPassada || isHoraPassadaHoje)
-                tituloErro = "O tempo já passou! 🕰️";
-            else if (lojaFechada)
+            if (lojaFechada)
                 tituloErro = "A loja não abre neste dia!";
+            else if (isDataPassada || isHoraPassadaHoje)
+                tituloErro = "O tempo já passou! 🕰️";
+            else if (foraDoHorario)
+                tituloErro = `Fora do expediente (${abertura} - ${fechamento})!`;
+            else if (jaTemAgendamento)
+                tituloErro = "Já existe cliente nesta hora!";
 
             boxDisponibilidade = `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(220,53,69,0.1); border-left: 3px solid #dc3545; font-size: 0.85rem;">
                    <strong style="color: #dc3545;"><i class="fas fa-times-circle"></i> ${tituloErro}</strong>
@@ -226,12 +238,8 @@ function renderNovos() {
                </div>`;
         }
 
-        // =======================================================================
-        // 🎨 4. HTML DO CARTÃO
-        // =======================================================================
         return `
         <div class="agenda-card cartao-expansivel" style="border-left: 5px solid ${isDisponivel ? '#17a2b8' : '#dc3545'}; padding: 20px; margin-bottom: 20px; transition: all 0.3s ease;">
-            
             <div class="ac-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                 <div>
                     <h3 style="margin: 0 0 5px 0; font-size: 1.2rem; font-weight: 700;">
@@ -383,7 +391,7 @@ function renderAgenda() {
                 
                 <div style="text-align:right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
                   <span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Confirmado</span>
-                  ${cli
+                  ${cli && cli.temUsuario
                 ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-address-book"></i> Cadastrado</span>`
                 : `<span class="badge" style="background-color: rgba(150, 150, 150, 0.1); color: #888; border: 1px dashed #555; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-user-slash"></i> S/ Cad.</span>`
                 }
@@ -502,7 +510,7 @@ function renderPendentes() {
                 <div style="text-align:right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
                     <span class="badge" style="background-color: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid #dc3545; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Pendente</span>
                     ${temPacote ? `<span class="badge" style="background-color: rgba(133, 100, 4, 0.15); color: #d39e00; border: 1px solid #ffeeba; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-box-open"></i> Pacote</span>` : ''}
-                    ${cli
+                    ${cli && cli.temUsuario
                 ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-address-book"></i> Cadastrado</span>`
                 : `<span class="badge" style="background-color: rgba(150, 150, 150, 0.1); color: #888; border: 1px dashed #555; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-user-slash"></i> S/ Cad.</span>`
                 }
@@ -519,11 +527,11 @@ function renderPendentes() {
               <div class="pc-reagen" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
                 <div class="field" style="flex: 1; min-width: 130px;">
                     <label style="font-size: 0.8rem; color: #666;">Nova Data</label>
-                    <input type="date" id="pnd-data-${a.id}" value="${dataIso}" min="${hojeIso}" onchange="verificarDisponibilidade(${a.id}, this.value)" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
+                    <input type="date" id="pnd-data-${a.id}" value="${dataIso}" min="${hojeIso}" onchange="verificarDisponibilidade(${a.id})" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
                 </div>
                 <div class="field" style="flex: 1; min-width: 100px;">
                     <label style="font-size: 0.8rem; color: #666;">Nova Hora</label>
-                    <input type="time" id="pnd-hora-${a.id}" value="${a.hora}" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
+                    <input type="time" id="pnd-hora-${a.id}" value="${a.hora}" onchange="verificarDisponibilidade(${a.id})" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
                 </div>
               </div>
               
@@ -536,7 +544,7 @@ function renderPendentes() {
                 <button class="btn-wpp-pend" onclick="sugerirReagendamento(${a.id}, '${a.contato}', '${a.dono}', '${a.pet}')" style="background: #25d366; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
                     <i class="fab fa-whatsapp"></i> Conversar
                 </button>
-                <button class="btn-confirmar-pend" onclick="confirmarPendente(${a.id})" style="background: #007bff; color: #fff; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                <button id="btn-agendar-pend-${a.id}" class="btn-confirmar-pend" onclick="confirmarPendente(${a.id})" style="background: #007bff; color: #fff; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">
                     <i class="fas fa-calendar-check"></i> Agendar
                 </button>
               </div>
@@ -544,12 +552,8 @@ function renderPendentes() {
     }).join('');
 
     lista.forEach(a => {
-        let dataIso = a.data;
-        if (a.data && a.data.includes('/')) {
-            const p = a.data.split('/');
-            dataIso = `${p[2]}-${p[1]}-${p[0]}`;
-        }
-        verificarDisponibilidade(a.id, dataIso);
+        // 🟢 AJUSTE 4: A chamada inicial agora só envia o ID
+        verificarDisponibilidade(a.id);
     });
 }
 
@@ -698,20 +702,25 @@ function sugerirReagendamento(id, contato, dono, pet) {
     openWA(contato, mensagem);
 }
 
-function verificarDisponibilidade(id, dataSelecionada) {
+function verificarDisponibilidade(id) {
+    const inputData = document.getElementById(`pnd-data-${id}`);
+    const inputHora = document.getElementById(`pnd-hora-${id}`);
     const elDisp = document.getElementById(`pnd-disp-${id}`);
-    if (!elDisp)
+
+    // Procura o botão para travar. ATENÇÃO: No seu HTML atual, o botão de agendar NÃO TEM ID. 
+    // Por favor, adicione id="btn-agendar-pend-${a.id}" no botão "Agendar" dentro do seu renderPendentes!
+    const btnAgendar = document.getElementById(`btn-agendar-pend-${id}`);
+
+    if (!elDisp || !inputData || !inputHora)
         return;
 
-    if (!dataSelecionada) {
+    const dataSelecionada = inputData.value;
+    const horaPedida = (inputHora.value || '').substring(0, 5);
+
+    if (!dataSelecionada || !horaPedida) {
         elDisp.innerHTML = '';
-        return;
-    }
-
-    let horasDoDia = obterHorariosDoDia(dataSelecionada);
-
-    if (horasDoDia.length === 0) {
-        elDisp.innerHTML = `<span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-store-slash"></i> Loja fechada neste dia.</span>`;
+        if (btnAgendar)
+            btnAgendar.disabled = true;
         return;
     }
 
@@ -719,30 +728,102 @@ function verificarDisponibilidade(id, dataSelecionada) {
     const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
     const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
 
-    if (dataSelecionada < hojeIso) {
-        elDisp.innerHTML = `<span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-history"></i> Data no passado. Impossível agendar.</span>`;
-        return;
+    // ==========================================================
+    // 🟢 VALIDAÇÃO PADRONIZADA (Igual ao Novos)
+    // ==========================================================
+    let horasLoja = obterHorariosDoDia(dataSelecionada);
+    const lojaFechada = horasLoja.length === 0;
+
+    let abertura = "00:00";
+    let fechamento = "23:59";
+    let foraDoHorario = false;
+
+    if (!lojaFechada) {
+        abertura = horasLoja[0];
+        fechamento = horasLoja[horasLoja.length - 1];
+        if (horaPedida < abertura || horaPedida > fechamento) {
+            foraDoHorario = true;
+        }
     }
 
-    if (dataSelecionada === hojeIso) {
-        horasDoDia = horasDoDia.filter(h => h > horaAtual);
-    }
-
-    const ocupados = agenda.filter(ag => {
+    const jaTemAgendamento = agenda.some(ag => {
         let agIso = ag.data;
         if (ag.data && ag.data.includes('/')) {
             const p = ag.data.split('/');
             agIso = `${p[2]}-${p[1]}-${p[0]}`;
         }
-        return agIso === dataSelecionada;
+        const agHora = (ag.hora || '').substring(0, 5);
+        return agIso === dataSelecionada && agHora === horaPedida && (ag.status === 'Confirmado' || ag.status === 'Retirada') && ag.id !== id;
+    });
+
+    const isDataPassada = dataSelecionada < hojeIso;
+    const isHoraPassadaHoje = dataSelecionada === hojeIso && horaPedida < horaAtual;
+
+    const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && !foraDoHorario && !jaTemAgendamento;
+
+    // ==========================================================
+    // 🟢 LISTA VISUAL (Mantendo o seu modelo original de listar as horas)
+    // ==========================================================
+    if (dataSelecionada === hojeIso) {
+        horasLoja = horasLoja.filter(h => h > horaAtual);
+    }
+
+    const ocupadosDoDia = agenda.filter(ag => {
+        let agIso = ag.data;
+        if (ag.data && ag.data.includes('/')) {
+            const p = ag.data.split('/');
+            agIso = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        return agIso === dataSelecionada && (ag.status === 'Confirmado' || ag.status === 'Retirada') && ag.id !== id;
     }).map(ag => (ag.hora || '').substring(0, 5));
 
-    const livres = horasDoDia.filter(h => !ocupados.includes(h));
+    const livres = horasLoja.filter(h => !ocupadosDoDia.includes(h));
 
-    if (livres.length === 0) {
-        elDisp.innerHTML = `<span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-times-circle"></i> Dia totalmente lotado (ou horas já passaram)!</span>`;
+    const txtLivres = livres.length > 0
+            ? `<div style="margin-top: 4px;"><i class="fas fa-check-circle"></i> Livres: <strong>${livres.join(', ')}</strong></div>`
+            : ``;
+
+    // ==========================================================
+    // 🟢 ATUALIZA HTML E BOTÃO
+    // ==========================================================
+    if (isDisponivel) {
+        elDisp.innerHTML = `
+            <span style="color:#28a745; background: rgba(40,167,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
+                <i class="fas fa-check-circle"></i> Horário Válido!
+            </span>
+            <span style="color:#28a745; background: rgba(40,167,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
+               ${txtLivres}
+            </span>`;
+
+        if (btnAgendar) {
+            btnAgendar.disabled = false;
+            btnAgendar.style.opacity = '1';
+            btnAgendar.style.cursor = 'pointer';
+        }
     } else {
-        elDisp.innerHTML = `<span style="color:#28a745; background: rgba(40,167,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;"><i class="fas fa-check-circle"></i> Livres: <strong>${livres.join(', ')}</strong></span>`;
+        let erro = "Horário indisponível!";
+        if (lojaFechada)
+            erro = "Loja fechada neste dia!";
+        else if (isDataPassada || isHoraPassadaHoje)
+            erro = "Data/hora no passado!";
+        else if (foraDoHorario)
+            erro = `Fora de expediente (${abertura}-${fechamento})`;
+        else if (jaTemAgendamento)
+            erro = "Já existe cliente nesta hora!";
+
+        elDisp.innerHTML = `
+            <span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
+                <i class="fas fa-times-circle"></i> ${erro}
+            </span>
+            <span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
+               ${txtLivres}
+            </span>`;
+
+        if (btnAgendar) {
+            btnAgendar.disabled = true;
+            btnAgendar.style.opacity = '0.5';
+            btnAgendar.style.cursor = 'not-allowed';
+        }
     }
 }
 
@@ -1441,7 +1522,7 @@ function buscarProximosHorariosLivres(dataInicialIso, qtdDesejada) {
     let dataDeBusca = dataInicialIso < hojeIso ? hojeIso : dataInicialIso;
     let dataAtualObj = new Date(dataDeBusca + 'T12:00:00');
 
-    for (let diaOff = 0; diaOff < 14; diaOff++) {
+    for (let diaOff = 0; diaOff < 23; diaOff++) {
         if (encontrados.length >= qtdDesejada)
             break;
 

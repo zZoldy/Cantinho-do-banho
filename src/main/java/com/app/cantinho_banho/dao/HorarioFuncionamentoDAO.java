@@ -22,7 +22,7 @@ public class HorarioFuncionamentoDAO {
                         h.setNomeDia(dias[i]);
                         h.setAberto(i > 0);
                         h.setHoraAbertura("08:00");
-                        h.setHoraFechamento("18:00");
+                        h.setHoraFechamento("17:00");
 
                         em.persist(h);
                         lista.add(h);

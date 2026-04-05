@@ -19,8 +19,15 @@ function mascaraTelefone(input) {
     input.value = valor;
 }
 
+let isEnviandoAgendamento = false;
+
 function enviarAgendamento(e) {
     e.preventDefault();
+
+    if (isEnviandoAgendamento) {
+        console.log("Aguarde, já estamos processando o seu pedido...");
+        return;
+    }
 
     const nome = document.getElementById('nome').value.trim();
     const tel = document.getElementById('tel').value.trim();
@@ -37,6 +44,17 @@ function enviarAgendamento(e) {
         return;
     }
 
+    isEnviandoAgendamento = true;
+    const btnSubmit = e.target.querySelector('button[type="submit"]');
+    let textoOriginal = "Enviar";
+
+    if (btnSubmit) {
+        textoOriginal = btnSubmit.innerHTML;
+        btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+        btnSubmit.disabled = true;
+        btnSubmit.style.opacity = '0.7';
+    }
+
     const formData = new URLSearchParams();
     formData.append('nomeDono', nome);
     formData.append('telefone', tel);
@@ -51,31 +69,41 @@ function enviarAgendamento(e) {
     fetch('/Cantinho_banho-1.0-SNAPSHOT/api/agendar', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },
         body: formData
     })
-            .then(response => {
-                if (response.ok) {
-                    return response.text();
-                } else {
-                    return response.text().then(text => {
-                        throw new Error(text)
-                    });
-                }
-            })
-            .then(resultado => {
-                console.log("Sucesso do Java:", resultado);
-
-                document.getElementById('form-agendamento').style.display = 'none';
-                document.getElementById('agendamento-sucesso').style.display = 'block';
-
-                document.getElementById('form-agendamento').querySelector('form').reset();
-            })
-            .catch(error => {
-                console.error('Erro na requisição:', error);
-                alert("Falha ao salvar no MySQL: " + error.message);
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        } else {
+            return response.text().then(text => {
+                throw new Error(text);
             });
+        }
+    })
+    .then(resultado => {
+        console.log("Sucesso do Java:", resultado);
+
+        document.getElementById('form-agendamento').style.display = 'none';
+        document.getElementById('agendamento-sucesso').style.display = 'block';
+
+        document.getElementById('form-agendamento').querySelector('form').reset();
+    })
+    .catch(error => {
+        console.error('Erro na requisição:', error);
+        alert("Falha ao salvar no MySQL: " + error.message);
+    })
+    .finally(() => {
+        isEnviandoAgendamento = false;
+        
+        if(btnSubmit){
+            btnSubmit.innerHTML = textoOriginal;
+            btnSubmit.disabled = false;
+            btnSubmit.style.opacity = '1';
+        }
+
+    });
 }
 
 function novoAgendamento() {

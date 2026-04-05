@@ -75,6 +75,8 @@ public class CadastrarClienteServlet extends HttpServlet {
                         cliente.getTelefone() != null ? cliente.getTelefone() : "");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().write(json);
+                
+                 com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
             }
         } catch (IOException e) {
             e.printStackTrace();

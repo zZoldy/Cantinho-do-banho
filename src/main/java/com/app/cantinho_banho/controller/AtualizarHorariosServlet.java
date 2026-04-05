@@ -36,6 +36,8 @@ public class AtualizarHorariosServlet extends HttpServlet {
             }
 
             response.setStatus(HttpServletResponse.SC_OK);
+            
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosHorario();
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
