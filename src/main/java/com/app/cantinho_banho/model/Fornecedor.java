@@ -1,10 +1,13 @@
 package com.app.cantinho_banho.model;
 
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
 public class Fornecedor {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String razaoSocial;
     private String cnpj;
