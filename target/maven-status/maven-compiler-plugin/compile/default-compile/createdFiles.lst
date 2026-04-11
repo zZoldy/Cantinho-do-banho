@@ -1,4 +1,5 @@
 com\app\cantinho_banho\dao\HorarioFuncionamentoDAO.class
+com\app\cantinho_banho\model\Fornecedor.class
 com\app\cantinho_banho\model\Funcionario.class
 com\app\cantinho_banho\controller\AtualizarHorariosServlet.class
 com\app\cantinho_banho\model\Pacote.class
@@ -48,3 +49,4 @@ com\app\cantinho_banho\controller\ExcluirPacoteServlet.class
 com\app\cantinho_banho\model\Cliente.class
 com\app\cantinho_banho\dao\PacoteDAO.class
 com\app\cantinho_banho\dao\FuncionarioDAO.class
+com\app\cantinho_banho\model\Produto.class

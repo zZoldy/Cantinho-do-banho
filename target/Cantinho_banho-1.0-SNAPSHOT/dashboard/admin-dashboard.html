@@ -1554,7 +1554,10 @@
                 const protocolo = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
                 const host = window.location.host;
 
-                const urlWebSocket = `${protocolo}${host}/Cantinho_banho-1.0-SNAPSHOT/ws/notificacoes`;
+                const contextPath = window.location.pathname.substring(0, window.location.pathname.indexOf('/', 1));
+
+
+                const urlWebSocket = `${protocolo}${host}${contextPath}/ws/notificacoes`;
 
                 const ws = new WebSocket(urlWebSocket);
 
@@ -1566,7 +1569,7 @@
                     if (event.data === "ATUALIZAR_TELA") {
                         await carregarFuncionariosDoBanco(isAdm);
                         await carregarClientesDoBanco();
-                        
+
                         await carregarAgendaDoBanco(true);
                     }
 
@@ -2188,7 +2191,7 @@
                 params.append('id', id);
 
                 try {
-                    const res = await fetch('api/agendamentos/excluir', {
+                    const res = await fetch('../api/agendamentos/excluir', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                         body: params

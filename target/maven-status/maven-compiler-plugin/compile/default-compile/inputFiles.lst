@@ -11,6 +11,7 @@ C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\j
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\controller\ListarAgendamentosServlet.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\controller\CriarAcessoClienteServlet.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\controller\VincularPacoteServlet.java
+C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\model\Fornecedor.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\controller\AgendamentoServlet.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\controller\ExcluirFuncionarioServlet.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\dao\PetDAO.java
@@ -46,5 +47,6 @@ C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\j
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\controller\AtualizarServicoServlet.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\websocket\AtualizacaoWebSocket.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\controller\ListarFuncionariosAdmServlet.java
+C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\model\Produto.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\dao\ServicoDAO.java
 C:\Users\Z D K\OneDrive\Documentos\NetBeansProjects\Cantinho_do_banho\src\main\java\com\app\cantinho_banho\dao\UsuarioDAO.java
