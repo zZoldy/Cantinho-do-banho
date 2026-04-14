@@ -1,23 +1,37 @@
 package com.app.cantinho_banho.model;
 
+import java.io.Serializable;
+import java.time.LocalDateTime;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
-public class Fornecedor {
+@Entity
+@Table(name = "fornecedores")
+public class Fornecedor implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false)
     private String razaoSocial;
+    @Column(nullable = false)
     private String cnpj;
+    @Column(nullable = false)
     private String telefone;
-    private String email;
+    @Column(nullable = false)
     private String endereco;
+    @Column(nullable = false)
+    private final LocalDateTime dataCadastro;
+
+    private String email;
     private boolean ativo;
 
     public Fornecedor() {
-
+        this.dataCadastro = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -70,5 +84,9 @@ public class Fornecedor {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public LocalDateTime getDataCadastro() {
+        return dataCadastro;
     }
 }

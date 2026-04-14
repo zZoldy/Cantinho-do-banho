@@ -834,6 +834,7 @@
                 <a href="#" class="nav-item" data-page="agenda"><i class="fas fa-calendar-check"></i> Agenda Confirmada</a>
                 <a href="#" class="nav-item" data-page="retirada"><i class="fas fa-dog"></i> Retirada do Pet <span class="nav-badge" id="badge-retirada">0</span></a>
                 <a href="#" class="nav-item" data-page="clientes"><i class="fas fa-star"></i> Clientes Cadastrados</a>
+                <a href="#" class="nav-item" data-page="estoques"><i class="fas fa-boxes"></i> Estoque</a>
                 <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="funcionarios"><i class="fas fa-users"></i> Funcionários</a>
                 <a href="#" class="nav-item" data-page="config"><i class="fas fa-cogs"></i> Configurações</a>
@@ -1055,6 +1056,7 @@
                 </div>
             </section>
 
+            <!-- ═══════════════ CONFIGURAÇÕES ═══════════════ -->
             <section class="page hidden" id="page-config">
                 <div class="page-header">
                     <h3><i class="fas fa-cogs" style="color:#C9A96E;margin-right:8px"></i>Configurações</h3>
@@ -1071,6 +1073,9 @@
                         </button>
                         <button class="btn-filtro" onclick="navConfig('pacotes')" id="btn-conf-pacotes" style="text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
                             <i class="fas fa-box"></i> Pacotes
+                        </button>
+                        <button class="btn-filtro" onclick="navConfig('fornecedores')" id="btn-conf-fornecedores" style="text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+                            <i class="fas fa-truck"></i> Fornecedores
                         </button>
                     </div>
 
@@ -1141,8 +1146,61 @@
                             </div>
                         </div>
 
+                        <div id="conf-fornecedores" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                                <div>
+                                    <h4 style="color: #eee; margin: 0 0 5px 0; font-size: 1.1rem;">Gestão de Fornecedores</h4>
+                                    <p style="color: #888; font-size: 0.8rem; margin: 0;">Cadastre e edite os seus distribuidores.</p>
+                                </div>
+                                <button onclick="prepararNovoFornecedor()" class="btn-primary" style="white-space: nowrap;"><i class="fas fa-plus"></i> Novo Fornecedor</button>
+                            </div>
+
+                            <div class="tabela-wrapper">
+                                <table class="tabela">
+                                    <thead>
+                                        <tr>
+                                            <th>Razão Social</th>
+                                            <th>CNPJ</th>
+                                            <th>Contato</th>
+                                            <th style="text-align: right;">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-fornecedores-config">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
+            </section>
+
+            <section class="page hidden" id="page-estoques">
+                <div class="page-header">
+                    <h3><i class="fas fa-boxes" style="color:#C9A96E; margin-right:8px"></i> Controle de Estoque</h3>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <button onclick="abrirModalProduto()" style="background: #C9A96E; color: #111; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;" onmouseover="this.style.filter = 'brightness(1.1)'" onmouseout="this.style.filter = 'brightness(1)'">
+                            <i class="fas fa-plus"></i> Novo Produto
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tabela-wrapper" style="margin-top: 15px;">
+                    <table class="tabela">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Fornecedor</th>
+                                <th style="text-align: center;">Qtd. Atual</th>
+                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: right;">Reposição / Consumo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-estoque">
+                        </tbody>
+                    </table>
+                </div>
+
             </section>
         </main>
 
@@ -1479,6 +1537,110 @@
             </div>
         </div>
 
+        <!-- ═══ MODAL PRODUTO ═══ -->
+        <div class="modal-overlay hidden" id="modal-produto">
+            <div class="modal" style="border-top: 5px solid #C9A96E;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-box-open" style="color:#C9A96E; margin-right: 8px;"></i> Cadastrar Produto</h3>
+                    <button onclick="fecharModalProduto()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+
+                <form id="form-produto" onsubmit="salvarProduto(event)">
+                    <div class="modal-body">
+
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div class="field" style="flex: 2; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Nome do Produto <span style="color:red">*</span></label>
+                                <input type="text" id="prod-nome" class="form-ctrl" required placeholder="Ex: Shampoo Pelos Claros">
+                            </div>
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Preço Venda (R$)</label>
+                                <input type="number" step="0.01" id="prod-preco" class="form-ctrl" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-bottom: 15px;">
+                            <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Fornecedor</label>
+                            <select id="prod-fornecedor" class="form-ctrl">
+                                <option value="">— Sem Fornecedor —</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; padding: 15px; background: rgba(201,169,110,0.05); border-radius: 6px; border: 1px dashed #C9A96E;">
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Estoque Inicial</label>
+                                <input type="number" id="prod-qtd" value="0" min="0" class="form-ctrl" required style="font-weight: bold;">
+                            </div>
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #dc3545; display: block; margin-bottom: 5px;">Alerta Mínimo</label>
+                                <input type="number" id="prod-minimo" value="5" min="1" class="form-ctrl" required style="color: #dc3545; font-weight: bold;">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="fecharModalProduto()" class="btn-secundario">Cancelar</button>
+                        <button type="submit" class="btn-primary" style="background: #28a745; border-color: #28a745;">
+                            <i class="fas fa-save"></i> Salvar Produto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══ MODAL FORNECEDORES ═══ -->
+        <div class="modal-overlay hidden" id="modal-fornecedor">
+            <div class="modal" style="border-top: 5px solid #C9A96E;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-truck" style="color:#C9A96E; margin-right: 8px;"></i> Cadastrar Fornecedor</h3>
+                    <button onclick="fecharModalFornecedor()" type="button" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+
+                <form id="form-fornecedor" onsubmit="salvarFornecedor(event)">
+                    <input type="hidden" id="forn-id"> 
+
+                    <div class="modal-body">
+                        <div class="field" style="margin-bottom: 15px;">
+                            <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Razão Social / Nome da Empresa <span style="color:red">*</span></label>
+                            <input type="text" id="forn-nome" class="form-ctrl" required placeholder="Ex: PetDistribuidora Lda">
+                        </div>
+
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">CNPJ (Opcional)</label>
+                                <input type="text" id="forn-cnpj" class="form-ctrl" placeholder="00.000.000/0000-00">
+                            </div>
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Telefone / WhatsApp</label>
+                                <input type="text" id="forn-tel" class="form-ctrl" placeholder="(00) 00000-0000">
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-bottom: 15px;">
+                            <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">E-mail (Opcional)</label>
+                            <input type="email" id="forn-email" class="form-ctrl" placeholder="contato@empresa.com">
+                        </div>
+
+                        <div class="field" style="margin-bottom: 0;">
+                            <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Endereço Completo</label>
+                            <input type="text" id="forn-end" class="form-ctrl" placeholder="Rua, Número, Bairro, Cidade">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" onclick="fecharModalFornecedor()" class="btn-secundario">Cancelar</button>
+                        <button type="submit" class="btn-primary" style="background: #28a745; border-color: #28a745;">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+
+
         <script>
             // ═══════════════════════════════════════════════════
             // DADOS
@@ -1491,6 +1653,7 @@
             let clientes = [];
             let pacotes = [];
             let funcionarios = [];
+            let estoques = [];
 
             // ═══════════════════════════════════════════════════
             // AUTH
@@ -1521,11 +1684,15 @@
             if (perfil === 'Funcionario') {
                 const navPag = document.querySelector('[data-page="pagamentos"]');
                 const navFuc = document.querySelector('[data-page="funcionarios"]');
+                const navConf = document.querySelector('[data-page="config"]');
 
                 if (navPag)
                     navPag.style.display = 'none';
                 if (navFuc)
                     navFuc.style.display = 'none';
+                if (navConf)
+                    navConf.style.display = 'none';
+
                 const style = document.createElement('style');
                 style.textContent = `
         #card-fat-mes, #dash-fat-chart-wrap, .area-financeira { 
@@ -1539,7 +1706,7 @@
                 window.location.href = 'login.html';
             }
             // Protege navegação por URL
-            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'config': ['Admin']};
+            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'config': ['Admin'], 'estoques': ['Admin']};
 
             function podeAcessar(page) {
                 const permitidos = paginasRestritas[page];
@@ -1581,6 +1748,9 @@
 
                         if (typeof renderPendentes === 'function')
                             renderPendentes();
+
+                        if (typeof carregarHorariosDoBanco() === 'function')
+                            renderPendentes();
                     }
 
                     if (event.data === "ATUALIZAR_CADASTRO") {
@@ -1594,6 +1764,34 @@
 
                         if (typeof renderAgenda === 'function')
                             renderAgenda();
+
+                    }
+
+                    if (event.data === "ATUALIZAR_PRODUTO") {
+                        await listarEstoque()();
+
+                        if (typeof renderEstoque === 'function')
+                            renderEstoque();
+                    }
+
+                    if (event.data === "ATUALIZAR_FORNECEDORES") {
+                        if (typeof carregarFornecedoresConfig === 'function') {
+                            carregarFornecedoresConfig();
+                        }
+
+                        if (typeof carregarFornecedoresParaModal === 'function') {
+                            carregarFornecedoresParaModal();
+                        }
+                    }
+
+                    if (event.data === "ATUALIZAR_SERVICO") {
+                        if (typeof carregarServicosDoBanco() === 'function')
+                            carregarServicosDoBanco();
+                    }
+
+                    if (event.data === "ATUALIZAR_PACOTE") {
+                        if (typeof carregarPacotesAdmin() === 'function')
+                            carregarPacotesAdmin();
                     }
                 };
 
@@ -1617,7 +1815,7 @@
             // ═══════════════════════════════════════════════════
             // NAVEGAÇÃO
             // ═══════════════════════════════════════════════════
-            const pageTitles = {dashboard: 'Dashboard', novos: 'Novos Pedidos', agenda: 'Agenda Confirmada', pendentes: 'Pendentes', clientes: 'Clientes Cadastrados', funcionarios: 'Funcionários', pagamentos: 'Pagamentos', config: 'Configurações'};
+            const pageTitles = {dashboard: 'Dashboard', novos: 'Novos Pedidos', agenda: 'Agenda Confirmada', pendentes: 'Pendentes', clientes: 'Clientes Cadastrados', estoques: 'Estoque', funcionarios: 'Funcionários', pagamentos: 'Pagamentos', config: 'Configurações'};
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', e => {
                     e.preventDefault();
@@ -1664,12 +1862,17 @@
                     await carregarVendasPacotes();
                 }
 
+                if (page === 'estoques') {
+                    await carregarEstoque();
+
+                }
+
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
                 document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
                 document.getElementById('page-' + page)?.classList.remove('hidden');
                 document.getElementById('pageTitle').textContent = pageTitles[page] || page;
-                ({dashboard: renderDashboard, novos: renderNovos, agenda: renderAgenda, pendentes: renderPendentes, clientes: renderClientes, funcionarios: renderFuncionarios, pagamentos: renderPagamentos, config: renderConfiguracoes})[page]?.();
+                ({dashboard: renderDashboard, novos: renderNovos, agenda: renderAgenda, pendentes: renderPendentes, clientes: renderClientes, estoques: renderEstoque, funcionarios: renderFuncionarios, pagamentos: renderPagamentos, config: renderConfiguracoes})[page]?.();
             }
             function toggleSidebar() {
                 document.getElementById('sidebar').classList.toggle('open');
@@ -2614,5 +2817,6 @@
         <script src="js/agendamento.js"></script>
         <script src="js/cliente.js"></script>
         <script src="js/pacote.js"></script>
+        <script src="js/estoque.js"></script>
     </body>
 </html>

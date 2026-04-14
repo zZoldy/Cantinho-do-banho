@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/api/servicos/atualizar")
 public class AtualizarServicoServlet extends HttpServlet {
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
@@ -20,12 +21,14 @@ public class AtualizarServicoServlet extends HttpServlet {
 
             ServicoDAO dao = new ServicoDAO();
             Servico s = dao.buscarPorId(id);
-            
+
             if (s != null) {
                 s.setNome(nome);
                 s.setTempoAtendimento(Integer.parseInt(tempoStr));
                 dao.atualizar(s);
                 response.setStatus(HttpServletResponse.SC_OK);
+
+                com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosServico();
             } else {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             }

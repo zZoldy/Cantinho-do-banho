@@ -7,7 +7,10 @@
         <class>com.app.cantinho_banho.model.Pet</class>
         <class>com.app.cantinho_banho.model.Agendamento</class>
         <class>com.app.cantinho_banho.model.Usuario</class>
-         <class>com.app.cantinho_banho.model.Funcionario</class>
+        <class>com.app.cantinho_banho.model.Funcionario</class>
+        <class>com.app.cantinho_banho.model.Estoque</class>
+        <class>com.app.cantinho_banho.model.Fornecedor</class>
+        <class>com.app.cantinho_banho.model.com.app.cantinho_banho.model.Produto</class>
         
         <properties>
             <property name="javax.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>

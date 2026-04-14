@@ -660,7 +660,7 @@ function renderConfiguracoes() {
 }
 
 function navConfig(aba) {
-    ['servicos', 'horarios', 'pacotes'].forEach(a => {
+    ['servicos', 'horarios', 'pacotes', 'fornecedores'].forEach(a => {
         document.getElementById('conf-' + a).style.display = 'none';
         document.getElementById('btn-conf-' + a).classList.remove('active');
     });
@@ -675,6 +675,9 @@ function navConfig(aba) {
     if (aba === 'pacotes') {
         carregarPacotesAdmin();
         carregarServicosNoSelect();
+    }
+    if (aba === 'fornecedores') {
+        carregarFornecedoresConfig();
     }
 }
 
@@ -1291,6 +1294,17 @@ async function carregarServicosDoBanco() {
         }
     } catch (erro) {
         console.error("Erro:", erro);
+    }
+}
+
+async function listarServico() {
+    try {
+        const response = await fetch('../api/servicos/listar');
+        if (response.ok) {
+            servicosCadastrados = await response.json();
+        }
+    } catch (e) {
+        console.error("Erro ao carregar estoque:", e);
     }
 }
 

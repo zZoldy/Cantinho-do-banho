@@ -31,8 +31,10 @@ public class ExcluirPacoteServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write("Pacote excluído com sucesso.");
 
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosPacote();
+
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_CONFLICT); 
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
             response.getWriter().write(e.getMessage());
         }
     }

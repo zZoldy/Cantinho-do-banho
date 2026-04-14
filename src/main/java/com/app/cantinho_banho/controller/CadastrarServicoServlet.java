@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/api/servicos/cadastrar")
 public class CadastrarServicoServlet extends HttpServlet {
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
@@ -26,11 +27,14 @@ public class CadastrarServicoServlet extends HttpServlet {
             Servico s = new Servico();
             s.setNome(nome);
             s.setTempoAtendimento(Integer.parseInt(tempoStr));
-            
+
             ServicoDAO dao = new ServicoDAO();
             dao.salvar(s);
 
             response.setStatus(HttpServletResponse.SC_CREATED);
+
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosServico();
+
         } catch (NumberFormatException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

@@ -51,6 +51,7 @@ public class CadastrarPacoteServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write("{\"sucesso\": true}");
 
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosPacote();
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

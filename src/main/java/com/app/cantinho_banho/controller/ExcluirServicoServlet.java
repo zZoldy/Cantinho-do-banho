@@ -19,6 +19,9 @@ public class ExcluirServicoServlet extends HttpServlet {
             dao.excluir(id);
 
             response.setStatus(HttpServletResponse.SC_OK);
+
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosServico();
+
         } catch (NumberFormatException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
