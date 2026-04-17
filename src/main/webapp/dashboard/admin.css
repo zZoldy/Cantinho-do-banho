@@ -236,8 +236,29 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+
+    overflow-y:auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 80px);
 }
 
+.sidebar-nav::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: #161616;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(201, 169, 110, 0.4);
+    border-radius: 8px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: var(--dourado, #C9A96E);
+}
 .nav-item {
     display: flex;
     align-items: center;

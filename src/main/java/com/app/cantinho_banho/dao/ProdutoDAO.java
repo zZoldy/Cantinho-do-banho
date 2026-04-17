@@ -41,4 +41,21 @@ public class ProdutoDAO {
             em.close();
         }
     }
+
+    public void excluir(Produto produto) {
+        EntityManager em = JPAUtil.getEntityManager(); 
+        try {
+            em.getTransaction().begin();
+
+            produto = em.merge(produto);
+            em.remove(produto); 
+
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
 }

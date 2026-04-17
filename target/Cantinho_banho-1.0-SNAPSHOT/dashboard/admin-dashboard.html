@@ -1208,35 +1208,46 @@
         <div class="modal-overlay hidden" id="modal-visualizar-pagamento">
             <div class="modal modal-md" style="border-top: 5px solid #C9A96E;">
                 <div class="modal-header">
-                    <h3><i class="fas fa-file-invoice-dollar" style="color:#C9A96E; margin-right: 8px;"></i> Detalhes do Pagamento</h3>
+                    <h3><i class="fas fa-file-invoice-dollar" style="color:#C9A96E; margin-right: 8px;"></i> Detalhes da Venda</h3>
                     <button onclick="fecharModalVisualizacaoPag()" class="btn-fechar"><i class="fas fa-times"></i></button>
                 </div>
 
                 <div class="modal-body">
                     <div style="background: rgba(201, 169, 110, 0.08); padding: 15px; border-radius: 6px; border: 1px solid rgba(201, 169, 110, 0.2); margin-bottom: 20px;">
-                        <h4 id="vp-descricao-titulo" style="margin: 0 0 10px 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                            Descrição do Item
-                        </h4>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #bbb;">
-                            <span><i class="fas fa-user" style="color:#C9A96E;"></i> <strong id="vp-cliente" style="color: #eee;">Nome do Cliente</strong></span>
-                            <span><i class="far fa-calendar-alt" style="color:#C9A96E;"></i> <strong id="vp-data" style="color: #eee;">00/00/0000</strong></span>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: #bbb; margin-bottom: 8px;">
+                            <span><i class="fas fa-user" style="color:#C9A96E; width: 20px;"></i> <strong id="vp-cliente" style="color: #eee;">--</strong></span>
+                            <span><i class="far fa-calendar-alt" style="color:#C9A96E; width: 20px;"></i> <strong id="vp-data" style="color: #eee;">--</strong></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: #bbb;">
+                            <span><i class="fas fa-hashtag" style="color:#C9A96E; width: 20px;"></i> <strong style="color: #eee;">Venda #<span id="vp-id"></span></strong></span>
+                            <span id="vp-status-badge" style="padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">--</span>
                         </div>
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label style="color: #888;">Valor Cobrado</label>
-                            <input type="text" id="vp-valor" class="form-input-admin" readonly style="background-color: rgba(0,0,0,0.2); color: #fff; cursor: default; border: 1px dashed #555;" />
+                    <label style="color: #888; font-size: 0.85rem; margin-bottom: 5px; display: block;">Itens da Venda</label>
+                    <div style="background: #111; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #333; color: #888; font-size: 0.8rem;">
+                                    <th style="text-align: left; padding-bottom: 5px;">Item</th>
+                                    <th style="text-align: center; padding-bottom: 5px;">Qtd</th>
+                                    <th style="text-align: right; padding-bottom: 5px;">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vp-itens-lista">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="color: #888; font-size: 0.85rem;">Forma de Pagamento</label>
+                            <div id="vp-forma" style="background-color: rgba(0,0,0,0.2); color: #fff; padding: 10px; border-radius: 6px; border: 1px dashed #555; font-size: 0.95rem;">--</div>
                         </div>
 
-                        <div class="form-group">
-                            <label style="color: #888;">Forma de Pagamento</label>
-                            <input type="text" id="vp-forma" class="form-input-admin" readonly style="background-color: rgba(0,0,0,0.2); color: #fff; cursor: default; border: 1px dashed #555;" />
-                        </div>
-
-                        <div class="form-group full">
-                            <label style="color: #888;">Status Financeiro</label>
-                            <input type="text" id="vp-status" class="form-input-admin" readonly style="background-color: rgba(0,0,0,0.2); font-weight: bold; cursor: default; border: 1px dashed #555;" />
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="color: #888; font-size: 0.85rem;">Valor Total</label>
+                            <div id="vp-valor" style="background-color: rgba(201,169,110,0.1); color: #C9A96E; font-weight: bold; padding: 10px; border-radius: 6px; border: 1px dashed #C9A96E; font-size: 1.1rem; text-align: right;">--</div>
                         </div>
                     </div>
                 </div>
@@ -2425,12 +2436,13 @@
                 const periodo = document.getElementById('filtro-periodo-pag')?.value || 'mes';
                 const ano = hoje.getFullYear().toString();
 
-                // 🟢 1. União de dados: Agendamentos + Vendas de Pacotes
+                // 🟢 1. União de dados: Agendamentos + Vendas
                 const vendas = typeof listaVendasPacotes !== 'undefined' ? listaVendasPacotes : [];
                 const todosItens = [...historico, ...agenda, ...retirada, ...vendas];
 
+                // 🟢 2. Filtro de Datas
                 let lista = todosItens.filter(a => {
-                    let dataRef = a.data || a.dataVenda;
+                    let dataRef = a.data || a.dataVenda || a.dataCriacao;
                     if (!dataRef)
                         return false;
 
@@ -2451,81 +2463,106 @@
                     return true;
                 });
 
+                // 🟢 3. Cálculos de Totais (Padronizado)
                 const metodos = {Pix: 0, Dinheiro: 0, 'Cartão de Crédito': 0, 'Cartão de Débito': 0, 'Pacote': 0};
+                let pagoTotal = 0;
+                let pendenteTotal = 0;
 
                 lista.forEach(a => {
-                    const status = a.statusPag || a.status_pagamento || (a.dataVenda ? 'Pago' : 'Pendente');
-                    const valor = a.valor || a.valorPago || 0;
+                    const isVenda = !!(a.dataVenda || a.itens || a.dataCriacao);
+                    const status = a.statusPag || a.status_pagamento || a.status || (isVenda ? 'Pago' : 'Pendente');
+                    const valor = a.valor || a.valorPago || a.valorTotal || 0;
                     const forma = a.formaPag || a.forma_pagamento || a.formaPagamento || '';
 
-                    if (status === 'Pago' && metodos[forma] !== undefined) {
-                        metodos[forma] += valor;
+                    if (status === 'Pago' || status === 'PAGO') {
+                        pagoTotal += valor;
+                        // Tratamento para não quebrar a chave do objeto (ex: CARTAO_CREDITO vs Cartão de Crédito)
+                        const formaLimpa = forma.replace('_', ' ');
+                        if (metodos[formaLimpa] !== undefined)
+                            metodos[formaLimpa] += valor;
+                    } else {
+                        pendenteTotal += valor;
                     }
                 });
 
-                const pago = lista.reduce((s, a) => {
-                    const status = a.statusPag || a.status_pagamento || (a.dataVenda ? 'Pago' : 'Pendente');
-                    return status === 'Pago' ? s + (a.valor || a.valorPago || 0) : s;
-                }, 0);
+                document.getElementById('pag-total-pago').textContent = `R$ ${pagoTotal.toFixed(2)}`;
+                document.getElementById('pag-total-pendente').textContent = `R$ ${pendenteTotal.toFixed(2)}`;
+                document.getElementById('pag-total-geral').textContent = `R$ ${(pagoTotal + pendenteTotal).toFixed(2)}`;
 
-                const pend = lista.reduce((s, a) => {
-                    const status = a.statusPag || a.status_pagamento || (a.dataVenda ? 'Pago' : 'Pendente');
-                    return status !== 'Pago' ? s + (a.valor || a.valorPago || 0) : s;
-                }, 0);
-
-                document.getElementById('pag-total-pago').textContent = `R$ ${pago.toFixed(2)}`;
-                document.getElementById('pag-total-pendente').textContent = `R$ ${pend.toFixed(2)}`;
-                document.getElementById('pag-total-geral').textContent = `R$ ${(pago + pend).toFixed(2)}`;
-
+                // 🟢 4. Renderização da Tabela
                 const tbody = document.getElementById('tbody-pagamentos');
                 if (!tbody)
                     return;
+
                 if (!lista.length) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px;">Nenhum registro encontrado.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:#888;">Nenhum registro encontrado neste período.</td></tr>`;
                     return;
                 }
 
+                // Ordena da data mais recente para a mais antiga
                 tbody.innerHTML = lista.sort((a, b) => {
-                    const d1 = a.data || a.dataVenda;
-                    const d2 = b.data || b.dataVenda;
+                    const d1 = a.data || a.dataVenda || a.dataCriacao;
+                    const d2 = b.data || b.dataVenda || b.dataCriacao;
                     return d2.localeCompare(d1);
                 }).map(a => {
-                    const isVenda = !!a.dataVenda;
-                    const statusFinanceiro = a.statusPag || a.status_pagamento || (isVenda ? 'Pago' : 'Pendente');
+                    // --- PADRONIZAÇÃO DE VARIÁVEIS ---
+                    const isVenda = !!(a.dataVenda || a.itens || a.dataCriacao);
+                    const statusFinanceiro = a.statusPag || a.status_pagamento || a.status || (isVenda ? 'Pago' : 'Pendente');
                     const statusServico = isVenda ? 'VENDA' : (a.status || '—');
 
-                    const nomePrincipal = isVenda ? `📦 Pacote: ${a.pacoteNome || 'Personalizado'}` : (a.pet || '—');
-                    const cliente = isVenda ? (a.clienteNome || '—') : (a.dono || '—');
+                    let nomePrincipal, cliente, descricao;
 
-                    const descricao = isVenda ? 'Aquisição de Pacote' : (a.servico || '—');
-                    const valor = a.valor || a.valorPago || 0;
+                    if (isVenda) {
+                        cliente = a.clienteNome || a.cliente || '—';
+
+                        if (a.itens && a.itens.length > 0) {
+                            // É uma Venda Nova (Carrinho)
+                            nomePrincipal = `🛒 Venda #${a.id || ''}`;
+                            const qtdItens = a.itens.reduce((sum, i) => sum + i.quantidade, 0);
+                            const nomes = a.itens.map(i => i.nomeProdutoOuServico || i.nome).join(', ');
+                            descricao = nomes.length > 25 ? nomes.substring(0, 25) + '...' : nomes;
+                            descricao += ` <span style="color:#C9A96E; font-size:0.75rem;">(${qtdItens} item${qtdItens > 1 ? 's' : ''})</span>`;
+                        } else {
+                            // É uma Venda Antiga (Pacote)
+                            nomePrincipal = `📦 Pacote: ${a.pacoteNome || 'Personalizado'}`;
+                            descricao = 'Aquisição de Pacote';
+                        }
+                    } else {
+                        // É um Agendamento
+                        nomePrincipal = a.pet || '—';
+                        cliente = a.dono || '—';
+                        descricao = a.servico || '—';
+                    }
+
+                    const valor = a.valor || a.valorPago || a.valorTotal || 0;
                     const forma = a.formaPag || a.forma_pagamento || a.formaPagamento || '—';
 
-                    // Limpa o "T" da data de venda para o formatador 'fd' não bugar
-                    let dataLimpa = a.data || a.dataVenda;
+                    // Limpa o "T" da data
+                    let dataLimpa = a.data || a.dataVenda || a.dataCriacao || '';
                     if (dataLimpa.includes('T'))
                         dataLimpa = dataLimpa.split('T')[0];
                     const dataExibicao = fd(dataLimpa);
 
+                    // --- CONSTRUÇÃO DA LINHA DO HTML ---
                     return `
-            <tr ${isVenda ? 'style="background: rgba(201, 169, 110, 0.08);"' : ''}>
-              <td><strong>${nomePrincipal}</strong><br><small style="color:#888">${cliente}</small></td>
-              <td>${descricao}</td>
-              <td>${a.funcionario || (isVenda ? 'Sistema' : '—')}</td>
-              <td>R$ ${valor.toFixed(2)}</td>
-              <td>${forma}</td>
-              <td>${dataExibicao}</td>
-              <td><span class="badge-status-${statusServico.toLowerCase()}">${statusServico}</span></td>
-              <td style="color: ${statusFinanceiro === 'Pago' ? '#5ac75a' : '#c77a7a'}; font-weight: bold;">
-                ${statusFinanceiro}
-              </td>
-              <td style="text-align:right">
-                <button class="btn-visualizar" onclick="abrirModalVisualizacaoPag(${a.id}, ${isVenda})" title="Ver Detalhes">
-                    <i class="fas fa-eye"></i>
-                </button>
-              </td>
-            </tr>
-        `;
+                    <tr ${isVenda ? 'style="background: rgba(201, 169, 110, 0.04);"' : ''}>
+                        <td><strong>${nomePrincipal}</strong><br><small style="color:#888">${cliente}</small></td>
+                        <td>${descricao}</td>
+                        <td>${a.funcionario || (isVenda ? 'Sistema/Caixa' : '—')}</td>
+                        <td>R$ ${valor.toFixed(2)}</td>
+                        <td>${forma.replace('_', ' ')}</td>
+                        <td>${dataExibicao}</td>
+                        <td><span class="badge-status-${statusServico.toLowerCase()}">${statusServico}</span></td>
+                        <td style="color: ${statusFinanceiro === 'Pago' || statusFinanceiro === 'PAGO' ? '#5ac75a' : '#c77a7a'}; font-weight: bold;">
+                            ${statusFinanceiro.toUpperCase()}
+                        </td>
+                        <td style="text-align:right">
+                            <button class="btn-visualizar" onclick="abrirModalVisualizacaoPag(${a.id}, ${isVenda})" title="Ver Detalhes">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
                 }).join('');
             }
 
@@ -2543,42 +2580,66 @@
                     console.error("Item não encontrado para o ID:", id);
                     return;
                 }
+                
+                document.getElementById('vp-id').innerText = item.id || 'N/A';
 
-                // --- Preenchimento do Cabeçalho ---
-                const titulo = document.getElementById('vp-descricao-titulo');
-                const clienteField = document.getElementById('vp-cliente');
-                const dataField = document.getElementById('vp-data');
+                const clienteNome = isVenda ? (item.clienteNome || item.cliente || 'Cliente Padrão') : (item.dono || '—');
+                document.getElementById('vp-cliente').innerText = clienteNome;
 
-                if (isVenda) {
-                    titulo.innerHTML = `<i class="fas fa-box-open" style="color:#C9A96E;"></i> Pacote: ${item.pacoteNome || 'Personalizado'}`;
-                    clienteField.textContent = item.clienteNome || '—';
-                    let dVenda = item.dataVenda || '';
-                    dataField.textContent = fd(dVenda.includes('T') ? dVenda.split('T')[0] : dVenda);
+                let dataReferencia = isVenda ? (item.dataVenda || item.dataCriacao || '') : (item.data || '');
+                if (dataReferencia.includes('T'))
+                    dataReferencia = dataReferencia.split('T')[0];
+                document.getElementById('vp-data').innerText = fd(dataReferencia);
+
+                const statusPg = item.statusPag || item.status_pagamento || item.status || (isVenda ? 'Pago' : 'Pendente');
+                const badge = document.getElementById('vp-status-badge');
+
+                if (statusPg === 'Pago' || statusPg === 'PAGO') {
+                    badge.style.background = 'rgba(40,167,69,0.2)';
+                    badge.style.color = '#28a745';
+                    badge.innerText = 'PAGO';
                 } else {
-                    titulo.innerHTML = `<i class="fas fa-paw" style="color:#17a2b8;"></i> Serviço: ${item.servico || '—'} (${item.pet || 'Pet'})`;
-                    clienteField.textContent = item.dono || '—';
-                    dataField.textContent = fd(item.data || '');
+                    badge.style.background = 'rgba(220,53,69,0.2)';
+                    badge.style.color = '#dc3545';
+                    badge.innerText = statusPg.toUpperCase();
                 }
 
-                // --- Preenchimento dos Dados Financeiros ---
-                const valorTotal = item.valor || item.valorPago || 0;
+                const valorTotal = item.valor || item.valorPago || item.valorTotal || 0;
                 const formaPg = item.formaPag || item.forma_pagamento || item.formaPagamento || '—';
-                const statusPg = item.statusPag || item.status_pagamento || (isVenda ? 'Pago' : 'Pendente');
 
-                document.getElementById('vp-valor').value = `R$ ${valorTotal.toFixed(2)}`;
-                document.getElementById('vp-forma').value = formaPg;
+                document.getElementById('vp-forma').innerText = formaPg.replace('_', ' ');
+                document.getElementById('vp-valor').innerText = `R$ ${valorTotal.toFixed(2)}`;
 
-                const statusBox = document.getElementById('vp-status');
-                statusBox.value = statusPg;
+                const tbody = document.getElementById('vp-itens-lista');
 
-                if (statusPg === 'Pago') {
-                    statusBox.style.color = '#5ac75a';
-                    statusBox.style.borderColor = '#5ac75a';
+                if (item.itens && item.itens.length > 0) {
+                    // É uma venda NOVA com múltiplos itens (Produtos do Estoque / Serviços)
+                    tbody.innerHTML = item.itens.map(i => `
+                        <tr>
+                            <td style="padding: 8px 5px; color: #eee; font-size: 0.9rem;">${i.nomeProdutoOuServico || i.nome}</td>
+                            <td style="padding: 8px 5px; text-align: center; color: #aaa;">${i.quantidade}x</td>
+                            <td style="padding: 8px 5px; text-align: right; color: #eee;">R$ ${((i.precoUnitario || i.preco) * i.quantidade).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
                 } else {
-                    statusBox.style.color = '#c77a7a';
-                    statusBox.style.borderColor = '#c77a7a';
+                    // Fallback para os registos ANTIGOS (Agendamento ou Venda de Pacote simples)
+                    let descricaoAntiga = '';
+                    if (isVenda) {
+                        descricaoAntiga = `Pacote: ${item.pacoteNome || 'Personalizado'}`;
+                    } else {
+                        descricaoAntiga = `Serviço: ${item.servico || '—'} (Pet: ${item.pet || '—'})`;
+                    }
+
+                    tbody.innerHTML = `
+                        <tr>
+                            <td style="padding: 8px 5px; color: #eee; font-size: 0.9rem;">${descricaoAntiga}</td>
+                            <td style="padding: 8px 5px; text-align: center; color: #aaa;">1x</td>
+                            <td style="padding: 8px 5px; text-align: right; color: #eee;">R$ ${valorTotal.toFixed(2)}</td>
+                        </tr>
+                    `;
                 }
 
+                // 6. Mostra o Modal
                 document.getElementById('modal-visualizar-pagamento').classList.remove('hidden');
             }
 

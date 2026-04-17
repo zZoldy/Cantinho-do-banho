@@ -64,7 +64,12 @@ function renderEstoque() {
                     <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">Min: ${item.quantidadeMinima}</div>
                 </td>
                 <td style="padding: 15px 10px; text-align: right;">
-                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                        
+                        <button onclick="excluirProduto(${item.produto.id})" style="background: transparent; color: #dc3545; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 1.1rem; margin-right: 5px;" title="Excluir Produto">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+
                         <button onclick="movimentarEstoque(${item.produto.id}, 'SAIDA')" style="background: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Registrar Consumo">
                             <i class="fas fa-minus"></i>
                         </button>
@@ -80,8 +85,11 @@ function renderEstoque() {
 
 function abrirModalProduto() {
     const modal = document.getElementById('modal-produto');
-    if (modal)
+    if (modal){
         modal.classList.remove('hidden');
+        
+        carregarFornecedoresParaModal();
+    }
 }
 
 function fecharModalProduto() {
@@ -123,7 +131,6 @@ async function carregarFornecedoresParaModal() {
             listaFornecedoresLocal = await response.json();
             const select = document.getElementById('prod-fornecedor');
             if (select) {
-                // Preenche o campo select com as opções vindas do banco
                 select.innerHTML = '<option value="">Sem Fornecedor / Fabricação Própria</option>' +
                         listaFornecedoresLocal.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
             }
@@ -163,7 +170,28 @@ async function salvarProduto(e) {
     }
 }
 
+async function excluirProduto(produtoId) {
+    if (!confirm("Tem a certeza que deseja EXCLUIR este produto definitivamente? Esta ação não pode ser desfeita.")) {
+        return;
+    }
 
+    try {
+        const res = await fetch('../api/produto/excluir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${produtoId}`
+        });
+
+        if (res.ok) {
+            carregarEstoque(); 
+        } else {
+            alert("Não foi possível excluir: " + await res.text());
+        }
+    } catch (e) {
+        console.error("Erro de comunicação ao excluir produto:", e);
+        alert("Erro ao comunicar com o servidor.");
+    }
+}
 
 
 

@@ -49,4 +49,21 @@ public class EstoqueDAO {
             em.close();
         }
     }
+
+    public void excluir(Estoque estoque) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+
+            estoque = em.merge(estoque);
+            em.remove(estoque);
+
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
 }
