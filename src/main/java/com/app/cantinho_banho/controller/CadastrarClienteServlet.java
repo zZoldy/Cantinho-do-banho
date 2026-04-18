@@ -41,6 +41,8 @@ public class CadastrarClienteServlet extends HttpServlet {
                 cliente.setNome(nome);
                 cliente.setTelefone(telefone);
             }
+            
+            String senhaGerada = null;
 
             if (email != null && !email.trim().isEmpty() && cpf != null && !cpf.trim().isEmpty()) {
                 UsuarioDAO usuarioDAO = new UsuarioDAO();
@@ -57,7 +59,7 @@ public class CadastrarClienteServlet extends HttpServlet {
                     return;
                 }
 
-                String senhaGerada = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+                senhaGerada = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
                 String senhaCriptografada = BCrypt.hashpw(senhaGerada, BCrypt.gensalt());
 
                 usuario.setNome(nome);
@@ -68,16 +70,17 @@ public class CadastrarClienteServlet extends HttpServlet {
                 usuario.setAtivo(true);
                 usuario.setReset_password(true);
                 cliente.setUsuario(usuario);
-                clienteDAO.salvar(cliente);
-                // 4. Monta um JSON para devolver a senha limpa ao Front-end (apenas desta vez!)
-                String json = String.format("{\"senha\": \"%s\", \"telefone\": \"%s\"}",
-                        senhaGerada,
-                        cliente.getTelefone() != null ? cliente.getTelefone() : "");
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().write(json);
-                
-                 com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
             }
+
+            clienteDAO.salvar(cliente);
+            
+            String json = String.format("{\"senha\": \"%s\", \"telefone\": \"%s\", \"status\": \"sucesso\"}",
+                    senhaGerada != null ? senhaGerada : "",
+                    cliente.getTelefone() != null ? cliente.getTelefone() : "");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(json);
+
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
         } catch (IOException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

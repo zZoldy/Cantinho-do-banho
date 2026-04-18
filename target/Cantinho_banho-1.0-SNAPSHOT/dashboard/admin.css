@@ -1014,6 +1014,27 @@ textarea.form-input-admin {
     min-height: 80px;
 }
 
+.config-nav-container {
+    width: 240px;
+    background: #161616;
+    border: 1px solid #252525;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.config-nav-container .btn-filtro {
+    text-align: left;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    white-space: nowrap; /* Impede o texto de quebrar linha */
+}
 /* ============================================
    RESPONSIVIDADE
    ============================================ */
@@ -1074,6 +1095,37 @@ textarea.form-input-admin {
 
     .login-box {
         padding: 36px 24px;
+    }
+
+    .config-nav-container {
+        width: 100%; 
+        flex-direction: row; 
+        overflow-x: auto; 
+        padding: 10px;
+        gap: 10px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        scrollbar-width: none;
+    }
+
+    .config-nav-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .config-nav-container .btn-filtro {
+        flex: 0 0 auto;
+        padding: 10px 15px;
+        justify-content: center;
+    }
+
+    @media (max-width: 400px) {
+        .config-nav-container .btn-filtro span {
+            display: none;
+        }
+        .config-nav-container .btn-filtro {
+            padding: 12px;
+        }
     }
 }
 
@@ -1196,4 +1248,59 @@ button:disabled:hover {
 #modal-acesso input[type="text"]:focus {
     border-color: #C9A96E !important;
     box-shadow: 0 0 5px rgba(201, 169, 110, 0.3) !important;
+}
+
+/* ========================================= */
+/* ABAS DO MÓDULO FINANCEIRO                 */
+/* ========================================= */
+.financeiro-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--borda);
+    padding-bottom: 1px;
+}
+
+.fin-tab {
+    background: transparent;
+    color: var(--texto-suave);
+    border: none;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: var(--trans);
+}
+
+.fin-tab:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.02);
+}
+
+.fin-tab.active {
+    color: var(--dourado);
+    border-bottom: 3px solid var(--dourado);
+    background: rgba(201, 169, 110, 0.05);
+}
+
+.fin-conteudo {
+    display: none;
+    animation: fadeInTab 0.4s ease;
+}
+
+.fin-conteudo.active {
+    display: block;
+}
+
+@keyframes fadeInTab {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

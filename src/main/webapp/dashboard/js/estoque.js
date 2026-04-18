@@ -2,7 +2,21 @@
 // LÓGICA DO ESTOQUE
 // ==========================================
 let listaEstoque = [];
-let listaFornecedoresLocal = []; // Guarda a lista na memória para podermos editar depois
+let listaFornecedoresLocal = [];
+let listaDespesas = [];
+
+async function carregarDespesas() {
+    try {
+        const response = await fetch('../api/despesas/listar');
+        if (response.ok) {
+            listaDespesas = await response.json();
+            if (typeof renderPagamentos === 'function')
+                renderPagamentos();
+        }
+    } catch (e) {
+        console.error("Erro ao carregar despesas:", e);
+    }
+}
 
 async function carregarEstoque() {
     try {
@@ -73,9 +87,6 @@ function renderEstoque() {
                         <button onclick="movimentarEstoque(${item.produto.id}, 'SAIDA')" style="background: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Registrar Consumo">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <button onclick="movimentarEstoque(${item.produto.id}, 'ENTRADA')" style="background: #007bff; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;" title="Registrar Compra">
-                            <i class="fas fa-plus"></i> Entrada
-                        </button>
                     </div>
                 </td>
             </tr>
@@ -85,9 +96,9 @@ function renderEstoque() {
 
 function abrirModalProduto() {
     const modal = document.getElementById('modal-produto');
-    if (modal){
+    if (modal) {
         modal.classList.remove('hidden');
-        
+
         carregarFornecedoresParaModal();
     }
 }
@@ -115,7 +126,7 @@ async function movimentarEstoque(produtoId, tipo) {
         });
 
         if (res.ok) {
-            carregarEstoque(); // Atualiza a tela após sucesso
+            carregarEstoque();
         } else {
             alert("Erro: " + await res.text());
         }
@@ -145,10 +156,16 @@ async function salvarProduto(e) {
 
     const dados = new URLSearchParams();
     dados.append('nome', document.getElementById('prod-nome').value);
-    dados.append('precoVenda', document.getElementById('prod-preco').value || '0');
+    dados.append('precoVenda', desmascararMoeda(document.getElementById('prod-preco').value));
     dados.append('fornecedorId', document.getElementById('prod-fornecedor').value || '');
     dados.append('qtdInicial', document.getElementById('prod-qtd').value || '0');
     dados.append('qtdMinima', document.getElementById('prod-minimo').value || '5');
+
+    const inputCusto = document.querySelector('input[name="custoTotal"]');
+    const selectForma = document.querySelector('select[name="formaPagamento"]');
+
+    dados.append('custoTotal', desmascararMoeda(document.querySelector('input[name="custoTotal"]').value));
+    dados.append('formaPagamento', selectForma ? selectForma.value : 'DINHEIRO');
 
     try {
         const response = await fetch('../api/produto/cadastrar', {
@@ -178,12 +195,12 @@ async function excluirProduto(produtoId) {
     try {
         const res = await fetch('../api/produto/excluir', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: `id=${produtoId}`
         });
 
         if (res.ok) {
-            carregarEstoque(); 
+            carregarEstoque();
         } else {
             alert("Não foi possível excluir: " + await res.text());
         }
@@ -191,6 +208,14 @@ async function excluirProduto(produtoId) {
         console.error("Erro de comunicação ao excluir produto:", e);
         alert("Erro ao comunicar com o servidor.");
     }
+}
+
+
+function desmascararMoeda(valorMascara) {
+    if (!valorMascara)
+        return '0.00';
+    let limpo = valorMascara.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.').trim();
+    return limpo || '0.00';
 }
 
 
@@ -219,7 +244,6 @@ async function listarFornecedores() {
     }
 }
 
-
 async function carregarFornecedoresConfig() {
     const el = document.getElementById('tbody-fornecedores-config');
     if (!el)
@@ -235,7 +259,6 @@ async function carregarFornecedoresConfig() {
                 return;
             }
 
-            // Agora desenhamos linhas de Tabela (<tr>) em vez de divs
             el.innerHTML = listaFornecedoresLocal.map(f => `
                 <tr style="border-bottom: 1px solid #2a2a2a;">
                     <td style="padding: 12px;">
@@ -247,6 +270,10 @@ async function carregarFornecedoresConfig() {
                     <td style="padding: 12px; text-align: right;">
                         <button onclick="editarFornecedor(${f.id})" style="background: transparent; border: none; color: #007bff; cursor: pointer; font-size: 1.1rem; padding: 5px;" title="Editar">
                             <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        <button onclick="excluirFornecedor(${f.id})" style="background: transparent; border: none; color: #dc3545; cursor: pointer; font-size: 1.1rem; padding: 5px; margin-left: 10px;" title="Excluir">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 </tr>
@@ -342,5 +369,86 @@ async function salvarFornecedor(e) {
         }
     } catch (error) {
         console.error("Erro na requisição:", error);
+    }
+}
+
+async function excluirFornecedor(id) {
+    if (!confirm("⚠️ Tem a certeza que deseja excluir este fornecedor?\nEsta ação não poderá ser desfeita."))
+        return;
+
+    try {
+        const response = await fetch(`../api/fornecedor/excluir?id=${id}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            // Chama a sua função que recarrega a tabela de fornecedores
+            if (typeof carregarFornecedores === 'function') {
+                await carregarFornecedores();
+            }
+            alert("Fornecedor removido com sucesso!");
+        } else {
+            const erroMsg = await response.text();
+            alert(erroMsg || "Erro ao excluir fornecedor.");
+        }
+    } catch (error) {
+        console.error("Erro na requisição:", error);
+        alert("Erro de comunicação com o servidor.");
+    }
+}
+
+
+// ==========================================
+// LÓGICA DE DESPESA 
+// ==========================================
+
+function abrirModalDespesa() {
+    const modal = document.getElementById('modal-despesa-manual');
+    if (modal) {
+        document.getElementById('form-despesa-manual').reset();
+        modal.classList.remove('hidden');
+    }
+}
+
+function fecharModalDespesa() {
+    const modal = document.getElementById('modal-despesa-manual');
+    if (modal)
+        modal.classList.add('hidden');
+}
+
+// Salvar a Despesa
+async function salvarDespesaManual(e) {
+    e.preventDefault();
+    const form = e.target;
+    const dados = new URLSearchParams();
+
+    dados.append('descricao', form.descricao.value);
+
+    let valorCru = form.valor.value.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.').trim();
+    if (!valorCru)
+        valorCru = '0.00';
+
+    dados.append('valor', valorCru);
+    dados.append('status', form.status.value);
+
+    // Se o fornecedor ficar vazio, enviamos 'Diversos'
+    dados.append('fornecedor', form.fornecedor.value || 'Diversos');
+    dados.append('formaPagamento', form.formaPagamento.value);
+
+    try {
+        const res = await fetch('../api/despesas/cadastrar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: dados
+        });
+
+        if (res.ok) {
+            fecharModalDespesa();
+            await carregarDespesas(); // Atualiza a aba na hora!
+        } else {
+            alert("Erro ao lançar a despesa.");
+        }
+    } catch (err) {
+        console.error("Erro na comunicação:", err);
     }
 }

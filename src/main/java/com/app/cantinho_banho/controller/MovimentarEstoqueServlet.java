@@ -37,9 +37,29 @@ public class MovimentarEstoqueServlet extends HttpServlet {
                     return;
                 }
                 estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() - quantidade);
-            } else if ("ENTRADA".equalsIgnoreCase(tipo)) {
-                estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() + quantidade);
-                estoque.setDataUltimaReposicao(LocalDateTime.now());
+//            } else if ("ENTRADA".equalsIgnoreCase(tipo)) {
+//                estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() + quantidade);
+//                estoque.setDataUltimaReposicao(LocalDateTime.now());
+//
+//                String custoStr = request.getParameter("custoTotal");
+//                String formaPag = request.getParameter("formaPagamento");
+//
+//                if (custoStr != null && !custoStr.trim().isEmpty()) {
+//                    com.app.cantinho_banho.model.Despesa despesa = new com.app.cantinho_banho.model.Despesa();
+//                    despesa.setDescricao("Compra de " + quantidade + "x " + estoque.getProduto().getNome());
+//                    despesa.setValor(Double.parseDouble(custoStr));
+//                    despesa.setFormaPagamento(formaPag != null ? formaPag : "DINHEIRO");
+//                    despesa.setStatus("PAGO");
+//                    despesa.setDataCriacao(LocalDateTime.now());
+//
+//                    if (estoque.getProduto().getFornecedor() != null) {
+//                        despesa.setFornecedor(estoque.getProduto().getFornecedor().getRazaoSocial());
+//                    } else {
+//                        despesa.setFornecedor("Fornecedor Avulso");
+//                    }
+//
+//                    new com.app.cantinho_banho.dao.DespesaDAO().salvar(despesa);
+//                }
             } else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.getWriter().write("Tipo de movimentação inválida.");
@@ -49,6 +69,7 @@ public class MovimentarEstoqueServlet extends HttpServlet {
             estoqueDAO.salvar(estoque); // Atualiza no banco
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write("Estoque atualizado com sucesso!");
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosProduto();
 
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

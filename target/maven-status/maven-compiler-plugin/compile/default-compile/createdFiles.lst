@@ -5,6 +5,7 @@ com\app\cantinho_banho\model\Funcionario.class
 com\app\cantinho_banho\controller\AtualizarHorariosServlet.class
 com\app\cantinho_banho\model\Pacote.class
 com\app\cantinho_banho\controller\CadastrarFornecedorServlet.class
+com\app\cantinho_banho\controller\ListarDespesasServlet.class
 com\app\cantinho_banho\controller\ListarFuncionariosServlet.class
 com\app\cantinho_banho\controller\CadastrarPacoteServlet.class
 com\app\cantinho_banho\websocket\AtualizacaoWebSocket.class
@@ -17,10 +18,14 @@ com\app\cantinho_banho\dao\ServicoDAO.class
 com\app\cantinho_banho\controller\ConcluirAgendamentoServlet.class
 com\app\cantinho_banho\controller\CadastrarProdutoServlet.class
 com\app\cantinho_banho\controller\ResetSenhaServlet.class
+com\app\cantinho_banho\controller\ExcluirDespesaServlet.class
 com\app\cantinho_banho\controller\LoginServlet.class
 com\app\cantinho_banho\controller\AgendamentoServlet.class
 com\app\cantinho_banho\controller\ListarPacotesServlet.class
+com\app\cantinho_banho\controller\CadastrarDespesaServlet.class
+com\app\cantinho_banho\model\Despesa.class
 com\app\cantinho_banho\controller\CriarAcessoClienteServlet.class
+com\app\cantinho_banho\dao\DespesaDAO.class
 com\app\cantinho_banho\controller\ListarVendasServlet.class
 com\app\cantinho_banho\controller\ListarEstoqueServlet.class
 com\app\cantinho_banho\controller\CadastroFuncionarioServlet.class
@@ -40,6 +45,7 @@ com\app\cantinho_banho\model\Agendamento.class
 com\app\cantinho_banho\controller\MovimentarEstoqueServlet.class
 com\app\cantinho_banho\controller\ListarFuncionariosAdmServlet.class
 com\app\cantinho_banho\controller\ListarFornecedoresServlet.class
+com\app\cantinho_banho\controller\BaixarDespesaServlet.class
 com\app\cantinho_banho\controller\ConfirmarAgendamentoServlet.class
 com\app\cantinho_banho\controller\VincularPacoteServlet.class
 com\app\cantinho_banho\controller\CadastrarClienteServlet.class
@@ -56,6 +62,7 @@ com\app\cantinho_banho\controller\ExcluirAgendamentoServlet.class
 com\app\cantinho_banho\controller\AtualizarServicoServlet.class
 com\app\cantinho_banho\model\HorarioFuncionamento.class
 com\app\cantinho_banho\controller\ListarHorariosServlet.class
+com\app\cantinho_banho\controller\ExcluirFornecedorServlet.class
 com\app\cantinho_banho\controller\ExcluirPacoteServlet.class
 com\app\cantinho_banho\model\Cliente.class
 com\app\cantinho_banho\dao\PacoteDAO.class

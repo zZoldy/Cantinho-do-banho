@@ -55,6 +55,30 @@ public class CadastrarProdutoServlet extends HttpServlet {
             EstoqueDAO estoqueDAO = new EstoqueDAO();
             estoqueDAO.salvar(estoque);
 
+            int quantidadeEstoque = estoque.getQuantidadeAtual();
+            String custoStr = request.getParameter("custoTotal");
+            String formaPag = request.getParameter("formaPagamento");
+
+            // Só gera despesa se a pessoa colocou estoque > 0 e digitou o custo (maior que zero)
+            if (quantidadeEstoque > 0 && custoStr != null && !custoStr.trim().isEmpty() && !custoStr.equals("0.00")) {
+                com.app.cantinho_banho.model.Despesa despesaInicial = new com.app.cantinho_banho.model.Despesa();
+                despesaInicial.setDescricao("Estoque Inicial: " + quantidadeEstoque + "x " + produto.getNome());
+
+                try {
+                    despesaInicial.setValor(Double.parseDouble(custoStr)); 
+                } catch (NumberFormatException ex) {
+                    despesaInicial.setValor(0.0);
+                }
+
+                despesaInicial.setFormaPagamento(formaPag != null && !formaPag.isEmpty() ? formaPag : "DINHEIRO");
+                despesaInicial.setStatus("PAGO");
+                despesaInicial.setDataCriacao(java.time.LocalDateTime.now());
+                despesaInicial.setFornecedor(produto.getFornecedor() != null ? produto.getFornecedor().getRazaoSocial(): "Fornecedor Avulso");
+                despesaInicial.setTipoMovimentacao("DESPESA");
+
+                new com.app.cantinho_banho.dao.DespesaDAO().salvar(despesaInicial);
+            }
+
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write("Produto e Estoque cadastrados com sucesso!");
 

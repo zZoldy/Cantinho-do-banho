@@ -1030,7 +1030,7 @@
             <!-- ═══════════════ PAGAMENTOS ═══════════════ -->
             <section class="page hidden" id="page-pagamentos">
                 <div class="page-header">
-                    <h3>Controle de Pagamentos</h3>
+                    <h3>Controle Financeiro</h3>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <select id="filtro-periodo-pag" class="input-select-sm" onchange="renderPagamentos()">
                             <option value="mes">Este mês</option><option value="semana">Esta semana</option><option value="ano">Este ano</option><option value="todos">Todos</option>
@@ -1039,20 +1039,61 @@
                     </div>
                 </div>
 
-                <!-- Totais por método -->
-                <div id="metodos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px"></div>
-
-                <div class="cards-resumo" style="margin-bottom:24px">
-                    <div class="card-resumo"><div class="card-resumo-icon verde"><i class="fas fa-check"></i></div><div><span class="card-resumo-valor" id="pag-total-pago">R$ 0</span><span class="card-resumo-label">Total Pago</span></div></div>
-                    <div class="card-resumo"><div class="card-resumo-icon amarelo"><i class="fas fa-hourglass-half"></i></div><div><span class="card-resumo-valor" id="pag-total-pendente">R$ 0</span><span class="card-resumo-label">Total Pendente</span></div></div>
-                    <div class="card-resumo"><div class="card-resumo-icon azul"><i class="fas fa-receipt"></i></div><div><span class="card-resumo-valor" id="pag-total-geral">R$ 0</span><span class="card-resumo-label">Faturamento Total</span></div></div>
+                <div class="financeiro-tabs" style="margin-top: -10px; margin-bottom: 20px;">
+                    <button class="fin-tab active" onclick="mudarAbaFinanceiro('visao-geral', this)"><i class="fas fa-chart-pie"></i> Visão Geral</button>
+                    <button class="fin-tab" onclick="mudarAbaFinanceiro('receber', this)"><i class="fas fa-arrow-down" style="color: #28a745;"></i> Contas a Receber</button>
+                    <button class="fin-tab" onclick="mudarAbaFinanceiro('pagar', this)"><i class="fas fa-arrow-up" style="color: #dc3545;"></i> Contas a Pagar</button>
                 </div>
 
-                <div class="tabela-wrapper">
-                    <table class="tabela">
-                        <thead><tr><th>Pet / Dono</th><th>Serviço</th><th>Funcionário</th><th>Valor</th><th>Forma de Pagto</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead>
-                        <tbody id="tbody-pagamentos"></tbody>
-                    </table>
+                <div id="aba-visao-geral" class="fin-conteudo active">
+                    <div id="metodos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px"></div>
+
+                    <div class="cards-resumo" style="margin-bottom:24px">
+                        <div class="card-resumo">
+                            <div class="card-resumo-icon verde"><i class="fas fa-arrow-down"></i></div>
+                            <div><span class="card-resumo-valor" id="pag-total-pago">R$ 0</span><span class="card-resumo-label">Total Entradas</span></div>
+                        </div>
+                        <div class="card-resumo">
+                            <div class="card-resumo-icon" style="background: rgba(220,53,69,0.1); color: #dc3545;"><i class="fas fa-arrow-up"></i></div>
+                            <div><span class="card-resumo-valor" id="pag-total-despesa" style="color: #dc3545;">R$ 0</span><span class="card-resumo-label">Total Saídas</span></div>
+                        </div>
+                        <div class="card-resumo">
+                            <div class="card-resumo-icon azul"><i class="fas fa-balance-scale"></i></div>
+                            <div><span class="card-resumo-valor" id="pag-total-geral">R$ 0</span><span class="card-resumo-label">Saldo Líquido</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="aba-receber" class="fin-conteudo">
+                    <div class="tabela-wrapper">
+                        <table class="tabela">
+                            <thead><tr><th>Cliente / Ref.</th><th>Descrição</th><th>Valor</th><th>Forma de Pagto</th><th>Data</th><th>Status</th><th style="text-align:right">Ações</th></tr></thead>
+                            <tbody id="tbody-receitas"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="aba-pagar" class="fin-conteudo">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+                        <button onclick="abrirModalDespesa()" class="btn-primary" style="background: #dc3545; border-color: #dc3545; padding: 6px 12px; font-size: 0.85rem;">
+                            <i class="fas fa-plus"></i> Nova Despesa
+                        </button>
+                    </div>
+                    <div class="tabela-wrapper">
+                        <table class="tabela">
+                            <thead>
+                                <tr>
+                                    <th>Fornecedor / Destino</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th style="text-align:right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-despesas"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -1064,18 +1105,18 @@
 
                 <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
 
-                    <div style="width: 240px; background: #161616; border: 1px solid #252525; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
-                        <button class="btn-filtro active" onclick="navConfig('servicos')" id="btn-conf-servicos" style="text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
-                            <i class="fas fa-cut"></i> Serviços Base
+                    <div class="config-nav-container">
+                        <button class="btn-filtro active" onclick="navConfig('servicos')" id="btn-conf-servicos">
+                            <i class="fas fa-cut"></i> <span>Serviços Base</span>
                         </button>
-                        <button class="btn-filtro" onclick="navConfig('horarios')" id="btn-conf-horarios" style="text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
-                            <i class="far fa-clock"></i> Funcionamento
+                        <button class="btn-filtro" onclick="navConfig('horarios')" id="btn-conf-horarios">
+                            <i class="fas fa-clock"></i> <span>Funcionamento</span>
                         </button>
-                        <button class="btn-filtro" onclick="navConfig('pacotes')" id="btn-conf-pacotes" style="text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
-                            <i class="fas fa-box"></i> Pacotes
+                        <button class="btn-filtro" onclick="navConfig('pacotes')" id="btn-conf-pacotes">
+                            <i class="fas fa-box"></i> <span>Pacotes</span>
                         </button>
-                        <button class="btn-filtro" onclick="navConfig('fornecedores')" id="btn-conf-fornecedores" style="text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
-                            <i class="fas fa-truck"></i> Fornecedores
+                        <button class="btn-filtro" onclick="navConfig('fornecedores')" id="btn-conf-fornecedores">
+                            <i class="fas fa-truck"></i> <span>Fornecedores</span>
                         </button>
                     </div>
 
@@ -1566,7 +1607,7 @@
                             </div>
                             <div class="field" style="flex: 1; margin-bottom: 0;">
                                 <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Preço Venda (R$)</label>
-                                <input type="number" step="0.01" id="prod-preco" class="form-ctrl" placeholder="0.00">
+                                <input type="text" id="prod-preco" class="form-ctrl" required placeholder="R$ 0,00" oninput="mascaraMoeda(event)">
                             </div>
                         </div>
 
@@ -1585,6 +1626,22 @@
                             <div class="field" style="flex: 1; margin-bottom: 0;">
                                 <label style="font-size: 0.8rem; color: #dc3545; display: block; margin-bottom: 5px;">Alerta Mínimo</label>
                                 <input type="number" id="prod-minimo" value="5" min="1" class="form-ctrl" required style="color: #dc3545; font-weight: bold;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Custo Total (R$) <small style="color:#555;">(Opcional)</small></label>
+                                <input type="text" name="custoTotal" class="form-ctrl" placeholder="R$ 0,00" oninput="mascaraMoeda(event)">
+                            </div>
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Pagamento (Estoque)</label>
+                                <select name="formaPagamento" class="form-ctrl">
+                                    <option value="DINHEIRO">Dinheiro</option>
+                                    <option value="PIX">PIX</option>
+                                    <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                                    <option value="BOLETO">Boleto</option>
+                                </select>
                             </div>
                         </div>
 
@@ -1642,6 +1699,62 @@
                         <button type="button" onclick="fecharModalFornecedor()" class="btn-secundario">Cancelar</button>
                         <button type="submit" class="btn-primary" style="background: #28a745; border-color: #28a745;">
                             <i class="fas fa-save"></i> Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══ MODAL DESPESA ═══ -->
+        <div class="modal-overlay hidden" id="modal-despesa-manual">
+            <div class="modal modal-sm" style="border-top: 5px solid #dc3545;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-hand-holding-usd" style="color: #dc3545; margin-right: 8px;"></i> Nova Despesa</h3>
+                    <button type="button" onclick="fecharModalDespesa()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <form id="form-despesa-manual" onsubmit="salvarDespesaManual(event)">
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Descrição (Ex: Luz, Água, Aluguel) <span style="color:red">*</span></label>
+                            <input type="text" name="descricao" class="form-ctrl" required placeholder="O que você está pagando?">
+                        </div>
+
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Valor (R$) <span style="color:red">*</span></label>
+                                <input type="text" name="valor" class="form-ctrl" required placeholder="R$ 0,00" oninput="mascaraMoeda(event)">
+                            </div>
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Status da Conta</label>
+                                <select name="status" class="form-ctrl">
+                                    <option value="PAGO">Já Pago</option>
+                                    <option value="PENDENTE">Pendente (A Pagar)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Fornecedor / Destino</label>
+                            <input type="text" name="fornecedor" class="form-ctrl" placeholder="Ex: EDP, Imobiliária, Funcionário...">
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Forma de Pagamento</label>
+                            <select name="formaPagamento" class="form-ctrl">
+                                <option value="DINHEIRO">Dinheiro</option>
+                                <option value="PIX">PIX</option>
+                                <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                                <option value="BOLETO">Boleto</option>
+                                <option value="TRANSFERENCIA">Transferência Bancária</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="fecharModalDespesa()" class="btn-secundario">Cancelar</button>
+                        <button type="submit" class="btn-primary" style="background:#dc3545; border-color:#dc3545;">
+                            <i class="fas fa-save"></i> Salvar Despesa
                         </button>
                     </div>
                 </form>
@@ -1779,7 +1892,8 @@
                     }
 
                     if (event.data === "ATUALIZAR_PRODUTO") {
-                        await listarEstoque()();
+                        await listarEstoque();
+                        await carregarDespesas();
 
                         if (typeof renderEstoque === 'function')
                             renderEstoque();
@@ -1803,6 +1917,12 @@
                     if (event.data === "ATUALIZAR_PACOTE") {
                         if (typeof carregarPacotesAdmin() === 'function')
                             carregarPacotesAdmin();
+                    }
+
+
+                    if (event.data === "ATUALIZAR_DESPESA") {
+                        if (typeof carregarDespesas() === 'function')
+                            carregarDespesas();
                     }
                 };
 
@@ -1871,6 +1991,7 @@
 
                 if (page === 'pagamentos') {
                     await carregarVendasPacotes();
+                    await carregarDespesas();
                 }
 
                 if (page === 'estoques') {
@@ -2432,25 +2553,49 @@
             let editandoPagId = null;
             let listaVendasPacotes = [];
 
+            async function mudarAbaFinanceiro(idAba, botaoClicado) {
+                // 1. UI: Atualiza os botões e esconde os conteúdos
+                document.querySelectorAll('.fin-tab').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.fin-conteudo').forEach(aba => aba.classList.remove('active'));
+
+                botaoClicado.classList.add('active');
+                const abaAlvo = document.getElementById('aba-' + idAba);
+                abaAlvo.classList.add('active');
+
+                if (idAba === 'pagar') {
+                    // Opcional: mostrar um 'carregando...' na tabela enquanto espera
+                    document.getElementById('tbody-despesas').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">Sincronizando com o banco...</td></tr>`;
+
+                    await carregarDespesas(); // Espera os dados virem do Java
+                } else if (idAba === 'receber' || idAba === 'visao-geral') {
+                    renderPagamentos();
+                }
+            }
+
+// O Motor de Renderização do Financeiro
             function renderPagamentos() {
                 const periodo = document.getElementById('filtro-periodo-pag')?.value || 'mes';
                 const ano = hoje.getFullYear().toString();
 
-                // 🟢 1. União de dados: Agendamentos + Vendas
+                // 1. Unir todas as bases de dados disponíveis globalmente
                 const vendas = typeof listaVendasPacotes !== 'undefined' ? listaVendasPacotes : [];
-                const todosItens = [...historico, ...agenda, ...retirada, ...vendas];
+                const despesas = typeof listaDespesas !== 'undefined' ? listaDespesas : [];
+                // historico, agenda e retirada vêm do seu agendamento.js
+                const todosItens = [...(typeof historico !== 'undefined' ? historico : []),
+                    ...(typeof agenda !== 'undefined' ? agenda : []),
+                    ...(typeof retirada !== 'undefined' ? retirada : []),
+                    ...vendas, ...despesas];
 
-                // 🟢 2. Filtro de Datas
-                let lista = todosItens.filter(a => {
-                    let dataRef = a.data || a.dataVenda || a.dataCriacao;
+                // 2. Filtrar por Período
+                let listaFiltrada = todosItens.filter(item => {
+                    let dataRef = item.data || item.dataVenda || item.dataCriacao || item.dataCompra;
                     if (!dataRef)
                         return false;
-
                     if (dataRef.includes('T'))
                         dataRef = dataRef.split('T')[0];
 
                     if (periodo === 'mes')
-                        return dataRef.startsWith(mesMes);
+                        return dataRef.startsWith(mesMes); // mesMes vem das vars globais
                     if (periodo === 'semana') {
                         const seg = new Date(hoje);
                         seg.setDate(hoje.getDate() - hoje.getDay() + 1);
@@ -2463,107 +2608,153 @@
                     return true;
                 });
 
-                // 🟢 3. Cálculos de Totais (Padronizado)
-                const metodos = {Pix: 0, Dinheiro: 0, 'Cartão de Crédito': 0, 'Cartão de Débito': 0, 'Pacote': 0};
-                let pagoTotal = 0;
-                let pendenteTotal = 0;
+                let totalReceitas = 0;
+                let totalDespesas = 0;
+                let htmlReceitas = '';
+                let htmlDespesas = '';
 
-                lista.forEach(a => {
-                    const isVenda = !!(a.dataVenda || a.itens || a.dataCriacao);
-                    const status = a.statusPag || a.status_pagamento || a.status || (isVenda ? 'Pago' : 'Pendente');
-                    const valor = a.valor || a.valorPago || a.valorTotal || 0;
-                    const forma = a.formaPag || a.forma_pagamento || a.formaPagamento || '';
-
-                    if (status === 'Pago' || status === 'PAGO') {
-                        pagoTotal += valor;
-                        // Tratamento para não quebrar a chave do objeto (ex: CARTAO_CREDITO vs Cartão de Crédito)
-                        const formaLimpa = forma.replace('_', ' ');
-                        if (metodos[formaLimpa] !== undefined)
-                            metodos[formaLimpa] += valor;
-                    } else {
-                        pendenteTotal += valor;
-                    }
+                listaFiltrada.sort((a, b) => {
+                    const d1 = a.data || a.dataVenda || a.dataCriacao || a.dataCompra;
+                    const d2 = b.data || b.dataVenda || b.dataCriacao || b.dataCompra;
+                    return (d2 || '').localeCompare(d1 || '');
                 });
 
-                document.getElementById('pag-total-pago').textContent = `R$ ${pagoTotal.toFixed(2)}`;
-                document.getElementById('pag-total-pendente').textContent = `R$ ${pendenteTotal.toFixed(2)}`;
-                document.getElementById('pag-total-geral').textContent = `R$ ${(pagoTotal + pendenteTotal).toFixed(2)}`;
+                listaFiltrada.forEach(item => {
+                    const isDespesa = item.tipoMovimentacao === 'DESPESA' || item.custoTotal !== undefined;
+                    const isVenda = !!(item.dataVenda || item.itens || item.dataCriacao) && !isDespesa;
 
-                // 🟢 4. Renderização da Tabela
-                const tbody = document.getElementById('tbody-pagamentos');
-                if (!tbody)
-                    return;
+                    const valor = item.valor || item.valorPago || item.valorTotal || item.custoTotal || 0;
+                    const status = item.statusPag || item.status_pagamento || item.status || (isVenda || isDespesa ? 'Pago' : 'Pendente');
+                    const forma = (item.formaPag || item.forma_pagamento || item.formaPagamento || '—').replace('_', ' ');
 
-                if (!lista.length) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:#888;">Nenhum registro encontrado neste período.</td></tr>`;
-                    return;
-                }
-
-                // Ordena da data mais recente para a mais antiga
-                tbody.innerHTML = lista.sort((a, b) => {
-                    const d1 = a.data || a.dataVenda || a.dataCriacao;
-                    const d2 = b.data || b.dataVenda || b.dataCriacao;
-                    return d2.localeCompare(d1);
-                }).map(a => {
-                    // --- PADRONIZAÇÃO DE VARIÁVEIS ---
-                    const isVenda = !!(a.dataVenda || a.itens || a.dataCriacao);
-                    const statusFinanceiro = a.statusPag || a.status_pagamento || a.status || (isVenda ? 'Pago' : 'Pendente');
-                    const statusServico = isVenda ? 'VENDA' : (a.status || '—');
-
-                    let nomePrincipal, cliente, descricao;
-
-                    if (isVenda) {
-                        cliente = a.clienteNome || a.cliente || '—';
-
-                        if (a.itens && a.itens.length > 0) {
-                            // É uma Venda Nova (Carrinho)
-                            nomePrincipal = `🛒 Venda #${a.id || ''}`;
-                            const qtdItens = a.itens.reduce((sum, i) => sum + i.quantidade, 0);
-                            const nomes = a.itens.map(i => i.nomeProdutoOuServico || i.nome).join(', ');
-                            descricao = nomes.length > 25 ? nomes.substring(0, 25) + '...' : nomes;
-                            descricao += ` <span style="color:#C9A96E; font-size:0.75rem;">(${qtdItens} item${qtdItens > 1 ? 's' : ''})</span>`;
-                        } else {
-                            // É uma Venda Antiga (Pacote)
-                            nomePrincipal = `📦 Pacote: ${a.pacoteNome || 'Personalizado'}`;
-                            descricao = 'Aquisição de Pacote';
-                        }
-                    } else {
-                        // É um Agendamento
-                        nomePrincipal = a.pet || '—';
-                        cliente = a.dono || '—';
-                        descricao = a.servico || '—';
-                    }
-
-                    const valor = a.valor || a.valorPago || a.valorTotal || 0;
-                    const forma = a.formaPag || a.forma_pagamento || a.formaPagamento || '—';
-
-                    // Limpa o "T" da data
-                    let dataLimpa = a.data || a.dataVenda || a.dataCriacao || '';
+                    let dataLimpa = item.data || item.dataVenda || item.dataCriacao || item.dataCompra || '';
                     if (dataLimpa.includes('T'))
                         dataLimpa = dataLimpa.split('T')[0];
                     const dataExibicao = fd(dataLimpa);
 
-                    // --- CONSTRUÇÃO DA LINHA DO HTML ---
-                    return `
-                    <tr ${isVenda ? 'style="background: rgba(201, 169, 110, 0.04);"' : ''}>
-                        <td><strong>${nomePrincipal}</strong><br><small style="color:#888">${cliente}</small></td>
-                        <td>${descricao}</td>
-                        <td>${a.funcionario || (isVenda ? 'Sistema/Caixa' : '—')}</td>
-                        <td>R$ ${valor.toFixed(2)}</td>
-                        <td>${forma.replace('_', ' ')}</td>
-                        <td>${dataExibicao}</td>
-                        <td><span class="badge-status-${statusServico.toLowerCase()}">${statusServico}</span></td>
-                        <td style="color: ${statusFinanceiro === 'Pago' || statusFinanceiro === 'PAGO' ? '#5ac75a' : '#c77a7a'}; font-weight: bold;">
-                            ${statusFinanceiro.toUpperCase()}
-                        </td>
-                        <td style="text-align:right">
-                            <button class="btn-visualizar" onclick="abrirModalVisualizacaoPag(${a.id}, ${isVenda})" title="Ver Detalhes">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    `;
-                }).join('');
+                    if (status.toUpperCase() === 'PAGO' || status.toUpperCase() === 'CONCLUÍDO') {
+                        if (isDespesa)
+                            totalDespesas += valor;
+                        else
+                            totalReceitas += valor;
+                    }
+
+                    if (isDespesa) {
+                        const fornecedor = item.fornecedor || 'Fornecedor / Diversos';
+                        const descricao = item.nomeProduto ? `Compra de ${item.quantidade}x ${item.nomeProduto}` : (item.descricao || 'Despesa');
+
+                        // 🟢 Lógica dos Botões de Ação
+                        const btnPagar = status.toUpperCase() === 'PENDENTE'
+                                ? `<button onclick="baixarDespesa(${item.id})" title="Marcar como Pago" style="background:none; border:none; color:#28a745; cursor:pointer; margin-right:10px; font-size: 1.1rem;"><i class="fas fa-check-circle"></i></button>`
+                                : '';
+
+                        const btnExcluir = `<button onclick="excluirDespesa(${item.id})" title="Excluir Despesa" style="background:none; border:none; color:#dc3545; cursor:pointer; font-size: 1.1rem;"><i class="fas fa-trash"></i></button>`;
+
+                        htmlDespesas += `
+                <tr>
+                    <td><strong>${fornecedor}</strong></td>
+                    <td>${descricao}</td>
+                    <td style="color: #dc3545; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
+                    <td>${dataExibicao}</td>
+                    <td style="color: ${status.toUpperCase() === 'PAGO' ? '#28a745' : '#dc3545'}; font-weight:bold;">${status.toUpperCase()}</td>
+                    <td style="text-align:right">
+                        ${btnPagar}
+                        ${btnExcluir}
+                    </td>
+                </tr>
+            `;
+                    } else {
+                        let nomePrincipal = isVenda ? `🛒 Venda #${item.id || ''}` : (item.pet || '—');
+                        let cliente = isVenda ? (item.clienteNome || item.cliente || '—') : (item.dono || '—');
+                        let descricao = '';
+
+                        if (isVenda) {
+                            if (item.itens && item.itens.length > 0) {
+                                const qtdItens = item.itens.reduce((sum, i) => sum + i.quantidade, 0);
+                                const nomes = item.itens.map(i => i.nomeProdutoOuServico || i.nome).join(', ');
+                                descricao = nomes.length > 25 ? nomes.substring(0, 25) + '...' : nomes;
+                                descricao += ` <span style="color:#C9A96E; font-size:0.75rem;">(${qtdItens} itens)</span>`;
+                            } else {
+                                descricao = `📦 Pacote: ${item.pacoteNome || 'Personalizado'}`;
+                            }
+                        } else {
+                            descricao = item.servico || '—';
+                        }
+
+                        htmlReceitas += `
+                <tr>
+                    <td><strong>${nomePrincipal}</strong><br><small style="color:#888">${cliente}</small></td>
+                    <td>${descricao}</td>
+                    <td>R$ ${valor.toFixed(2)}</td>
+                    <td>${forma}</td>
+                    <td>${dataExibicao}</td>
+                    <td style="color: ${status.toUpperCase() === 'PAGO' ? '#28a745' : '#dc3545'}; font-weight:bold;">${status.toUpperCase()}</td>
+                    <td style="text-align:right">
+                        <button class="btn-visualizar" onclick="abrirModalVisualizacaoPag(${item.id}, ${isVenda})" title="Ver Detalhes">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+                    }
+                });
+
+                // Atualiza Tela
+                const elPago = document.getElementById('pag-total-pago');
+                const elDespesa = document.getElementById('pag-total-despesa');
+                const elGeral = document.getElementById('pag-total-geral');
+
+                if (elPago)
+                    elPago.textContent = `R$ ${totalReceitas.toFixed(2)}`;
+                if (elDespesa)
+                    elDespesa.textContent = `R$ ${totalDespesas.toFixed(2)}`;
+
+                if (elGeral) {
+                    const lucro = totalReceitas - totalDespesas;
+                    elGeral.textContent = `R$ ${lucro.toFixed(2)}`;
+                    elGeral.style.color = lucro >= 0 ? '#C9A96E' : '#dc3545';
+                }
+
+                const tbodyReceitas = document.getElementById('tbody-receitas');
+                if (tbodyReceitas)
+                    tbodyReceitas.innerHTML = htmlReceitas || `<tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Nenhuma entrada/receita encontrada.</td></tr>`;
+
+                const tbodyDespesas = document.getElementById('tbody-despesas');
+                if (tbodyDespesas)
+                    tbodyDespesas.innerHTML = htmlDespesas || `<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">Nenhuma saída/despesa encontrada.</td></tr>`;
+            }
+
+            async function baixarDespesa(id) {
+                if (!confirm("Confirmar o pagamento desta despesa?"))
+                    return;
+
+                try {
+                    const res = await fetch(`../api/despesas/baixar?id=${id}`, {method: 'POST'});
+                    if (res.ok) {
+                        await carregarDespesas(); // Recarrega os dados e atualiza a tabela
+                        alert("Despesa marcada como paga com sucesso!");
+                    } else {
+                        alert("Erro ao baixar despesa.");
+                    }
+                } catch (e) {
+                    console.error("Erro na comunicação:", e);
+                }
+            }
+
+            async function excluirDespesa(id) {
+                if (!confirm("Tem a certeza que deseja excluir esta despesa? Esta ação não pode ser desfeita."))
+                    return;
+
+                try {
+                    const res = await fetch(`../api/despesas/excluir?id=${id}`, {method: 'POST'});
+                    if (res.ok) {
+                        await carregarDespesas(); // Recarrega os dados e atualiza a tabela
+                    } else {
+                        alert("Erro ao excluir despesa.");
+                    }
+                } catch (e) {
+                    console.error("Erro na comunicação:", e);
+                }
             }
 
             function abrirModalVisualizacaoPag(id, isVenda = false) {
@@ -2580,7 +2771,7 @@
                     console.error("Item não encontrado para o ID:", id);
                     return;
                 }
-                
+
                 document.getElementById('vp-id').innerText = item.id || 'N/A';
 
                 const clienteNome = isVenda ? (item.clienteNome || item.cliente || 'Cliente Padrão') : (item.dono || '—');

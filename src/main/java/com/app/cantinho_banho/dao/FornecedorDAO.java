@@ -57,4 +57,23 @@ public class FornecedorDAO {
         }
     }
 
+    public void excluir(Long id) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            Fornecedor fornecedor = em.find(Fornecedor.class, id);
+            if (fornecedor != null) {
+                em.remove(fornecedor);
+            }
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
+
 }

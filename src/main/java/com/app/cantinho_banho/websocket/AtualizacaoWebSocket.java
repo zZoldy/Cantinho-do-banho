@@ -106,4 +106,16 @@ public class AtualizacaoWebSocket {
             }
         }
     }
+
+    public static void notificarTodosDespesa() {
+        for (Session s : sessoes) {
+            if (s.isOpen()) {
+                try {
+                    s.getBasicRemote().sendText("ATUALIZAR_DESPESA");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }
