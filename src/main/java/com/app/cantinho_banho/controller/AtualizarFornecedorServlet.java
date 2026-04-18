@@ -15,6 +15,7 @@ public class AtualizarFornecedorServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
         try {
             Long id = Long.parseLong(request.getParameter("id"));
             FornecedorDAO dao = new FornecedorDAO();

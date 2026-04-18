@@ -10,18 +10,19 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/api/pets/atualizar-obs")
 public class AtualizarObsPetServlet extends HttpServlet {
-    
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
-        
+        response.setCharacterEncoding("UTF-8");
+
         try {
             Long id = Long.parseLong(request.getParameter("id"));
             String obs = request.getParameter("obs");
 
             PetDAO dao = new PetDAO();
             Pet pet = dao.buscarPorId(id);
-            
+
             if (pet != null) {
                 pet.setObs(obs);
                 dao.salvarOuAtualizar(pet);

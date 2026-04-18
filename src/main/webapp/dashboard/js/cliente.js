@@ -1,4 +1,4 @@
-let editCliId = null;
+let clienteSendoEditado = null;
 let listaClientes = [];
 
 async function carregarClientesDoBanco() {
@@ -28,7 +28,6 @@ async function listarClientesBD() {
     try {
         const resClientes = await fetch('../api/clientes/listar');
         if (resClientes.ok) {
-            // Atualiza a variável global (não se esqueça de a declarar no topo do arquivo se não existir: let horariosSemana = [];)
             listaClientes = await resClientes.json();
         }
 
@@ -178,15 +177,23 @@ function renderClientes() {
 // ================= FLUXO DE CRIAR ACESSO (CLIENTE) =================
 
 function abrirModalCriarUsuario(id, nome) {
-
-    if (typeof fecharFocoCliente === 'function') {
+    if (typeof fecharFocoCliente === 'function')
         fecharFocoCliente();
-    }
+
+    const cliente = listaClientes.find(c => c.id == id);
 
     document.getElementById('id-cliente-acesso').value = id;
     document.getElementById('nome-cliente-acesso').textContent = nome;
     document.getElementById('email-acesso').value = '';
     document.getElementById('cpf-acesso').value = '';
+
+    // 🟢 Preenchimento ou Limpeza dos campos padronizados
+    document.getElementById('cep-acesso').value = cliente?.endereco?.cep || '';
+    document.getElementById('numero-acesso').value = cliente?.endereco?.numero || '';
+    document.getElementById('logradouro-acesso').value = cliente?.endereco?.logradouro || '';
+    document.getElementById('bairro-acesso').value = cliente?.endereco?.bairro || '';
+    document.getElementById('cidade-acesso').value = cliente?.endereco?.cidade || '';
+    document.getElementById('uf-acesso').value = cliente?.endereco?.uf || '';
 
     document.getElementById('modal-acesso').classList.remove('hidden');
 }
@@ -221,6 +228,13 @@ async function salvarAcessoCliente(e) {
     params.append('clienteId', id);
     params.append('email', email);
     params.append('cpf', cpf);
+
+    params.append('cep', document.getElementById('cep-acesso').value);
+    params.append('logradouro', document.getElementById('logradouro-acesso').value);
+    params.append('numero', document.getElementById('numero-acesso').value);
+    params.append('bairro', document.getElementById('bairro-acesso').value);
+    params.append('cidade', document.getElementById('cidade-acesso').value);
+    params.append('uf', document.getElementById('uf-acesso').value);
 
     try {
         const resposta = await fetch('../api/clientes/criar-acesso', {
@@ -267,6 +281,13 @@ function abrirModalNovoCliente() {
     document.getElementById('email-novo-cliente').value = '';
     document.getElementById('cpf-novo-cliente').value = '';
 
+    document.getElementById('cep-novo-cliente').value = '';
+    document.getElementById('logradouro-novo-cliente').value = '';
+    document.getElementById('numero-novo-cliente').value = '';
+    document.getElementById('bairro-novo-cliente').value = '';
+    document.getElementById('cidade-novo-cliente').value = '';
+    document.getElementById('uf-novo-cliente').value = '';
+
     document.getElementById('modal-novo-cliente').classList.remove('hidden');
 }
 
@@ -292,6 +313,13 @@ async function salvarNovoCliente(e) {
     params.append('telefone', telefone);
     params.append('email', email);
     params.append('cpf', cpf);
+
+    params.append('cep', document.getElementById('cep-novo-cliente').value);
+    params.append('logradouro', document.getElementById('logradouro-novo-cliente').value);
+    params.append('numero', document.getElementById('numero-novo-cliente').value);
+    params.append('bairro', document.getElementById('bairro-novo-cliente').value);
+    params.append('cidade', document.getElementById('cidade-novo-cliente').value);
+    params.append('uf', document.getElementById('uf-novo-cliente').value);
 
     try {
         const resposta = await fetch('../api/clientes/cadastrar', {
@@ -331,49 +359,176 @@ async function salvarNovoCliente(e) {
     }
 }
 
-// ================= FLUXO DE INFO CLIENTE/PET =================
+async function salvarEdicaoCliente() {
+    const btn = document.getElementById('btn-confirmar-edicao');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gravando...';
+
+    const params = new URLSearchParams();
+    params.append('id', clienteSendoEditado.id);
+    params.append('nome', document.getElementById('nome-edit').value);
+    params.append('telefone', document.getElementById('telefone-edit').value);
+    params.append('cep', document.getElementById('cep-edit').value);
+    params.append('logradouro', document.getElementById('logradouro-edit').value);
+    params.append('numero', document.getElementById('numero-edit').value);
+    params.append('bairro', document.getElementById('bairro-edit').value);
+    params.append('cidade', document.getElementById('cidade-edit').value);
+    params.append('uf', document.getElementById('uf-edit').value);
+
+    try {
+        const response = await fetch('../api/clientes/atualizar', {
+            method: 'POST',
+            body: params
+        });
+
+        if (response.ok) {
+            alert("✅ Cliente atualizado!");
+            fecharModalCliente();
+            await carregarClientesDoBanco();
+        } else {
+            alert("Erro ao salvar alterações.");
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
 function abrirModalCliente(id) {
-    const cliente = listaClientes.find(c => c.id === id);
-    if (!cliente)
+    clienteSendoEditado = listaClientes.find(c => c.id === id);
+
+    if (!clienteSendoEditado) {
+        console.error("Cliente não encontrado na listaClientes!");
         return;
+    }
+
+    const container = document.getElementById('conteudo-modal-cliente');
+    const btnEdicao = document.getElementById('btn-modo-edicao');
+    const footer = document.getElementById('footer-edicao-cliente');
+
+    if (footer)
+        footer.classList.add('hidden');
+    if (btnEdicao)
+        btnEdicao.classList.remove('hidden');
 
     let htmlPets = '';
-    if (cliente.pets && cliente.pets.length > 0) {
-        htmlPets = cliente.pets.map(p => `
+    if (clienteSendoEditado.pets && clienteSendoEditado.pets.length > 0) {
+        htmlPets = clienteSendoEditado.pets.map(p => `
             <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <strong style="color: #C9A96E; font-size: 1.1rem;"><i class="fas fa-paw"></i> ${p.nome}</strong>
                     <span class="badge" style="background: #333; color: #ccc;">${p.tipo}</span>
                 </div>
-                
                 <div style="margin-bottom: 10px;">
-                    <label style="color: #aaa; font-size: 0.85rem; margin-bottom: 5px; display: block;">Observações (Alergias, Comportamento):</label>
-                    <textarea id="obs-pet-${p.id}" rows="2" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #111; color: #eee; resize: vertical;">${p.obs || ''}</textarea>
+                    <textarea id="obs-pet-${p.id}" rows="2" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #111; color: #eee;">${p.obs || ''}</textarea>
                 </div>
-                
                 <div style="text-align: right;">
-                    <button onclick="salvarObsPet(${p.id}, this)" style="background: #17a2b8; border: none; padding: 6px 12px; color: #fff; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: 0.2s;" onmouseover="this.style.background='#138496';" onmouseout="this.style.background='#17a2b8';">
+                    <button onclick="salvarObsPet(${p.id}, this)" class="btn-primary" style="background: #17a2b8; font-size: 0.85rem;">
                         <i class="fas fa-save"></i> Salvar Obs
                     </button>
                 </div>
             </div>
         `).join('');
     } else {
-        htmlPets = '<div style="padding: 15px; text-align: center; border: 1px dashed #444; border-radius: 8px; color: #888;">Nenhum pet cadastrado para este cliente.</div>';
+        htmlPets = '<div style="padding: 15px; text-align: center; color: #888;">Nenhum pet cadastrado.</div>';
     }
 
-    document.getElementById('conteudo-modal-cliente').innerHTML = `
-        <div style="margin-bottom: 25px;">
-            <h4 style="color: #eee; margin: 0 0 5px 0; font-size: 1.3rem;">${cliente.nome}</h4>
-            <div style="color: #aaa; font-size: 0.95rem;"><i class="fab fa-whatsapp" style="color: #25d366;"></i> ${cliente.telefone}</div>
-            ${cliente.temUsuario ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; margin-top: 8px; display: inline-block;"><i class="fas fa-check-circle"></i> Possui Login no App</span>` : ''}
+    container.innerHTML = `
+        <div id="view-mode">
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #eee; margin: 0 0 5px 0; font-size: 1.3rem;">${clienteSendoEditado.nome}</h4>
+                <div style="color: #aaa; font-size: 0.95rem;"><i class="fab fa-whatsapp" style="color: #25d366;"></i> ${clienteSendoEditado.telefone}</div>
+                ${clienteSendoEditado.temUsuario ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; margin-top: 8px; display: inline-block;"><i class="fas fa-check-circle"></i> Possui Login no App</span>` : ''}
+            </div>
+
+            <h5 style="color: #C9A96E; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 10px;">
+                <i class="fas fa-map-marker-alt"></i> Endereço
+            </h5>
+            <div style="color: #ccc; font-size: 0.9rem; margin-bottom: 20px;">
+                ${clienteSendoEditado.endereco ? `
+                    <p style="margin: 3px 0;">${clienteSendoEditado.endereco.logradouro}, ${clienteSendoEditado.endereco.numero}</p>
+                    <p style="margin: 3px 0;">${clienteSendoEditado.endereco.bairro} - ${clienteSendoEditado.endereco.cidade}</p>
+                ` : '<p style="color: #666; font-style: italic;">Endereço não cadastrado.</p>'}
+            </div>
+            
+            <h5 style="color: #eee; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 15px;"><i class="fas fa-dog"></i> Pets do Cliente</h5>
+            ${htmlPets}
         </div>
-        
-        <h5 style="color: #eee; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 15px;"><i class="fas fa-dog"></i> Pets do Cliente</h5>
-        ${htmlPets}
     `;
 
+    btnEdicao.onclick = () => alternarParaEdicao();
+
     document.getElementById('modal-detalhes-cliente').classList.remove('hidden');
+}
+
+function alternarParaEdicao() {
+    if (!clienteSendoEditado)
+        return;
+
+    const container = document.getElementById('conteudo-modal-cliente');
+    const btnEdicao = document.getElementById('btn-modo-edicao');
+    const footer = document.getElementById('footer-edicao-cliente');
+
+    if (btnEdicao)
+        btnEdicao.classList.add('hidden');
+    if (footer)
+        footer.classList.remove('hidden');
+
+    container.innerHTML = `
+        <div id="edit-mode">
+            <div class="field" style="margin-bottom: 12px;">
+                <label class="form-label">Nome Completo</label>
+                <input type="text" id="nome-edit" class="form-ctrl" value="${clienteSendoEditado.nome}">
+            </div>
+            <div class="field" style="margin-bottom: 15px;">
+                <label class="form-label">WhatsApp</label>
+                <input type="text" id="telefone-edit" class="form-ctrl" value="${clienteSendoEditado.telefone}" oninput="mascaraTelefone(this)">
+            </div>
+
+            <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333;">
+                <h4 style="color: #C9A96E; margin-top: 0; margin-bottom: 12px; font-size: 0.9rem;">Editar Endereço</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="field">
+                        <label class="form-label">CEP</label>
+                        <input type="text" id="cep-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.cep || ''}" onblur="buscarCEP(this.value, 'edit')">
+                    </div>
+                    <div class="field">
+                        <label class="form-label">Número</label>
+                        <input type="text" id="numero-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.numero || ''}">
+                    </div>
+                </div>
+
+                <div class="field" style="margin-bottom: 10px;">
+                    <label class="form-label">Rua / Logradouro</label>
+                    <input type="text" id="logradouro-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.logradouro || ''}">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="field">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" id="bairro-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.bairro || ''}">
+                    </div>
+                    <div class="field">
+                        <label class="form-label">Cidade</label>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" id="cidade-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.cidade || ''}">
+                            <input type="text" id="uf-edit" class="form-ctrl" style="width: 45px;" value="${clienteSendoEditado.endereco?.uf || ''}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function cancelarEdicao() {
+    if (clienteSendoEditado) {
+        abrirModalCliente(clienteSendoEditado.id);
+    }
 }
 
 function fecharModalCliente() {
@@ -432,7 +587,6 @@ function fecharFocoCliente() {
     });
 }
 
-// Máscara elegante para o número de telefone (00) 00000-0000
 function mascaraTelefone(input) {
     let v = input.value.replace(/\D/g, ""); // Remove tudo que não é dígito
     if (v.length > 11)
@@ -440,4 +594,83 @@ function mascaraTelefone(input) {
     v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
     v = v.replace(/(\d)(\d{4})$/, "$1-$2");
     input.value = v;
+}
+
+async function buscarCEP(cep, prefixo) {
+    cep = cep.replace(/\D/g, '');
+    if (cep.length !== 8)
+        return;
+
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (!data.erro) {
+            // Buscamos os elementos pelos IDs padronizados
+            const elRua = document.getElementById(`logradouro-${prefixo}`);
+            const elBairro = document.getElementById(`bairro-${prefixo}`);
+            const elCidade = document.getElementById(`cidade-${prefixo}`);
+            const elUf = document.getElementById(`uf-${prefixo}`);
+            const elNum = document.getElementById(`numero-${prefixo}`);
+
+            // Só preenche se o elemento existir na tela
+            if (elRua)
+                elRua.value = data.logradouro || '';
+            if (elBairro)
+                elBairro.value = data.bairro || '';
+            if (elCidade)
+                elCidade.value = data.localidade || '';
+            if (elUf)
+                elUf.value = data.uf || '';
+            if (elNum)
+                elNum.focus();
+        }
+    } catch (e) {
+        console.error("Erro ao buscar CEP:", e);
+    }
+}
+
+
+function abrirModalNovoPetParaCliente() {
+    if (!clienteSendoEditado)
+        return;
+
+    document.getElementById('form-pet').reset();
+    document.getElementById('pet-cliente-id').value = clienteSendoEditado.id;
+    document.getElementById('modal-pet').classList.remove('hidden');
+}
+
+function fecharModalPet() {
+    document.getElementById('modal-pet').classList.add('hidden');
+}
+
+async function salvarPet(event) {
+    event.preventDefault();
+
+    const petData = {
+        nome: document.getElementById('pet-nome').value,
+        tipo: document.getElementById('pet-tipo').value,
+        raca: document.getElementById('pet-raca').value,
+        porte: document.getElementById('pet-porte').value,
+        obs: document.getElementById('pet-obs').value,
+        clienteId: document.getElementById('pet-cliente-id').value
+    };
+
+    try {
+        const response = await fetch('../api/pets/salvar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(petData)
+        });
+
+        if (response.ok) {
+            alert("🐾 Pet cadastrado com sucesso!");
+            fecharModalPet();
+            fecharModalCliente();
+        } else {
+            alert("Erro ao salvar pet.");
+        }
+    } catch (e) {
+        console.error(e);
+    }
 }

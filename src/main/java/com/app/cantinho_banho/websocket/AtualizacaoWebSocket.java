@@ -58,6 +58,19 @@ public class AtualizacaoWebSocket {
             }
         }
     }
+    
+    
+    public static void notificarTodosCadPet() {
+        for (Session s : sessoes) {
+            if (s.isOpen()) {
+                try {
+                    s.getBasicRemote().sendText("ATUALIZAR_PET");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     public static void notificarTodosProduto() {
         for (Session s : sessoes) {

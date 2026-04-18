@@ -4,8 +4,8 @@ import com.app.cantinho_banho.dao.ClienteDAO;
 import com.app.cantinho_banho.dao.UsuarioDAO;
 import com.app.cantinho_banho.model.Cliente;
 import com.app.cantinho_banho.model.Usuario;
+import com.app.cantinho_banho.model.Endereco; // 🟢 Importação do novo modelo
 import java.io.IOException;
-import java.util.Random;
 import java.util.UUID;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -23,9 +23,18 @@ public class CriarAcessoClienteServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         try {
+            // 1. Captura de parâmetros básicos
             Long clienteId = Long.parseLong(request.getParameter("clienteId"));
             String email = request.getParameter("email");
             String cpf = request.getParameter("cpf");
+
+            // 2. 🟢 Captura de parâmetros de endereço
+            String cep = request.getParameter("cep");
+            String logradouro = request.getParameter("logradouro");
+            String numero = request.getParameter("numero");
+            String bairro = request.getParameter("bairro");
+            String cidade = request.getParameter("cidade");
+            String uf = request.getParameter("uf");
 
             ClienteDAO dao = new ClienteDAO();
             Cliente cliente = dao.buscarPorId(clienteId);
@@ -56,6 +65,22 @@ public class CriarAcessoClienteServlet extends HttpServlet {
                 return;
             }
 
+            if (cep != null && !cep.trim().isEmpty()) {
+                Endereco endereco = cliente.getEndereco();
+                if (endereco == null) {
+                    endereco = new Endereco();
+                }
+
+                endereco.setCep(cep);
+                endereco.setLogradouro(logradouro);
+                endereco.setNumero(numero);
+                endereco.setBairro(bairro);
+                endereco.setCidade(cidade);
+                endereco.setUf(uf);
+
+                cliente.setEndereco(endereco);
+            }
+
             String senhaGerada = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
 
             Usuario u = new Usuario();
@@ -65,21 +90,21 @@ public class CriarAcessoClienteServlet extends HttpServlet {
             u.setPerfil("Cliente");
             u.setAtivo(true);
             u.setReset_password(true);
-
             u.setSenha(BCrypt.hashpw(senhaGerada, BCrypt.gensalt()));
 
             cliente.setUsuario(u);
+
             dao.criarAcessoEVincular(cliente, u);
 
-            // 4. Monta um JSON para devolver a senha limpa ao Front-end (apenas desta vez!)
             String json = String.format("{\"senha\": \"%s\", \"telefone\": \"%s\"}",
                     senhaGerada,
                     cliente.getTelefone() != null ? cliente.getTelefone() : "");
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(json);
+
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

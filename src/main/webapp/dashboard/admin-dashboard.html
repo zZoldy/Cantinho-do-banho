@@ -1118,6 +1118,9 @@
                         <button class="btn-filtro" onclick="navConfig('fornecedores')" id="btn-conf-fornecedores">
                             <i class="fas fa-truck"></i> <span>Fornecedores</span>
                         </button>
+                        <button class="btn-filtro" onclick="navConfig('fiscal')" id="btn-conf-fiscal" style="text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+                            <i class="fas fa-file-invoice-dollar"></i> Nota Fiscal
+                        </button>
                     </div>
 
                     <div style="flex: 1; min-width: 300px; background: #161616; border: 1px solid #252525; border-radius: 12px; padding: 24px; min-height: 400px;">
@@ -1209,6 +1212,24 @@
                                     <tbody id="tbody-fornecedores-config">
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+
+                        <div id="conf-fiscal" style="display: none;">
+                            <div style="background: #161616; padding: 25px; border-radius: 12px; border: 1px solid #252525;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <div>
+                                        <h3 style="color: #C9A96E; margin: 0;"><i class="fas fa-file-invoice-dollar"></i> Módulo Fiscal</h3>
+                                        <p style="color: #888; font-size: 0.85rem; margin-top: 5px;">Gerencie a emissão de notas e dados da sua empresa.</p>
+                                    </div>
+                                    <button class="btn-primary" onclick="abrirModalConfigEmpresa()" style="background: #17a2b8; border: none; padding: 10px 20px; border-radius: 8px;">
+                                        <i class="fas fa-building"></i> Configurar Empresa
+                                    </button>
+                                </div>
+
+                                <div id="info-empresa-resumo" style="background: #111; padding: 20px; border-radius: 8px; border: 1px solid #333;">
+                                    <p style="color: #666; font-style: italic;">Carregando informações da empresa...</p>
+                                </div>
                             </div>
                         </div>
 
@@ -1318,6 +1339,40 @@
                             <input type="text" id="telefone-novo-cliente" class="form-ctrl" required placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)">
                         </div>
 
+                        <div style="margin-top: 15px; border-top: 1px dashed #333; padding-top: 15px;">
+                            <h4 style="color: #C9A96E; font-size: 0.85rem; margin-bottom: 10px;"><i class="fas fa-map-marker-alt"></i> Endereço Fiscal</h4>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div class="field">
+                                    <label class="form-label">CEP</label>
+                                    <input type="text" id="cep-novo-cliente" class="form-ctrl" placeholder="00000-000" onblur="buscarCEP(this.value, 'novo-cliente')">
+                                </div>
+                                <div class="field">
+                                    <label class="form-label">Número</label>
+                                    <input type="text" id="numero-novo-cliente" class="form-ctrl" placeholder="123">
+                                </div>
+                            </div>
+
+                            <div class="field" style="margin-bottom: 10px;">
+                                <label class="form-label">Rua / Logradouro</label>
+                                <input type="text" id="logradouro-novo-cliente" class="form-ctrl" placeholder="Rua exemplo...">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="field">
+                                    <label class="form-label">Bairro</label>
+                                    <input type="text" id="bairro-novo-cliente" class="form-ctrl">
+                                </div>
+                                <div class="field">
+                                    <label class="form-label">Cidade/UF</label>
+                                    <div style="display: flex; gap: 5px;">
+                                        <input type="text" id="cidade-novo-cliente" class="form-ctrl" placeholder="Cidade">
+                                        <input type="text" id="uf-novo-cliente" class="form-ctrl" style="width: 45px;" placeholder="UF">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 20px;">
                             <h4 style="color: #17a2b8; margin-top: 0; margin-bottom: 12px; font-size: 0.95rem;">
                                 <i class="fas fa-mobile-alt"></i> Acesso ao App (Opcional)
@@ -1344,12 +1399,28 @@
         </div>
 
         <div class="modal-overlay hidden" id="modal-detalhes-cliente">
-            <div class="modal" style="max-width: 500px; border-top: 5px solid #17a2b8; background: #161616;">
-                <div class="modal-header" style="border-bottom: 1px solid #333;">
+            <div class="modal" style="max-width: 550px; border-top: 5px solid #17a2b8; background: #161616;">
+                <div class="modal-header" style="border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="color: #17a2b8; margin: 0;"><i class="fas fa-user-circle"></i> Detalhes do Cliente</h3>
-                    <button onclick="fecharModalCliente()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" onclick="abrirModalNovoPetParaCliente()" 
+                                style="background: #28a745; border: none; padding: 5px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-plus-circle"></i> Cadastrar Pet
+                        </button>
+
+                        <button id="btn-modo-edicao" class="btn-primary" style="background: #007bff; border: none; padding: 5px 12px; font-size: 0.8rem;">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button onclick="fecharModalCliente()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                    </div>
                 </div>
-                <div class="modal-body" id="conteudo-modal-cliente" style="max-height: 65vh; overflow-y: auto; padding: 20px;">
+                <div class="modal-body" id="conteudo-modal-cliente" style="max-height: 75vh; overflow-y: auto; padding: 20px;">
+                </div>
+                <div class="modal-footer hidden" id="footer-edicao-cliente" style="border-top: 1px solid #333;">
+                    <button onclick="cancelarEdicao()" class="btn-secundario">Cancelar</button>
+                    <button onclick="salvarEdicaoCliente()" class="btn-primary" id="btn-confirmar-edicao" style="background: #28a745; border: none;">
+                        <i class="fas fa-check"></i> Salvar Alterações
+                    </button>
                 </div>
             </div>
         </div>
@@ -1389,6 +1460,43 @@
                             <input type="text" id="cpf-acesso" required placeholder="000.000.000-00" oninput="mascaraCPF(this)" 
                                    style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; outline: none; box-sizing: border-box; background: #fff;">
                         </div>
+
+                        <div style="background: #f1f1f1; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #ddd;">
+                            <h4 style="color: #333; margin-top: 0; margin-bottom: 12px; font-size: 0.9rem;">
+                                <i class="fas fa-map-marker-alt"></i> Confirmar Endereço para Nota Fiscal
+                            </h4>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div class="field">
+                                    <label style="font-size: 0.8rem; color: #666;">CEP</label>
+                                    <input type="text" id="cep-acesso" class="form-ctrl" placeholder="00000-000" 
+                                           onblur="buscarCEP(this.value, 'acesso')" style="background: #fff;">
+                                </div>
+                                <div class="field">
+                                    <label style="font-size: 0.8rem; color: #666;">Número</label>
+                                    <input type="text" id="numero-acesso" class="form-ctrl" placeholder="Nº" style="background: #fff;">
+                                </div>
+                            </div>
+
+                            <div class="field" style="margin-bottom: 10px;">
+                                <label style="font-size: 0.8rem; color: #666;">Rua / Logradouro</label>
+                                <input type="text" id="logradouro-acesso" class="form-ctrl" style="background: #fff;">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="field">
+                                    <label style="font-size: 0.8rem; color: #666;">Bairro</label>
+                                    <input type="text" id="bairro-acesso" class="form-ctrl" style="background: #fff;">
+                                </div>
+                                <div class="field">
+                                    <label style="font-size: 0.8rem; color: #666;">Cidade</label>
+                                    <div style="display: flex; gap: 4px;">
+                                        <input type="text" id="cidade-acesso" class="form-ctrl" style="background: #fff;">
+                                        <input type="text" id="uf-acesso" class="form-ctrl" style="width: 40px; background: #fff;" placeholder="UF">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </div>
 
@@ -1399,6 +1507,53 @@
                     </button>
                 </div>
 
+            </div>
+        </div>
+
+        <!-- ═══ MODAL PET ═══ -->
+        <div class="modal-overlay hidden" id="modal-pet">
+            <div class="modal" style="max-width: 550px; border-top: 5px solid #C9A96E;">
+                <div class="modal-header">
+                    <h3 style="color: #C9A96E; margin: 0;"><i class="fas fa-dog"></i> Adicionar Pet para o Cliente</h3>
+                    <button onclick="fecharModalPet()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-pet" onsubmit="salvarPet(event)">
+                        <input type="hidden" id="pet-cliente-id"> <div class="field" style="margin-bottom: 15px;">
+                            <label class="form-label">Nome do Pet *</label>
+                            <input type="text" id="pet-nome" class="form-ctrl" required>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="field">
+                                <label class="form-label">Tipo (Cão/Gato)</label>
+                                <input type="text" id="pet-tipo" class="form-ctrl" placeholder="Ex: Cão">
+                            </div>
+                            <div class="field">
+                                <label class="form-label">Raça</label>
+                                <input type="text" id="pet-raca" class="form-ctrl" placeholder="Ex: Poodle">
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-bottom: 15px;">
+                            <label class="form-label">Porte</label>
+                            <select id="pet-porte" class="form-ctrl">
+                                <option value="Pequeno">Pequeno</option>
+                                <option value="Médio">Médio</option>
+                                <option value="Grande">Grande</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label class="form-label">Observações (Alergias/Temperamento)</label>
+                            <textarea id="pet-obs" class="form-ctrl" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="fecharModalPet()" class="btn-secundario">Cancelar</button>
+                    <button type="submit" form="form-pet" class="btn-primary">Salvar Pet</button>
+                </div>
             </div>
         </div>
 
@@ -1761,7 +1916,69 @@
             </div>
         </div>
 
+        <!-- ═══ MODAL CONFIGURAR EMPRESA ═══ -->
+        <div class="modal-overlay hidden" id="modal-config-empresa">
+            <div class="modal" style="max-width: 650px; border-top: 5px solid #17a2b8;">
+                <div class="modal-header">
+                    <h3 style="color: #17a2b8; margin: 0;"><i class="fas fa-building"></i> Dados do Emitente</h3>
+                    <button onclick="fecharModalConfigEmpresa()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-empresa" onsubmit="salvarDadosEmpresa(event)">
+                        <div class="field" style="margin-bottom: 15px;">
+                            <label class="form-label">Razão Social *</label>
+                            <input type="text" id="empresa-razao" class="form-ctrl" required>
+                        </div>
 
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="field">
+                                <label class="form-label">CNPJ *</label>
+                                <input type="text" id="empresa-cnpj" class="form-ctrl" placeholder="00.000.000/0000-00">
+                            </div>
+                            <div class="field">
+                                <label class="form-label">Inscrição Estadual</label>
+                                <input type="text" id="empresa-ie" class="form-ctrl">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="field">
+                                <label class="form-label">Regime Tributário</label>
+                                <select id="empresa-regime" class="form-ctrl">
+                                    <option value="1">Simples Nacional</option>
+                                    <option value="3">Regime Normal (Lucro Presumido/Real)</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label class="form-label">Ambiente SEFAZ</label>
+                                <select id="empresa-ambiente" class="form-ctrl">
+                                    <option value="2">Homologação (Testes)</option>
+                                    <option value="1">Produção (Real)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                            <h4 style="margin-top: 0; font-size: 0.9rem; color: #333;"><i class="fas fa-shield-alt"></i> Certificado Digital</h4>
+                            <div class="field" style="margin-bottom: 10px;">
+                                <label class="form-label">Arquivo (.pfx)</label>
+                                <input type="file" id="empresa-cert-file" class="form-ctrl" accept=".pfx">
+                            </div>
+                            <div class="field">
+                                <label class="form-label">Senha do Certificado</label>
+                                <input type="password" id="empresa-cert-senha" class="form-ctrl">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="fecharModalConfigEmpresa()" class="btn-secundario">Cancelar</button>
+                    <button type="submit" form="form-empresa" class="btn-primary" style="background: #28a745; border: none;">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                </div>
+            </div>
+        </div>
 
 
 
@@ -1778,6 +1995,8 @@
             let pacotes = [];
             let funcionarios = [];
             let estoques = [];
+
+            let dadosEmpresaAtual = null;
 
             // ═══════════════════════════════════════════════════
             // AUTH
@@ -1830,7 +2049,7 @@
                 window.location.href = 'login.html';
             }
             // Protege navegação por URL
-            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'config': ['Admin'], 'estoques': ['Admin']};
+            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'config': ['Admin']};
 
             function podeAcessar(page) {
                 const permitidos = paginasRestritas[page];
@@ -1919,11 +2138,20 @@
                             carregarPacotesAdmin();
                     }
 
-
                     if (event.data === "ATUALIZAR_DESPESA") {
                         if (typeof carregarDespesas() === 'function')
                             carregarDespesas();
                     }
+
+                    if (event.data === "ATUALIZAR_PET") {
+                        await listarClientesBD();
+                        if (typeof renderClientes() === 'function')
+                            renderClientes();
+
+                        if (typeof abrirModalCliente(clienteSendoEditado.id) === 'function')
+                            abrirModalCliente(clienteSendoEditado.id);
+                    }
+
                 };
 
                 ws.onclose = function () {
@@ -3051,6 +3279,130 @@
                     }
                 } catch (e) {
                     console.error("Erro ao carregar vendas de pacotes", e);
+                }
+            }
+
+            async function carregarDadosEmpresaConfig() {
+                const resumoEl = document.getElementById('info-empresa-resumo');
+
+                try {
+                    const response = await fetch('../api/config/empresa/obter');
+                    if (!response.ok)
+                        throw new Error("Erro ao buscar dados da empresa");
+
+                    const empresa = await response.json();
+                    dadosEmpresaAtual = empresa;
+
+                    // Se o objeto estiver vazio (empresa não configurada)
+                    if (!empresa.cnpj) {
+                        resumoEl.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="color: #ffc107; font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p style="color: #ccc;">Nenhuma empresa configurada. Clique no botão acima para cadastrar os dados fiscais.</p>
+                </div>`;
+                        return;
+                    }
+
+                    // Preenche o Resumo visual na Aba Fiscal
+                    resumoEl.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">Razão Social:</strong><br> ${empresa.razaoSocial}</p>
+                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">CNPJ:</strong><br> ${empresa.cnpj}</p>
+                </div>
+                <div>
+                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">Inscrição Estadual:</strong><br> ${empresa.inscricaoEstadual || 'Isento'}</p>
+                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">Ambiente SEFAZ:</strong><br> 
+                        <span class="badge" style="background: ${empresa.ambiente === 1 ? '#28a745' : '#17a2b8'}; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem;">
+                            ${empresa.ambiente === 1 ? 'PRODUÇÃO' : 'HOMOLOGAÇÃO (Testes)'}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; display: flex; align-items: center; gap: 10px; color: #888; font-size: 0.85rem;">
+                <i class="fas fa-shield-check" style="color: #28a745;"></i> 
+                Certificado Digital configurado e salvo no sistema.
+            </div>
+        `;
+
+                    // Preenche automaticamente os campos do Modal de Edição
+                    preencherCamposModalEmpresa(empresa);
+
+                } catch (erro) {
+                    console.error(erro);
+                    resumoEl.innerHTML = `<p style="color: #dc3545;"><i class="fas fa-times"></i> Erro ao carregar dados fiscais.</p>`;
+                }
+            }
+
+            function preencherCamposModalEmpresa(empresa) {
+                if (document.getElementById('empresa-razao'))
+                    document.getElementById('empresa-razao').value = empresa.razaoSocial || '';
+                if (document.getElementById('empresa-cnpj'))
+                    document.getElementById('empresa-cnpj').value = empresa.cnpj || '';
+                if (document.getElementById('empresa-ie'))
+                    document.getElementById('empresa-ie').value = empresa.inscricaoEstadual || '';
+                if (document.getElementById('empresa-cert-senha'))
+                    document.getElementById('empresa-cert-senha').value = empresa.certificadoSenha || '';
+                // Nota: O campo input file (certificado) não pode ser preenchido via JS por segurança do navegador
+            }
+
+// Funções de controle do Modal (Caso ainda não as tenha definido)
+            function abrirModalConfigEmpresa() {
+                document.getElementById('modal-config-empresa').classList.remove('hidden');
+            }
+
+            function fecharModalConfigEmpresa() {
+                document.getElementById('modal-config-empresa').classList.add('hidden');
+            }
+
+            async function salvarDadosEmpresa(event) {
+                event.preventDefault(); // Impede o recarregamento da página
+
+                const btn = document.querySelector('button[form="form-empresa"]');
+                const originalHTML = btn.innerHTML;
+
+                // Feedback visual
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gravando Dados...';
+
+                // Criamos o FormData para suportar o upload do arquivo
+                const formData = new FormData();
+
+                // Adicionamos os campos de texto (os nomes devem bater com o request.getParameter do Servlet)
+                formData.append('razaoSocial', document.getElementById('empresa-razao').value);
+                formData.append('cnpj', document.getElementById('empresa-cnpj').value);
+                formData.append('ie', document.getElementById('empresa-ie').value);
+                formData.append('senhaCertificado', document.getElementById('empresa-cert-senha').value);
+
+                // Capturamos o arquivo do certificado se o usuário selecionou um novo
+                const certInput = document.getElementById('empresa-cert-file');
+                if (certInput.files.length > 0) {
+                    formData.append('certificado', certInput.files[0]);
+                }
+
+                try {
+                    const response = await fetch('../api/config/empresa/salvar', {
+                        method: 'POST',
+                        body: formData
+                                // ⚠️ ATENÇÃO: Não definimos 'Content-Type' aqui. 
+                                // O navegador definirá automaticamente como 'multipart/form-data' com o boundary correto.
+                    });
+
+                    if (response.ok) {
+                        alert("✅ Configurações fiscais atualizadas com sucesso!");
+                        fecharModalConfigEmpresa();
+                        await carregarDadosEmpresaConfig(); // Atualiza o resumo cinza na tela
+                    } else {
+                        const msgErro = await response.text();
+                        throw new Error(msgErro || "Erro desconhecido no servidor.");
+                    }
+
+                } catch (erro) {
+                    console.error("Erro ao salvar empresa:", erro);
+                    alert("Falha ao salvar: " + erro.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
                 }
             }
 

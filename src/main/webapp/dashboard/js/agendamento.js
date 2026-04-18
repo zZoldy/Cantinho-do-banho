@@ -660,7 +660,7 @@ function renderConfiguracoes() {
 }
 
 function navConfig(aba) {
-    ['servicos', 'horarios', 'pacotes', 'fornecedores'].forEach(a => {
+    ['servicos', 'horarios', 'pacotes', 'fornecedores', 'fiscal'].forEach(a => {
         document.getElementById('conf-' + a).style.display = 'none';
         document.getElementById('btn-conf-' + a).classList.remove('active');
     });
@@ -678,6 +678,10 @@ function navConfig(aba) {
     }
     if (aba === 'fornecedores') {
         carregarFornecedoresConfig();
+    }
+
+    if (aba === 'fiscal') {
+        carregarDadosEmpresaConfig();
     }
 }
 

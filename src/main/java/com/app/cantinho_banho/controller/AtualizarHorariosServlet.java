@@ -15,6 +15,7 @@ public class AtualizarHorariosServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
 
         try {
             HorarioFuncionamentoDAO dao = new HorarioFuncionamentoDAO();
@@ -36,7 +37,7 @@ public class AtualizarHorariosServlet extends HttpServlet {
             }
 
             response.setStatus(HttpServletResponse.SC_OK);
-            
+
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosHorario();
         } catch (Exception e) {
             e.printStackTrace();

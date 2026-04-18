@@ -30,6 +30,10 @@ public class Cliente implements Serializable {
     @JoinColumn(name = "usuario_id", nullable = true)
     private Usuario usuario;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "endereco_id")
+    private Endereco endereco;
+
     public Cliente() {
     }
 
@@ -67,6 +71,14 @@ public class Cliente implements Serializable {
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
+    }
+
+    public Endereco getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(Endereco endereco) {
+        this.endereco = endereco;
     }
 
 }

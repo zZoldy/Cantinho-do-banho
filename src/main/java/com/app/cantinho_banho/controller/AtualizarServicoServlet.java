@@ -14,6 +14,7 @@ public class AtualizarServicoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
         try {
             Long id = Long.parseLong(request.getParameter("id"));
             String nome = request.getParameter("nome");
