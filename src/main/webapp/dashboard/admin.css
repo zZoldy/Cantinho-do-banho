@@ -1035,6 +1035,21 @@ textarea.form-input-admin {
     font-size: 0.9rem;
     white-space: nowrap; /* Impede o texto de quebrar linha */
 }
+
+.cliente-card button:hover {
+    transform: scale(1.2);
+    color: #0056b3 !important;
+}
+
+/* Garante que o scroll interno dos pets não quebre o layout */
+.scroll-interno::-webkit-scrollbar {
+    width: 4px;
+}
+.scroll-interno::-webkit-scrollbar-thumb {
+    background: #C9A96E;
+    border-radius: 10px;
+}
+
 /* ============================================
    RESPONSIVIDADE
    ============================================ */

@@ -28,6 +28,12 @@ public class CadastrarPetServlet extends HttpServlet {
             String jsonStr = request.getReader().lines().collect(Collectors.joining());
 
             Pet pet = new Pet();
+
+            String idStr = extrairCampo(jsonStr, "id");
+            if (idStr != null && !idStr.isEmpty() && !idStr.equals("null")) {
+                pet.setId(Long.parseLong(idStr));
+            }
+
             pet.setNome(extrairCampo(jsonStr, "nome"));
             pet.setTipo(extrairCampo(jsonStr, "tipo"));
             pet.setRaca(extrairCampo(jsonStr, "raca"));

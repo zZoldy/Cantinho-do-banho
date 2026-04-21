@@ -1,4 +1,5 @@
 let clienteSendoEditado = null;
+let petIdEdicao = null;
 let listaClientes = [];
 
 async function carregarClientesDoBanco() {
@@ -90,7 +91,17 @@ function renderClientes() {
 
         const nomesDosPets = (c.pets && c.pets.length > 0)
                 ? c.pets.map((p, index) => {
-                    let htmlPet = `<span style="font-weight: 600; color: #2c3e50; font-size: 0.95rem;">${p.nome}</span> <span style="color:#888; font-size: 0.8rem;">(${p.tipo})</span>`;
+                    let htmlPet = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-weight: 600; color: #2c3e50; font-size: 0.95rem;">${p.nome}</span> 
+                    <span style="color:#888; font-size: 0.8rem;">(${p.tipo})</span>
+                </div>
+                <button onclick="event.stopPropagation(); preencherModalPet(${c.id}, ${p.id})" 
+                        style="background: none; border: none; color: #17a2b8; cursor: pointer; padding: 2px 5px; font-size: 0.8rem;" title="Editar Pet">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>`;
                     if (p.obs && p.obs.trim() !== "") {
                         htmlPet += `<div style="font-size: 0.8rem; color: #666; margin-left: 5px; margin-top: 5px; border-left: 3px solid #C9A96E; padding-left: 8px; background: #fff; padding-top: 4px; padding-bottom: 4px; border-radius: 0 4px 4px 0;"><em><i class="fas fa-info-circle" style="color:#C9A96E; font-size: 0.75rem; margin-right: 4px;"></i>${p.obs}</em></div>`;
                     }
@@ -630,13 +641,19 @@ async function buscarCEP(cep, prefixo) {
     }
 }
 
-
 function abrirModalNovoPetParaCliente() {
     if (!clienteSendoEditado)
         return;
 
+    petIdEdicao = null;
+
     document.getElementById('form-pet').reset();
     document.getElementById('pet-cliente-id').value = clienteSendoEditado.id;
+
+    const titulo = document.querySelector('#modal-pet h3');
+    if (titulo)
+        titulo.innerHTML = '<i class="fas fa-dog"></i> Novo Pet';
+
     document.getElementById('modal-pet').classList.remove('hidden');
 }
 
@@ -644,10 +661,33 @@ function fecharModalPet() {
     document.getElementById('modal-pet').classList.add('hidden');
 }
 
+function abrirModalEditarPet(petId) {
+    const pet = clienteSendoEditado.pets.find(p => p.id === petId);
+    if (!pet)
+        return;
+
+    petIdEdicao = pet.id;
+
+    // Preenche os campos do formulário
+    document.getElementById('pet-nome').value = pet.nome;
+    document.getElementById('pet-tipo').value = pet.tipo;
+    document.getElementById('pet-raca').value = pet.raca;
+    document.getElementById('pet-porte').value = pet.porte;
+    document.getElementById('pet-obs').value = pet.obs || '';
+    document.getElementById('pet-cliente-id').value = clienteSendoEditado.id;
+
+    const titulo = document.querySelector('#modal-pet h3');
+    if (titulo)
+        titulo.innerHTML = '<i class="fas fa-edit"></i> Editar Pet';
+
+    document.getElementById('modal-pet').classList.remove('hidden');
+}
+
 async function salvarPet(event) {
     event.preventDefault();
 
     const petData = {
+        id: petIdEdicao,
         nome: document.getElementById('pet-nome').value,
         tipo: document.getElementById('pet-tipo').value,
         raca: document.getElementById('pet-raca').value,
@@ -664,13 +704,39 @@ async function salvarPet(event) {
         });
 
         if (response.ok) {
-            alert("🐾 Pet cadastrado com sucesso!");
+            alert(petIdEdicao ? "🐾 Pet atualizado!" : "🐾 Pet cadastrado!");
             fecharModalPet();
-            fecharModalCliente();
+            await carregarClientesDoBanco(); // Recarrega a lista
+            if (clienteSendoEditado)
+                abrirModalCliente(clienteSendoEditado.id); // Atualiza os detalhes abertos
         } else {
             alert("Erro ao salvar pet.");
         }
     } catch (e) {
         console.error(e);
     }
+}
+
+function preencherModalPet(clienteId, petId) {
+    const cliente = listaClientes.find(c => c.id === clienteId);
+    if (!cliente)
+        return;
+
+    const pet = cliente.pets.find(p => p.id === petId);
+    if (!pet)
+        return;
+
+    petIdEdicao = pet.id;
+    clienteIdAtual = clienteId;
+
+    document.querySelector('#modal-pet h3').innerHTML = '<i class="fas fa-edit"></i> Editar Pet';
+
+    document.getElementById('pet-nome').value = pet.nome;
+    document.getElementById('pet-tipo').value = pet.tipo || '';
+    document.getElementById('pet-raca').value = pet.raca || '';
+    document.getElementById('pet-porte').value = pet.porte || 'Médio';
+    document.getElementById('pet-obs').value = pet.obs || '';
+    document.getElementById('pet-cliente-id').value = clienteId;
+
+    document.getElementById('modal-pet').classList.remove('hidden');
 }
