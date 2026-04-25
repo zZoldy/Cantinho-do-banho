@@ -1,6 +1,7 @@
 package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.FornecedorDAO;
+import com.app.cantinho_banho.model.Endereco;
 import com.app.cantinho_banho.model.Fornecedor;
 
 import javax.servlet.ServletException;
@@ -43,8 +44,20 @@ public class ListarFornecedoresServlet extends HttpServlet {
                 String email = f.getEmail() != null ? f.getEmail().replace("\"", "\\\"") : "";
                 json.append("\"email\":\"").append(email).append("\",");
 
-                String endereco = f.getEndereco() != null ? f.getEndereco().replace("\"", "\\\"") : "";
-                json.append("\"endereco\":\"").append(endereco).append("\""); 
+                if (f.getEndereco() != null) {
+                    Endereco end = f.getEndereco();
+                    json.append("\"endereco\":{");
+                    json.append("\"cep\":\"").append(end.getCep() != null ? end.getCep() : "").append("\",");
+                    json.append("\"logradouro\":\"").append(end.getLogradouro() != null ? end.getLogradouro().replace("\"", "\\\"") : "").append("\",");
+                    json.append("\"numero\":\"").append(end.getNumero() != null ? end.getNumero() : "").append("\",");
+                    json.append("\"bairro\":\"").append(end.getBairro() != null ? end.getBairro().replace("\"", "\\\"") : "").append("\",");
+                    json.append("\"cidade\":\"").append(end.getCidade() != null ? end.getCidade().replace("\"", "\\\"") : "").append("\",");
+                    json.append("\"uf\":\"").append(end.getUf() != null ? end.getUf() : "").append("\",");
+                    json.append("\"complemento\":\"").append(end.getComplemento() != null ? end.getComplemento().replace("\"", "\\\"") : "").append("\"");
+                    json.append("}");
+                } else {
+                    json.append("\"endereco\":null");
+                }
 
                 json.append("}");
 

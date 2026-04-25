@@ -267,12 +267,14 @@ async function carregarFornecedoresConfig() {
                     </td>
                     <td style="padding: 12px; color: #888; font-size: 0.85rem;">${f.cnpj || '--'}</td>
                     <td style="padding: 12px; color: #888; font-size: 0.85rem;">${f.telefone || '--'}</td>
+                    <td style="padding: 12px; color: #666; font-size: 0.75rem;">
+                        ${f.endereco ? `${f.endereco.cidade} - ${f.endereco.uf}` : 'Sem endereço'}
+                    </td>
                     <td style="padding: 12px; text-align: right;">
-                        <button onclick="editarFornecedor(${f.id})" style="background: transparent; border: none; color: #007bff; cursor: pointer; font-size: 1.1rem; padding: 5px;" title="Editar">
+                        <button onclick="editarFornecedor(${f.id})" style="background: transparent; border: none; color: #007bff; cursor: pointer;" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        
-                        <button onclick="excluirFornecedor(${f.id})" style="background: transparent; border: none; color: #dc3545; cursor: pointer; font-size: 1.1rem; padding: 5px; margin-left: 10px;" title="Excluir">
+                        <button onclick="excluirFornecedor(${f.id})" style="background: transparent; border: none; color: #dc3545; cursor: pointer; margin-left: 10px;" title="Excluir">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -281,7 +283,6 @@ async function carregarFornecedoresConfig() {
         }
     } catch (e) {
         console.error("Erro ao carregar fornecedores:", e);
-        el.innerHTML = `<tr><td colspan="4" style="color:#dc3545; text-align:center;">Erro ao carregar lista.</td></tr>`;
     }
 }
 
@@ -326,6 +327,17 @@ function editarFornecedor(id) {
     document.getElementById('forn-email').value = forn.email || '';
     document.getElementById('forn-end').value = forn.endereco || '';
 
+    if (forn.endereco) {
+        const p = 'forn';
+        document.getElementById(`cep-${p}`).value = forn.endereco.cep || '';
+        document.getElementById(`logradouro-${p}`).value = forn.endereco.logradouro || '';
+        document.getElementById(`numero-${p}`).value = forn.endereco.numero || '';
+        document.getElementById(`bairro-${p}`).value = forn.endereco.bairro || '';
+        document.getElementById(`cidade-${p}`).value = forn.endereco.cidade || '';
+        document.getElementById(`uf-${p}`).value = forn.endereco.uf || '';
+        document.getElementById(`complemento-${p}`).value = forn.endereco.complemento || '';
+    }
+
     // Muda o título do Modal
     document.querySelector('#modal-fornecedor h3').innerHTML = '<i class="fas fa-edit" style="color:#007bff; margin-right: 8px;"></i> Editar Fornecedor';
     abrirModalFornecedor();
@@ -346,7 +358,14 @@ async function salvarFornecedor(e) {
     dados.append('cnpj', document.getElementById('forn-cnpj').value);
     dados.append('telefone', document.getElementById('forn-tel').value);
     dados.append('email', document.getElementById('forn-email').value);
-    dados.append('endereco', document.getElementById('forn-end').value);
+    const prefixo = 'forn';
+    const camposEnd = ['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'uf', 'complemento'];
+
+    camposEnd.forEach(campo => {
+        const el = document.getElementById(`${campo}-${prefixo}`);
+        if (el)
+            dados.append(campo, el.value);
+    });
 
     try {
         const response = await fetch(`../api/fornecedor/${rota}`, {
@@ -397,7 +416,22 @@ async function excluirFornecedor(id) {
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const cepForn = document.getElementById('cep-forn');
+    if (cepForn) {
+        cepForn.addEventListener('input', (e) => {
+            // Aplica máscara 00000-000
+            let v = e.target.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{5})(\d)/, "$1-$2");
+            e.target.value = v.substring(0, 9);
 
+            // Chama sua função buscarCEP com o prefixo 'forn'
+            if (v.length === 9) {
+                buscarCEP(v, 'forn');
+            }
+        });
+    }
+});
 // ==========================================
 // LÓGICA DE DESPESA 
 // ==========================================

@@ -1,6 +1,7 @@
 package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.FornecedorDAO;
+import com.app.cantinho_banho.model.Endereco;
 import com.app.cantinho_banho.model.Fornecedor;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -26,8 +27,21 @@ public class AtualizarFornecedorServlet extends HttpServlet {
                 fornecedor.setCnpj(request.getParameter("cnpj"));
                 fornecedor.setTelefone(request.getParameter("telefone"));
                 fornecedor.setEmail(request.getParameter("email"));
-                fornecedor.setEndereco(request.getParameter("endereco"));
 
+                Endereco endereco = fornecedor.getEndereco();
+                if (endereco == null) {
+                    endereco = new Endereco();
+                }
+
+                endereco.setCep(request.getParameter("cep-forn"));
+                endereco.setLogradouro(request.getParameter("logradouro-forn"));
+                endereco.setNumero(request.getParameter("numero-forn"));
+                endereco.setBairro(request.getParameter("bairro-forn"));
+                endereco.setCidade(request.getParameter("cidade-forn"));
+                endereco.setUf(request.getParameter("uf-forn"));
+                endereco.setComplemento(request.getParameter("complemento-forn"));
+
+                fornecedor.setEndereco(endereco);
                 dao.atualizar(fornecedor);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().write("Fornecedor atualizado com sucesso!");

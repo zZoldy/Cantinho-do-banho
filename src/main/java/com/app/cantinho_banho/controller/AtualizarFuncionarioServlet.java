@@ -2,6 +2,7 @@ package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.FuncionarioDAO;
 import com.app.cantinho_banho.dao.UsuarioDAO;
+import com.app.cantinho_banho.model.Endereco;
 import com.app.cantinho_banho.model.Funcionario;
 import com.app.cantinho_banho.model.Usuario;
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class AtualizarFuncionarioServlet extends HttpServlet {
                 response.getWriter().write("Erro: ID do usuário não fornecido");
                 return;
             }
-            
+
             String nome = request.getParameter("nome");
             String email = request.getParameter("email");
             String cpf = request.getParameter("cpf");
@@ -35,6 +36,15 @@ public class AtualizarFuncionarioServlet extends HttpServlet {
             String perfil = request.getParameter("perfil");
             String funcao = request.getParameter("funcao");
             String salario = request.getParameter("salario");
+
+            Endereco endFunc = new Endereco();
+            endFunc.setCep(request.getParameter("cep-func"));
+            endFunc.setLogradouro(request.getParameter("logradouro-func"));
+            endFunc.setNumero(request.getParameter("numero-func"));
+            endFunc.setBairro(request.getParameter("bairro-func"));
+            endFunc.setCidade(request.getParameter("cidade-func"));
+            endFunc.setUf(request.getParameter("uf-func"));
+            endFunc.setComplemento(request.getParameter("complemento-func"));
 
             java.util.ArrayList<String> camposFaltando = new java.util.ArrayList<>();
 
@@ -121,8 +131,10 @@ public class AtualizarFuncionarioServlet extends HttpServlet {
 
             }
 
+            f.setEndereco(endFunc);
+
             dao.atualizar(f);
-            
+
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
 
             response.setStatus(200);

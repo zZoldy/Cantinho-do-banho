@@ -1,6 +1,7 @@
 package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.FuncionarioDAO;
+import com.app.cantinho_banho.model.Endereco;
 import com.app.cantinho_banho.model.Funcionario;
 import com.app.cantinho_banho.model.Usuario;
 import java.io.IOException;
@@ -59,8 +60,24 @@ public class ListarFuncionariosAdmServlet extends HttpServlet {
                         .append("\"conta_ativa\":\"").append(conta_ativa).append("\",")
                         .append("\"matricula\":\"").append(matricula).append("\",")
                         .append("\"funcao\":\"").append(funcao).append("\",")
-                        .append("\"salario\":").append(salario)
-                        .append("}");
+                        .append("\"salario\":").append(salario).append(",");
+
+                if (f.getEndereco() != null) {
+                    Endereco end = f.getEndereco();
+                    json.append("\"endereco\":{")
+                            .append("\"cep-func\":\"").append(end.getCep() != null ? end.getCep() : "").append("\",")
+                            .append("\"logradouro-func\":\"").append(end.getLogradouro() != null ? end.getLogradouro().replace("\"", "\\\"") : "").append("\",")
+                            .append("\"numero-func\":\"").append(end.getNumero() != null ? end.getNumero() : "").append("\",")
+                            .append("\"bairro-func\":\"").append(end.getBairro() != null ? end.getBairro().replace("\"", "\\\"") : "").append("\",")
+                            .append("\"cidade-func\":\"").append(end.getCidade() != null ? end.getCidade().replace("\"", "\\\"") : "").append("\",")
+                            .append("\"uf-func\":\"").append(end.getUf() != null ? end.getUf() : "").append("\",")
+                            .append("\"complemento-func\":\"").append(end.getComplemento() != null ? end.getComplemento().replace("\"", "\\\"") : "").append("\"")
+                            .append("}");
+                } else {
+                    json.append("\"endereco\":null");
+                }
+
+                json.append("}");
 
                 if (i < lista.size() - 1) {
                     json.append(",");

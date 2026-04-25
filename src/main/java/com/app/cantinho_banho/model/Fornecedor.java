@@ -2,11 +2,14 @@ package com.app.cantinho_banho.model;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import javax.persistence.CascadeType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -22,8 +25,9 @@ public class Fornecedor implements Serializable {
     private String cnpj;
     @Column(nullable = false)
     private String telefone;
-    @Column(nullable = false)
-    private String endereco;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "endereco_id")
+    private Endereco endereco;
     @Column(nullable = false)
     private final LocalDateTime dataCadastro;
 
@@ -70,14 +74,6 @@ public class Fornecedor implements Serializable {
         this.email = email;
     }
 
-    public String getEndereco() {
-        return endereco;
-    }
-
-    public void setEndereco(String endereco) {
-        this.endereco = endereco;
-    }
-
     public boolean isAtivo() {
         return ativo;
     }
@@ -88,5 +84,13 @@ public class Fornecedor implements Serializable {
 
     public LocalDateTime getDataCadastro() {
         return dataCadastro;
+    }
+
+    public Endereco getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(Endereco endereco) {
+        this.endereco = endereco;
     }
 }

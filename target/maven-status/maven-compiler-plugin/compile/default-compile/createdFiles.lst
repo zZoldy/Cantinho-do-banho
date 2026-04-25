@@ -64,6 +64,7 @@ com\app\cantinho_banho\controller\ExcluirProdutoServlet.class
 com\app\cantinho_banho\controller\ListarServicosServlet.class
 com\app\cantinho_banho\model\Pet.class
 com\app\cantinho_banho\controller\CadastrarPetServlet.class
+com\app\cantinho_banho\resources\Function.class
 com\app\cantinho_banho\dao\AgendamentoDAO.class
 com\app\cantinho_banho\controller\ExcluirAgendamentoServlet.class
 com\app\cantinho_banho\model\Endereco.class

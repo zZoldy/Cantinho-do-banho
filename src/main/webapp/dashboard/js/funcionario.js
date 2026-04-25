@@ -90,16 +90,20 @@ function renderFuncsCadastro() {
 
         return `
             <div class="func-cad-card">
-              <div class="func-avatar">${f.nome.charAt(0).toUpperCase()}</div>
-              <div class="func-cad-info">
-                <div class="func-cad-nome">${f.nome}</div>
-                <div class="func-cad-cargo">${f.perfil || '—'}</div>
-              </div>
-              <div style="display:flex;gap:6px">
-                <button class="btn-sm-primary" onclick="abrirModalFunc(${f.id})" title="Editar"><i class="fas fa-edit"></i></button>
-                <button class="btn-danger-sm" onclick="excluirFunc(${f.id})" title="Desativar Acesso"><i class="fas fa-trash"></i></button>
-              </div>
-            </div>`;
+                  <div class="func-avatar">${f.nome.charAt(0).toUpperCase()}</div>
+                  <div class="func-cad-info">
+                    <div class="func-cad-nome">${f.nome}</div>
+                    <div class="func-cad-cargo">${f.perfil || '—'}</div>
+                    <div class="func-cad-endereco" style="font-size: 0.75rem; color: #888; margin-top: 2px;">
+                      <i class="fas fa-map-marker-alt" style="font-size: 0.65rem;"></i> 
+                      ${f.endereco ? `${f.endereco.bairro}, ${f.endereco.cidade}` : 'Endereço não informado'}
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn-sm-primary" onclick="abrirModalFunc(${f.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn-danger-sm" onclick="excluirFunc(${f.id})" title="Desativar Acesso"><i class="fas fa-trash"></i></button>
+                  </div>
+                </div>`;
     }).join('');
 }
 function renderPerformance() {
@@ -183,6 +187,16 @@ function abrirModalFunc(id = null) {
             mascaraMoeda({target: document.getElementById('salarioFunc')});
         } else {
             document.getElementById('salarioFunc').value = '';
+        }
+
+        if (f.endereco) {
+            document.getElementById('cep-func').value = f.endereco.cep || '';
+            document.getElementById('logradouro-func').value = f.endereco.logradouro || '';
+            document.getElementById('numero-func').value = f.endereco.numero || '';
+            document.getElementById('bairro-func').value = f.endereco.bairro || '';
+            document.getElementById('cidade-func').value = f.endereco.cidade || '';
+            document.getElementById('uf-func').value = f.endereco.uf || '';
+            document.getElementById('complemento-func').value = f.endereco.complemento || '';
         }
 
         const isAtivo = (f.conta_ativa === true || f.conta_ativa === "true");
@@ -299,6 +313,17 @@ function cadastrarUsuario(event) {
         salarioFormatado = salarioFormatado.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
     }
     formData.append('salario', salarioFormatado);
+
+    const prefixo = 'func';
+    const camposEndereco = ['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'uf', 'complemento'];
+
+    camposEndereco.forEach(campo => {
+        const el = document.getElementById(`${campo}-${prefixo}`);
+
+        if (el && el.value) {
+            formData.append(campo, el.value);
+        }
+    });
 
     let urlDaApi = '../api/funcionarios/cadastrar';
 
@@ -490,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mascaras
     const inputCpf = document.getElementById('cpfFuncionario');
     if (inputCpf)
-        inputCpf.addEventListener('input', mascaraCPF);
+        inputCpf.addEventListener('input', mascaraFuncCPF);
 
     const inputRg = document.getElementById('rgFuncionario');
     if (inputRg)
@@ -499,11 +524,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputSalario = document.getElementById('salarioFunc');
     if (inputSalario)
         inputSalario.addEventListener('input', mascaraMoeda);
+
+    const inputCepFunc = document.getElementById('cep-func');
+
+    if (inputCepFunc) {
+        inputCepFunc.addEventListener('input', (e) => {
+            // Aplica a máscara visual 00000-000
+            let v = e.target.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{5})(\d)/, "$1-$2");
+            e.target.value = v.substring(0, 9);
+
+            // CHAMA A BUSCA: Certifique-se que o prefixo é 'func'
+            if (v.length === 9) {
+                buscarCEP(v, 'func');
+            }
+        });
+    }
 });
 
 // 🎭 MÁSCARAS DE INPUT
 
-function mascaraCPF(evento) {
+function mascaraFuncCPF(evento) {
     let v = evento.target.value.replace(/\D/g, ""); // Remove tudo o que não é dígito
     v = v.replace(/(\d{3})(\d)/, "$1.$2"); // Coloca um ponto entre o 3º e o 4º dígitos
     v = v.replace(/(\d{3})(\d)/, "$1.$2"); // Coloca um ponto entre o 6º e o 7º dígitos

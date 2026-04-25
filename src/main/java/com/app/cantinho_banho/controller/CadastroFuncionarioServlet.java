@@ -2,6 +2,7 @@ package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.FuncionarioDAO;
 import com.app.cantinho_banho.dao.UsuarioDAO;
+import com.app.cantinho_banho.model.Endereco;
 import com.app.cantinho_banho.model.Funcionario;
 import com.app.cantinho_banho.model.Usuario;
 import java.io.IOException;
@@ -98,6 +99,17 @@ public class CadastroFuncionarioServlet extends HttpServlet {
                 func.setSalario(0.0);
             }
 
+            Endereco endFunc = new Endereco();
+            endFunc.setCep(request.getParameter("cep-func"));
+            endFunc.setLogradouro(request.getParameter("logradouro-func"));
+            endFunc.setNumero(request.getParameter("numero-func"));
+            endFunc.setBairro(request.getParameter("bairro-func"));
+            endFunc.setCidade(request.getParameter("cidade-func"));
+            endFunc.setUf(request.getParameter("uf-func"));
+            endFunc.setComplemento(request.getParameter("complemento-func"));
+
+            func.setEndereco(endFunc);
+
             FuncionarioDAO funcDAO = new FuncionarioDAO();
 
             String matriculaSegura = funcDAO.gerarMatriculaUnica();
@@ -106,7 +118,7 @@ public class CadastroFuncionarioServlet extends HttpServlet {
             func.setUsuario(novoUsuario);
 
             funcDAO.salvar(func);
-            
+
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
 
             response.setStatus(201);

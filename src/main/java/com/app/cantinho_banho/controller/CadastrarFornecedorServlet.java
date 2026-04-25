@@ -1,6 +1,7 @@
 package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.FornecedorDAO;
+import com.app.cantinho_banho.model.Endereco;
 import com.app.cantinho_banho.model.Fornecedor;
 import com.app.cantinho_banho.resources.Function;
 
@@ -22,31 +23,28 @@ public class CadastrarFornecedorServlet extends HttpServlet {
             Fornecedor fornecedor = new Fornecedor();
 
             fornecedor.setRazaoSocial(request.getParameter("nome"));
-            if (!Function.validarInicioNaoLetra(fornecedor.getRazaoSocial())) {
+            if (Function.validarInicioNaoLetra(fornecedor.getRazaoSocial())) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.getWriter().write("Erro: A Razão Social deve iniciar com uma letra.");
                 return;
             }
 
             String cnpj = request.getParameter("cnpj");
-            if (!Function.validarInicioNaoLetra(cnpj)) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("Erro: O cnpj deve conter números.");
-                return;
-            }
             fornecedor.setCnpj(cnpj != null && !cnpj.isEmpty() ? cnpj : "Não Informado");
 
             String telefone = request.getParameter("telefone");
             fornecedor.setTelefone(telefone != null && !telefone.isEmpty() ? telefone : "Não Informado");
 
-            String endereco = request.getParameter("endereco");
-            if (!Function.validarInicioNaoLetra(endereco)) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("Erro: O endereço deve iniciar conter números.");
-                return;
-            }
-            
-            // fornecedor.setEndereco(endereco != null && !endereco.isEmpty() ? endereco : "Não Informado");
+            Endereco enderecoObj = new Endereco();
+            enderecoObj.setCep(request.getParameter("cep-forn"));
+            enderecoObj.setLogradouro(request.getParameter("logradouro-forn"));
+            enderecoObj.setNumero(request.getParameter("numero-forn"));
+            enderecoObj.setBairro(request.getParameter("bairro-forn"));
+            enderecoObj.setCidade(request.getParameter("cidade-forn"));
+            enderecoObj.setUf(request.getParameter("uf-forn"));
+            enderecoObj.setComplemento(request.getParameter("complemento-forn"));
+
+            fornecedor.setEndereco(enderecoObj);
 
             fornecedor.setEmail(request.getParameter("email"));
             fornecedor.setAtivo(true);
