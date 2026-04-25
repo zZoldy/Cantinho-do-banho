@@ -2,6 +2,7 @@ package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.DespesaDAO;
 import com.app.cantinho_banho.model.Despesa;
+import com.app.cantinho_banho.resources.Function;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -21,6 +22,11 @@ public class CadastrarDespesaServlet extends HttpServlet {
         try {
             Despesa d = new Despesa();
             d.setDescricao(request.getParameter("descricao"));
+            if (!Function.validarInicioNaoLetra(d.getDescricao())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("Erro: O Descrição deve iniciar com uma letra.");
+                return;
+            }
             d.setValor(Double.parseDouble(request.getParameter("valor")));
             d.setFornecedor(request.getParameter("fornecedor"));
             d.setFormaPagamento(request.getParameter("formaPagamento"));

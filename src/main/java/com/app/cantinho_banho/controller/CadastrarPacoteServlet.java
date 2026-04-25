@@ -4,6 +4,7 @@ import com.app.cantinho_banho.dao.PacoteDAO;
 import com.app.cantinho_banho.dao.ServicoDAO;
 import com.app.cantinho_banho.model.Pacote;
 import com.app.cantinho_banho.model.Servico;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,6 +22,11 @@ public class CadastrarPacoteServlet extends HttpServlet {
 
         try {
             String nome = request.getParameter("nome");
+            if (!Function.validarInicioNaoLetra(nome)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("Erro: O nome do pacote deve iniciar com uma letra.");
+                return;
+            }
             int sessoes = Integer.parseInt(request.getParameter("sessoes"));
             int validade = Integer.parseInt(request.getParameter("validade"));
             double valor = Double.parseDouble(request.getParameter("valor"));

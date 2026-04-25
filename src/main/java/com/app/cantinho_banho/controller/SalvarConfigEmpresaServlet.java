@@ -14,12 +14,16 @@ import javax.servlet.http.Part;
 @WebServlet("/api/config/empresa/salvar")
 @MultipartConfig
 public class SalvarConfigEmpresaServlet extends HttpServlet {
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
+            request.setCharacterEncoding("UTF-8");
             ConfigEmpresaDAO dao = new ConfigEmpresaDAO();
             ConfigEmpresa config = dao.obterConfiguracao(); // Busca a única linha existente
-            if (config == null) config = new ConfigEmpresa();
+            if (config == null) {
+                config = new ConfigEmpresa();
+            }
 
             config.setRazaoSocial(request.getParameter("razaoSocial"));
             config.setCnpj(request.getParameter("cnpj"));

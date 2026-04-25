@@ -1,11 +1,14 @@
 package com.app.cantinho_banho.model;
 
 import java.io.Serializable;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
+import javax.persistence.OneToOne;
 
 @Entity
 public class ConfigEmpresa implements Serializable {
@@ -24,6 +27,10 @@ public class ConfigEmpresa implements Serializable {
     private byte[] certificadoPfx;
     private String certificadoSenha;
     private Integer ambiente;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "endereco_id")
+    private Endereco endereco;
 
     public Long getId() {
         return id;
@@ -96,5 +103,15 @@ public class ConfigEmpresa implements Serializable {
     public void setAmbiente(Integer ambiente) {
         this.ambiente = ambiente;
     }
+
+    public Endereco getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(Endereco endereco) {
+        this.endereco = endereco;
+    }
+    
+    
 
 }

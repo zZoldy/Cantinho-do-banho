@@ -5,6 +5,7 @@ import com.app.cantinho_banho.dao.UsuarioDAO;
 import com.app.cantinho_banho.model.Cliente;
 import com.app.cantinho_banho.model.Usuario;
 import com.app.cantinho_banho.model.Endereco; // 🟢 Importante importar o novo modelo
+import com.app.cantinho_banho.resources.Function;
 import org.mindrot.jbcrypt.BCrypt;
 import java.io.IOException;
 import java.util.UUID;
@@ -24,6 +25,11 @@ public class CadastrarClienteServlet extends HttpServlet {
 
         try {
             String nome = request.getParameter("nome");
+            if (!Function.validarInicioNaoLetra(nome)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("Erro: O nome do pacote deve iniciar com uma letra.");
+                return;
+            }
             String telefone = request.getParameter("telefone");
             String email = request.getParameter("email");
             String cpf = request.getParameter("cpf");

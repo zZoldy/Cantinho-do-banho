@@ -2,6 +2,7 @@ package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.FornecedorDAO;
 import com.app.cantinho_banho.model.Fornecedor;
+import com.app.cantinho_banho.resources.Function;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -21,15 +22,31 @@ public class CadastrarFornecedorServlet extends HttpServlet {
             Fornecedor fornecedor = new Fornecedor();
 
             fornecedor.setRazaoSocial(request.getParameter("nome"));
+            if (!Function.validarInicioNaoLetra(fornecedor.getRazaoSocial())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("Erro: A Razão Social deve iniciar com uma letra.");
+                return;
+            }
 
             String cnpj = request.getParameter("cnpj");
+            if (!Function.validarInicioNaoLetra(cnpj)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("Erro: O cnpj deve conter números.");
+                return;
+            }
             fornecedor.setCnpj(cnpj != null && !cnpj.isEmpty() ? cnpj : "Não Informado");
 
             String telefone = request.getParameter("telefone");
             fornecedor.setTelefone(telefone != null && !telefone.isEmpty() ? telefone : "Não Informado");
 
             String endereco = request.getParameter("endereco");
-            fornecedor.setEndereco(endereco != null && !endereco.isEmpty() ? endereco : "Não Informado");
+            if (!Function.validarInicioNaoLetra(endereco)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("Erro: O endereço deve iniciar conter números.");
+                return;
+            }
+            
+            // fornecedor.setEndereco(endereco != null && !endereco.isEmpty() ? endereco : "Não Informado");
 
             fornecedor.setEmail(request.getParameter("email"));
             fornecedor.setAtivo(true);

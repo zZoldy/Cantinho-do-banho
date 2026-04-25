@@ -66,7 +66,7 @@ function enviarAgendamento(e) {
     formData.append('data', data);
     formData.append('hora', hora);
 
-    fetch('/Cantinho_banho-1.0-SNAPSHOT/api/agendar', {
+    fetch('api/agendar', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
@@ -122,7 +122,7 @@ async function carregarServicosNoSelect() {
         return;
 
     try {
-        const resposta = await fetch('/Cantinho_banho-1.0-SNAPSHOT/api/servicos/listar');
+        const resposta = await fetch('api/servicos/listar');
         if (resposta.ok) {
             const servicos = await resposta.json();
 
