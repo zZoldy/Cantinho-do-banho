@@ -38,13 +38,13 @@ public class AtualizarFuncionarioServlet extends HttpServlet {
             String salario = request.getParameter("salario");
 
             Endereco endFunc = new Endereco();
-            endFunc.setCep(request.getParameter("cep-func"));
-            endFunc.setLogradouro(request.getParameter("logradouro-func"));
-            endFunc.setNumero(request.getParameter("numero-func"));
-            endFunc.setBairro(request.getParameter("bairro-func"));
-            endFunc.setCidade(request.getParameter("cidade-func"));
-            endFunc.setUf(request.getParameter("uf-func"));
-            endFunc.setComplemento(request.getParameter("complemento-func"));
+            endFunc.setCep(request.getParameter("cep"));
+            endFunc.setLogradouro(request.getParameter("logradouro"));
+            endFunc.setNumero(request.getParameter("numero"));
+            endFunc.setBairro(request.getParameter("bairro"));
+            endFunc.setCidade(request.getParameter("cidade"));
+            endFunc.setUf(request.getParameter("uf"));
+            endFunc.setComplemento(request.getParameter("complemento"));
 
             java.util.ArrayList<String> camposFaltando = new java.util.ArrayList<>();
 

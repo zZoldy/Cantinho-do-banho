@@ -36,13 +36,13 @@ public class CadastrarFornecedorServlet extends HttpServlet {
             fornecedor.setTelefone(telefone != null && !telefone.isEmpty() ? telefone : "Não Informado");
 
             Endereco enderecoObj = new Endereco();
-            enderecoObj.setCep(request.getParameter("cep-forn"));
-            enderecoObj.setLogradouro(request.getParameter("logradouro-forn"));
-            enderecoObj.setNumero(request.getParameter("numero-forn"));
-            enderecoObj.setBairro(request.getParameter("bairro-forn"));
-            enderecoObj.setCidade(request.getParameter("cidade-forn"));
-            enderecoObj.setUf(request.getParameter("uf-forn"));
-            enderecoObj.setComplemento(request.getParameter("complemento-forn"));
+            enderecoObj.setCep(request.getParameter("cep"));
+            enderecoObj.setLogradouro(request.getParameter("logradouro"));
+            enderecoObj.setNumero(request.getParameter("numero"));
+            enderecoObj.setBairro(request.getParameter("bairro"));
+            enderecoObj.setCidade(request.getParameter("cidade"));
+            enderecoObj.setUf(request.getParameter("uf"));
+            enderecoObj.setComplemento(request.getParameter("complemento"));
 
             fornecedor.setEndereco(enderecoObj);
 

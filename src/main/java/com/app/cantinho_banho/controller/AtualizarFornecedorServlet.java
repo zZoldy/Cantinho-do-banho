@@ -33,13 +33,13 @@ public class AtualizarFornecedorServlet extends HttpServlet {
                     endereco = new Endereco();
                 }
 
-                endereco.setCep(request.getParameter("cep-forn"));
-                endereco.setLogradouro(request.getParameter("logradouro-forn"));
-                endereco.setNumero(request.getParameter("numero-forn"));
-                endereco.setBairro(request.getParameter("bairro-forn"));
-                endereco.setCidade(request.getParameter("cidade-forn"));
-                endereco.setUf(request.getParameter("uf-forn"));
-                endereco.setComplemento(request.getParameter("complemento-forn"));
+                endereco.setCep(request.getParameter("cep"));
+                endereco.setLogradouro(request.getParameter("logradouro"));
+                endereco.setNumero(request.getParameter("numero"));
+                endereco.setBairro(request.getParameter("bairro"));
+                endereco.setCidade(request.getParameter("cidade"));
+                endereco.setUf(request.getParameter("uf"));
+                endereco.setComplemento(request.getParameter("complemento"));
 
                 fornecedor.setEndereco(endereco);
                 dao.atualizar(fornecedor);

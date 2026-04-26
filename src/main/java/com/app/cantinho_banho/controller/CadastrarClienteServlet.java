@@ -16,13 +16,13 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/api/clientes/cadastrar")
 public class CadastrarClienteServlet extends HttpServlet {
-
+    
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-
+        
         try {
             String nome = request.getParameter("nome");
             if (!Function.validarInicioNaoLetra(nome)) {
@@ -33,29 +33,29 @@ public class CadastrarClienteServlet extends HttpServlet {
             String telefone = request.getParameter("telefone");
             String email = request.getParameter("email");
             String cpf = request.getParameter("cpf");
-
+            
             String cep = request.getParameter("cep");
             String logradouro = request.getParameter("logradouro");
             String numero = request.getParameter("numero");
             String bairro = request.getParameter("bairro");
             String cidade = request.getParameter("cidade");
             String uf = request.getParameter("uf");
-
+            
             ClienteDAO clienteDAO = new ClienteDAO();
-
-            Cliente cliente = clienteDAO.buscarPorTelefoneENome(telefone, nome);
-
+            
+            Long id = clienteDAO.existeTelefone(telefone);
+            Cliente cliente = null;
+            
+            if (id > 0) {
+                cliente = clienteDAO.buscarPorId(id);
+            } 
+            
             if (cliente == null) {
-                if (clienteDAO.existeTelefone(telefone)) {
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                    response.getWriter().write("Este Telefone já está em uso por outra pessoa.");
-                    return;
-                }
                 cliente = new Cliente();
                 cliente.setNome(nome);
                 cliente.setTelefone(telefone);
             }
-
+            
             if (cep != null && !cep.trim().isEmpty()) {
                 Endereco endereco = new Endereco();
                 endereco.setCep(cep);
@@ -64,30 +64,30 @@ public class CadastrarClienteServlet extends HttpServlet {
                 endereco.setBairro(bairro);
                 endereco.setCidade(cidade);
                 endereco.setUf(uf);
-
+                
                 cliente.setEndereco(endereco);
             }
-
+            
             String senhaGerada = null;
-
+            
             if (email != null && !email.trim().isEmpty() && cpf != null && !cpf.trim().isEmpty()) {
                 UsuarioDAO usuarioDAO = new UsuarioDAO();
-
+                
                 if (usuarioDAO.existeEmail(email)) {
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                     response.getWriter().write("Este e-mail já está em uso.");
                     return;
                 }
-
+                
                 if (usuarioDAO.existeCpf(cpf)) {
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                     response.getWriter().write("Este CPF já está em uso.");
                     return;
                 }
-
+                
                 senhaGerada = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
                 String senhaCriptografada = BCrypt.hashpw(senhaGerada, BCrypt.gensalt());
-
+                
                 Usuario usuario = new Usuario();
                 usuario.setNome(nome);
                 usuario.setEmail(email);
@@ -96,21 +96,21 @@ public class CadastrarClienteServlet extends HttpServlet {
                 usuario.setPerfil("Cliente");
                 usuario.setAtivo(true);
                 usuario.setReset_password(true);
-
+                
                 cliente.setUsuario(usuario);
             }
-
+            
             clienteDAO.salvar(cliente);
-
+            
             String json = String.format("{\"senha\": \"%s\", \"telefone\": \"%s\", \"status\": \"sucesso\"}",
                     senhaGerada != null ? senhaGerada : "",
                     cliente.getTelefone() != null ? cliente.getTelefone() : "");
-
+            
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(json);
-
+            
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
-
+            
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

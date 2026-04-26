@@ -18,14 +18,14 @@ public class AtualizarServicoServlet extends HttpServlet {
         try {
             Long id = Long.parseLong(request.getParameter("id"));
             String nome = request.getParameter("nome");
-            String tempoStr = request.getParameter("tempo");
+            String valorStr = request.getParameter("valor");
 
             ServicoDAO dao = new ServicoDAO();
             Servico s = dao.buscarPorId(id);
 
             if (s != null) {
                 s.setNome(nome);
-                s.setTempoAtendimento(Integer.parseInt(tempoStr));
+                s.setValor(Double.parseDouble(valorStr.replace(",", ".")));
                 dao.atualizar(s);
                 response.setStatus(HttpServletResponse.SC_OK);
 

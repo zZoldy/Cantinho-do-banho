@@ -23,15 +23,15 @@ public class ListarServicosServlet extends HttpServlet {
 
             StringBuilder json = new StringBuilder();
             json.append("[");
-            
+
             for (int i = 0; i < servicos.size(); i++) {
                 Servico s = servicos.get(i);
                 json.append("{");
                 json.append("\"id\":").append(s.getId()).append(",");
                 json.append("\"nome\":\"").append(s.getNome().replace("\"", "\\\"")).append("\",");
-                json.append("\"tempo\":").append(s.getTempoAtendimento());
+                json.append("\"valor\":").append(s.getValor());
                 json.append("}");
-                
+
                 if (i < servicos.size() - 1) {
                     json.append(",");
                 }
@@ -40,7 +40,7 @@ public class ListarServicosServlet extends HttpServlet {
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(json.toString());
-            
+
         } catch (IOException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

@@ -45,24 +45,31 @@ public class AgendamentoServlet extends HttpServlet {
             LocalDate data = LocalDate.parse(dataStr);
             LocalTime hora = LocalTime.parse(horaStr);
 
-            Cliente cliente = clienteDAO.buscarPorTelefoneENome(telefone, nomeDono);
-            if (cliente == null) {
-                if (clienteDAO.existeTelefone(telefone)) {
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                    response.getWriter().write("Este Telefone já está em uso por outra pessoa.");
-                    return;
-                }
-                
-                cliente = new Cliente();
-                cliente.setNome(nomeDono);
-                cliente.setTelefone(telefone);
-            }
-
+            Cliente cliente = new Cliente();
             Pet pet = null;
 
-            if (cliente.getId() != null) {
-                PetDAO petDAO = new PetDAO();
-                pet = petDAO.buscarPorNomeEDono(nomePet, cliente.getId());
+            Long id = clienteDAO.buscarIdPorTelefoneENome(telefone, nomeDono);
+
+            if (id != null) {
+                if (clienteDAO.temUsuario(id)) {
+                    cliente = clienteDAO.buscarPorId(id);
+                    if (cliente.getNome().equals(nomeDono)) {
+                        PetDAO petDAO = new PetDAO();
+                        pet = petDAO.buscarPorNomeEDono(nomePet, cliente.getId());
+                    } else {
+                        cliente = null;
+                        cliente = new Cliente();
+                        cliente.setNome(nomeDono);
+                        cliente.setTelefone(telefone);
+                    }
+
+                } else {
+                    cliente.setNome(nomeDono);
+                    cliente.setTelefone(telefone);
+                }
+            } else {
+                cliente.setNome(nomeDono);
+                cliente.setTelefone(telefone);
             }
 
             if (pet == null) {

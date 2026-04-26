@@ -325,7 +325,6 @@ function editarFornecedor(id) {
     document.getElementById('forn-cnpj').value = forn.cnpj || '';
     document.getElementById('forn-tel').value = forn.telefone || '';
     document.getElementById('forn-email').value = forn.email || '';
-    document.getElementById('forn-end').value = forn.endereco || '';
 
     if (forn.endereco) {
         const p = 'forn';

@@ -38,6 +38,15 @@ public class CriarAcessoClienteServlet extends HttpServlet {
 
             ClienteDAO dao = new ClienteDAO();
             Cliente cliente = dao.buscarPorId(clienteId);
+            String telefoneAlvo = cliente.getTelefone();
+            String nomeAlvo = cliente.getNome();
+
+            Cliente duplicado = dao.buscarDuplicadoSemUsuario(nomeAlvo, telefoneAlvo, clienteId);
+
+            if (duplicado != null) {
+                // Transfere o histórico e deleta o duplicado antes de finalizar o acesso
+                dao.fundirClientes(duplicado, cliente);
+            }
 
             if (cliente == null) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);

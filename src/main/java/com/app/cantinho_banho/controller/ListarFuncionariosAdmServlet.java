@@ -65,13 +65,13 @@ public class ListarFuncionariosAdmServlet extends HttpServlet {
                 if (f.getEndereco() != null) {
                     Endereco end = f.getEndereco();
                     json.append("\"endereco\":{")
-                            .append("\"cep-func\":\"").append(end.getCep() != null ? end.getCep() : "").append("\",")
-                            .append("\"logradouro-func\":\"").append(end.getLogradouro() != null ? end.getLogradouro().replace("\"", "\\\"") : "").append("\",")
-                            .append("\"numero-func\":\"").append(end.getNumero() != null ? end.getNumero() : "").append("\",")
-                            .append("\"bairro-func\":\"").append(end.getBairro() != null ? end.getBairro().replace("\"", "\\\"") : "").append("\",")
-                            .append("\"cidade-func\":\"").append(end.getCidade() != null ? end.getCidade().replace("\"", "\\\"") : "").append("\",")
-                            .append("\"uf-func\":\"").append(end.getUf() != null ? end.getUf() : "").append("\",")
-                            .append("\"complemento-func\":\"").append(end.getComplemento() != null ? end.getComplemento().replace("\"", "\\\"") : "").append("\"")
+                            .append("\"cep\":\"").append(end.getCep() != null ? end.getCep() : "").append("\",")
+                            .append("\"logradouro\":\"").append(end.getLogradouro() != null ? end.getLogradouro().replace("\"", "\\\"") : "").append("\",")
+                            .append("\"numero\":\"").append(end.getNumero() != null ? end.getNumero() : "").append("\",")
+                            .append("\"bairro\":\"").append(end.getBairro() != null ? end.getBairro().replace("\"", "\\\"") : "").append("\",")
+                            .append("\"cidade\":\"").append(end.getCidade() != null ? end.getCidade().replace("\"", "\\\"") : "").append("\",")
+                            .append("\"uf\":\"").append(end.getUf() != null ? end.getUf() : "").append("\",")
+                            .append("\"complemento\":\"").append(end.getComplemento() != null ? end.getComplemento().replace("\"", "\\\"") : "").append("\"")
                             .append("}");
                 } else {
                     json.append("\"endereco\":null");

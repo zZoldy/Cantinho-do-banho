@@ -17,16 +17,16 @@ public class CadastrarServicoServlet extends HttpServlet {
 
         try {
             String nome = request.getParameter("nome");
-            String tempoStr = request.getParameter("tempo");
-
-            if (nome == null || nome.isEmpty() || tempoStr == null || tempoStr.isEmpty()) {
+            String valorStr = request.getParameter("valor");
+            
+            if (nome == null || nome.isEmpty() || valorStr == null || valorStr.isEmpty()) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
 
             Servico s = new Servico();
             s.setNome(nome);
-            s.setTempoAtendimento(Integer.parseInt(tempoStr));
+            s.setValor(Double.parseDouble(valorStr.replace(",", ".")));
 
             ServicoDAO dao = new ServicoDAO();
             dao.salvar(s);

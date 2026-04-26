@@ -728,7 +728,7 @@
                 width:70px;
                 text-align:right
             }
-            /* ── Pagamentos por método ── */
+            
             .metodo-box{
                 background:#161616;
                 border:1px solid #252525;
@@ -753,7 +753,7 @@
                 text-transform:uppercase;
                 letter-spacing:1px
             }
-            /* ── Btn primário pequeno ── */
+
             .btn-sm-primary{
                 background:#C9A96E22;
                 border:1px solid #C9A96E55;
@@ -767,7 +767,7 @@
             .btn-sm-primary:hover{
                 background:#C9A96E33
             }
-            /* ── Funcionários cadastro ── */
+
             .func-cad-card{
                 background:#161616;
                 border:1px solid #252525;
@@ -795,7 +795,7 @@
             .func-cad-wpp{
                 display:none
             }
-            /* filtro botoes */
+
             .btn-filtro-group{
                 display:flex;
                 gap:6px;
@@ -817,6 +817,47 @@
                 border-color:#C9A96E55;
                 color:#C9A96E
             }
+
+            .sub-nav-container {
+                margin-bottom: 25px;
+                border-bottom: 2px solid #252525;
+                display: flex;
+                gap: 10px;
+            }
+
+
+            .sub-nav-link {
+                background: transparent;
+                border: none;
+                color: #888; 
+                padding: 12px 20px;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                border-bottom: 3px solid transparent;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                border-radius: 6px 6px 0 0; 
+            }
+            
+            .sub-nav-link:hover:not(.active) {
+                color: #C9A96E;
+                background: rgba(201, 169, 110, 0.05);
+                border-bottom-color: rgba(201, 169, 110, 0.3);
+            }
+
+            .sub-nav-link.active {
+                color: #C9A96E;
+                border-bottom: 3px solid #C9A96E; 
+                background: rgba(201, 169, 110, 0.1); 
+            }
+
+            .sub-nav-link i {
+                font-size: 1.1rem;
+                transition: color 0.3s ease;
+            }
         </style>
     </head>
     <body class="admin-page">
@@ -829,11 +870,11 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</a>
+                <a href="#" class="nav-item" data-page="clientes"><i class="fas fa-star"></i> Clientes</a>
                 <a href="#" class="nav-item" data-page="novos"><i class="fas fa-bell"></i> Novos Pedidos <span class="nav-badge" id="badge-novos">0</span></a>
                 <a href="#" class="nav-item" data-page="pendentes"><i class="fas fa-clock"></i> Pendentes <span class="nav-badge" id="badge-pend">0</span></a>
                 <a href="#" class="nav-item" data-page="agenda"><i class="fas fa-calendar-check"></i> Agenda Confirmada</a>
                 <a href="#" class="nav-item" data-page="retirada"><i class="fas fa-dog"></i> Retirada do Pet <span class="nav-badge" id="badge-retirada">0</span></a>
-                <a href="#" class="nav-item" data-page="clientes"><i class="fas fa-star"></i> Clientes Cadastrados</a>
                 <a href="#" class="nav-item" data-page="estoques"><i class="fas fa-boxes"></i> Estoque</a>
                 <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="funcionarios"><i class="fas fa-users"></i> Funcionários</a>
@@ -982,29 +1023,36 @@
                 <div id="lista-retirada"></div>
             </section>
 
-            <!-- ═══════════════ CLIENTES CADASTRADOS ═══════════════ -->
+            <!-- ═══════════════ CLIENTES ═══════════════ -->
             <section class="page hidden" id="page-clientes">
                 <div class="page-header">
-                    <h3><i class="fas fa-star" style="color:#C9A96E;margin-right:8px"></i>Clientes Cadastrados</h3>
+                    <h3><i class="fas fa-users" style="color:#C9A96E;margin-right:8px"></i>Gestão de Clientes</h3>
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                         <button class="btn-secundario" onclick="abrirRelatorio()"><i class="fas fa-file-alt"></i> Relatório</button>
                         <button class="btn-primary" onclick="abrirModalNovoCliente()"><i class="fas fa-plus"></i> Novo Cliente</button>
                     </div>
                 </div>
 
-                <!-- Pacotes criados (colapsável) -->
-                <div id="painel-pacotes" style="display:none;margin-bottom:20px">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                        <h4 style="color:#888;font-size:.82rem;text-transform:uppercase;letter-spacing:2px;margin:0"><i class="fas fa-box" style="color:#C9A96E;margin-right:6px"></i>Pacotes Cadastrados</h4>
-                    </div>
-                    <div id="lista-pacotes-painel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
+                <div class="sub-nav-container" style="margin-bottom: 20px; border-bottom: 1px solid #252525; display: flex; gap: 15px;">
+                    <button class="sub-nav-link active" id="btn-sub-cadastrados" onclick="mudarSubAbaClientes('cadastrados')">
+                        <i class="fas fa-user-check"></i> Cadastrados
+                    </button>
+                    <button class="sub-nav-link" id="btn-sub-nao-cadastrados" onclick="mudarSubAbaClientes('nao-cadastrados')">
+                        <i class="fas fa-user-slash"></i> Sem Cadastro
+                    </button>
                 </div>
 
                 <div class="filtros-bar-sm">
                     <input type="text" id="busca-clientes" placeholder="🔍 Buscar cliente ou telefone..." oninput="renderClientes()"/>
                 </div>
 
-                <div id="lista-clientes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
+                <div id="container-clientes-cadastrados">
+                    <div id="lista-clientes-cadastrados" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
+                </div>
+
+                <div id="container-clientes-nao-cadastrados" class="hidden">
+                    <div id="lista-clientes-nao-cadastrados" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
+                </div>
             </section>
 
             <!-- ═══════════════ FUNCIONÁRIOS ═══════════════ -->
@@ -1109,11 +1157,11 @@
                         <button class="btn-filtro active" onclick="navConfig('servicos')" id="btn-conf-servicos">
                             <i class="fas fa-cut"></i> <span>Serviços Base</span>
                         </button>
-                        <button class="btn-filtro" onclick="navConfig('horarios')" id="btn-conf-horarios">
-                            <i class="fas fa-clock"></i> <span>Funcionamento</span>
-                        </button>
                         <button class="btn-filtro" onclick="navConfig('pacotes')" id="btn-conf-pacotes">
                             <i class="fas fa-box"></i> <span>Pacotes</span>
+                        </button>
+                        <button class="btn-filtro" onclick="navConfig('horarios')" id="btn-conf-horarios">
+                            <i class="fas fa-clock"></i> <span>Funcionamento</span>
                         </button>
                         <button class="btn-filtro" onclick="navConfig('fornecedores')" id="btn-conf-fornecedores">
                             <i class="fas fa-truck"></i> <span>Fornecedores</span>
@@ -1206,7 +1254,7 @@
                                             <th>Razão Social</th>
                                             <th>CNPJ</th>
                                             <th>Contato</th>
-                                            <th style="text-align: right;">Ações</th>
+                                            <th style="padding: 12px;">Endereço</th> <th style="padding: 12px; text-align: right;">Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbody-fornecedores-config">
@@ -1732,8 +1780,9 @@
                         </div>
 
                         <div class="field" style="margin-bottom: 15px;">
-                            <label class="form-label">Tempo Estimado (Minutos)</label>
-                            <input type="number" id="tempo-servico" class="form-ctrl" required min="1" placeholder="Ex: 60 (1 HORA)">
+                            <label class="form-label">Valor do Serviço (R$)</label>
+                            <input type="text" id="serv-valor" class="form-ctrl" placeholder="R$ 0,00" required 
+                                   oninput="if(typeof aplicarMascaraMoeda === 'function') aplicarMascaraMoeda(this)">
                         </div>
                     </form>
                 </div>
@@ -2134,12 +2183,12 @@
 //
 //
 //
+
             function conectarWebSocket() {
                 const protocolo = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
                 const host = window.location.host;
 
                 const contextPath = window.location.pathname.substring(0, window.location.pathname.indexOf('/', 1));
-
 
                 const urlWebSocket = `${protocolo}${host}${contextPath}/ws/notificacoes`;
 

@@ -679,40 +679,7 @@
                                             inputData.setAttribute('min', hoje);
                                         }
 
-                                        carregarHorarioDinamico();
                                     });
-
-                                    async function carregarHorarioDinamico() {
-                                        const divHorario = document.getElementById('horario-dinamico');
-                                        try {
-                                            const resposta = await fetch('api/horarios/listar');
-                                            if (resposta.ok) {
-                                                const horarios = await resposta.json();
-
-                                                window.horariosLoja = horarios;
-                                                aplicarRegrasNoFormulario();
-
-                                                if (divHorario && horarios.length > 0) {
-                                                    let htmlFormatado = '';
-                                                    horarios.forEach(h => {
-                                                        let nomeCurto = h.nomeDia.substring(0, 3);
-                                                        if (h.aberto) {
-                                                            htmlFormatado += `${nomeCurto}: <strong>${h.horaAbertura} – ${h.horaFechamento}</strong><br>`;
-                                                        } else {
-                                                            htmlFormatado += `${nomeCurto}: <strong style="color: #dc3545;">Fechado</strong><br>`;
-                                                        }
-                                                    });
-                                                    divHorario.innerHTML = htmlFormatado;
-                                                } else if (divHorario) {
-                                                    divHorario.innerHTML = "Horários não configurados.";
-                                                }
-                                            }
-                                        } catch (erro) {
-                                            console.error("Erro:", erro);
-                                            if (divHorario)
-                                                divHorario.innerHTML = "Erro ao carregar.";
-                                        }
-                                    }
 
                                     function aplicarRegrasNoFormulario() {
                                         const inputData = document.getElementById('data');

@@ -22,12 +22,12 @@ public class ConfirmarAgendamentoServlet extends HttpServlet {
             String novoStatus = request.getParameter("status");
 
             AgendamentoDAO dao = new AgendamentoDAO();
-            
+
             Agendamento agendamento = dao.buscarPorId(id);
 
             if (agendamento != null) {
                 agendamento.setStatus(novoStatus);
-                
+
                 if (novaData != null && !novaData.isEmpty()) {
                     agendamento.setData(LocalDate.parse(novaData));
                 }
@@ -35,8 +35,14 @@ public class ConfirmarAgendamentoServlet extends HttpServlet {
                     agendamento.setHora(LocalTime.parse(novaHora));
                 }
 
+                if (agendamento.getServico() != null && agendamento.getServico().getValor() != null) {
+                    if (agendamento.getValor() == 0.0) {
+                        agendamento.setValor(agendamento.getServico().getValor());
+                    }
+                }
+
                 dao.salvarOuAtualizar(agendamento);
-                
+
                 com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
 
                 response.setStatus(HttpServletResponse.SC_OK);

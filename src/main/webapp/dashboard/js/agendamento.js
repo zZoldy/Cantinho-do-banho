@@ -624,8 +624,11 @@ function renderServicos() {
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border: 1px solid #252525; border-left: 4px solid #C9A96E; border-radius: 8px; background: #111;">
             <div>
                 <strong style="color: #eee; display: block; font-size: 1rem; margin-bottom: 4px;">${s.nome}</strong>
-                <span style="font-size: 0.8rem; color: #888;"><i class="fas fa-stopwatch" style="color: #C9A96E; margin-right: 4px;"></i> ${s.tempo} minutos estim.</span>
-            </div>
+                    <span style="font-size: 0.8rem; color: #888;">
+                        <i class="fas fa-dollar-sign" style="color: #C9A96E; margin-right: 4px;"></i> 
+                        R$ ${parseFloat(s.valor || 0).toFixed(2).replace('.', ',')}
+                    </span>
+                </div>
             <div style="display: flex; gap: 8px;">
                 <button onclick="abrirModalServico(${s.id})" class="btn-sm-primary" title="Editar"><i class="fas fa-edit"></i></button>
                 <button onclick="excluirServico(${s.id}, this)" class="btn-danger-sm" title="Excluir"><i class="fas fa-trash"></i></button>
@@ -1317,7 +1320,7 @@ async function listarServico() {
 function abrirModalServico(id = null) {
     const inputId = document.getElementById('id-servico');
     const inputNome = document.getElementById('nome-servico');
-    const inputTempo = document.getElementById('tempo-servico');
+    const inputValor = document.getElementById('serv-valor');
     const titulo = document.getElementById('modal-servico-titulo');
 
     if (id) {
@@ -1326,14 +1329,14 @@ function abrirModalServico(id = null) {
         if (serv) {
             inputId.value = serv.id;
             inputNome.value = serv.nome;
-            inputTempo.value = serv.tempo;
+            inputValor.value = serv.valor;
             titulo.innerHTML = '<i class="fas fa-edit"></i> Editar Serviço';
         }
     } else {
         // Modo Novo
         inputId.value = '';
         inputNome.value = '';
-        inputTempo.value = '';
+        inputValor.value = '';
         titulo.innerHTML = '<i class="fas fa-cut"></i> Novo Serviço';
     }
 
@@ -1354,13 +1357,13 @@ async function salvarServico(e) {
 
     const id = document.getElementById('id-servico').value;
     const nome = document.getElementById('nome-servico').value;
-    const tempo = document.getElementById('tempo-servico').value;
+    const valor = document.getElementById('serv-valor').value;
 
     const params = new URLSearchParams();
     if (id)
         params.append('id', id); // Só envia o ID se for edição!
     params.append('nome', nome);
-    params.append('tempo', tempo);
+    params.append('valor', valor);
 
     // 🟢 ROTEAMENTO INTELIGENTE: Decide qual Servlet chamar baseado na existência do ID
     const url = id ? '../api/servicos/atualizar' : '../api/servicos/cadastrar';

@@ -8,13 +8,14 @@ import javax.persistence.Id;
 
 @Entity
 public class Servico implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String nome;
-    
-    private Integer tempoAtendimento;
+
+    private Double valor;
 
     public Long getId() {
         return id;
@@ -28,11 +29,11 @@ public class Servico implements Serializable {
         this.nome = nome;
     }
 
-    public Integer getTempoAtendimento() {
-        return tempoAtendimento;
+    public Double getValor() {
+        return valor;
     }
 
-    public void setTempoAtendimento(Integer tempoAtendimento) {
-        this.tempoAtendimento = tempoAtendimento;
+    public void setValor(Double valor) {
+        this.valor = valor;
     }
 }

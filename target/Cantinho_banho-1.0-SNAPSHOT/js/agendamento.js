@@ -73,37 +73,37 @@ function enviarAgendamento(e) {
         },
         body: formData
     })
-    .then(response => {
-        if (response.ok) {
-            return response.text();
-        } else {
-            return response.text().then(text => {
-                throw new Error(text);
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    return response.text().then(text => {
+                        throw new Error(text);
+                    });
+                }
+            })
+            .then(resultado => {
+                console.log("Sucesso do Java:", resultado);
+
+                document.getElementById('form-agendamento').style.display = 'none';
+                document.getElementById('agendamento-sucesso').style.display = 'block';
+
+                document.getElementById('form-agendamento').querySelector('form').reset();
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                alert("Falha ao salvar no MySQL: " + error.message);
+            })
+            .finally(() => {
+                isEnviandoAgendamento = false;
+
+                if (btnSubmit) {
+                    btnSubmit.innerHTML = textoOriginal;
+                    btnSubmit.disabled = false;
+                    btnSubmit.style.opacity = '1';
+                }
+
             });
-        }
-    })
-    .then(resultado => {
-        console.log("Sucesso do Java:", resultado);
-
-        document.getElementById('form-agendamento').style.display = 'none';
-        document.getElementById('agendamento-sucesso').style.display = 'block';
-
-        document.getElementById('form-agendamento').querySelector('form').reset();
-    })
-    .catch(error => {
-        console.error('Erro na requisição:', error);
-        alert("Falha ao salvar no MySQL: " + error.message);
-    })
-    .finally(() => {
-        isEnviandoAgendamento = false;
-        
-        if(btnSubmit){
-            btnSubmit.innerHTML = textoOriginal;
-            btnSubmit.disabled = false;
-            btnSubmit.style.opacity = '1';
-        }
-
-    });
 }
 
 function novoAgendamento() {
@@ -113,6 +113,8 @@ function novoAgendamento() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    conectarWebSocket();
+    carregarHorarioDinamico();
     carregarServicosNoSelect();
 });
 
@@ -138,4 +140,65 @@ async function carregarServicosNoSelect() {
     } catch (erro) {
         console.error("Erro ao carregar serviços no site:", erro);
     }
+}
+
+async function carregarHorarioDinamico() {
+    const divHorario = document.getElementById('horario-dinamico');
+    try {
+        const resposta = await fetch('api/horarios/listar');
+        if (resposta.ok) {
+            const horarios = await resposta.json();
+
+            window.horariosLoja = horarios;
+            aplicarRegrasNoFormulario();
+
+            if (divHorario && horarios.length > 0) {
+                let htmlFormatado = '';
+                horarios.forEach(h => {
+                    let nomeCurto = h.nomeDia.substring(0, 3);
+                    if (h.aberto) {
+                        htmlFormatado += `${nomeCurto}: <strong>${h.horaAbertura} – ${h.horaFechamento}</strong><br>`;
+                    } else {
+                        htmlFormatado += `${nomeCurto}: <strong style="color: #dc3545;">Fechado</strong><br>`;
+                    }
+                });
+                divHorario.innerHTML = htmlFormatado;
+            } else if (divHorario) {
+                divHorario.innerHTML = "Horários não configurados.";
+            }
+        }
+    } catch (erro) {
+        console.error("Erro:", erro);
+        if (divHorario)
+            divHorario.innerHTML = "Erro ao carregar.";
+    }
+}
+
+function conectarWebSocket() {
+    const protocolo = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const host = window.location.host;
+
+    const contextPath = window.location.pathname.substring(0, window.location.pathname.indexOf('/', 1));
+
+    const urlWebSocket = `${protocolo}${host}${contextPath}/ws/notificacoes`;
+
+    const ws = new WebSocket(urlWebSocket);
+
+    ws.onmessage = async function (event) {
+        if (event.data === "ATUALIZAR_SERVICO") {
+            console.log("Recebido sinal para atualizar serviços...");
+            if (typeof carregarServicosNoSelect() === 'function')
+                await carregarServicosNoSelect();
+        }
+
+        if (event.data === "ATUALIZAR_HORARIO") {
+            console.log("Recebido sinal para atualizar horários...");
+            if (typeof carregarHorarioDinamico() === 'function')
+                await carregarHorarioDinamico();
+        }
+    };
+
+    ws.onclose = function () {
+        setTimeout(conectarWebSocket, 5000);
+    };
 }
