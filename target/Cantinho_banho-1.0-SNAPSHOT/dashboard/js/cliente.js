@@ -46,17 +46,20 @@ async function listarClientesBD() {
 function renderClientes() {
     const busca = (document.getElementById('busca-clientes')?.value || '').toLowerCase();
 
-    const listaFiltrada = listaClientes.filter(c => {
+    const lista = listaClientes.filter(c => {
         const textoPets = (c.pets && c.pets.length > 0) ? c.pets.map(p => p.nome).join(' ') : '';
         const telefoneBusca = c.telefone || '';
         return (c.nome + ' ' + textoPets + ' ' + telefoneBusca).toLowerCase().includes(busca);
     });
 
-    const cadastrados = listaFiltrada.filter(c => c.temUsuario === true);
-    const naoCadastrados = listaFiltrada.filter(c => c.temUsuario === false);
+    const cadastrados = lista.filter(c => c.temUsuario === true);
+    const naoCadastrados = lista.filter(c => c.temUsuario === false);
 
     const elCad = document.getElementById('lista-clientes-cadastrados');
     const elNao = document.getElementById('lista-clientes-nao-cadastrados');
+
+    // Se nenhum dos dois containers da nova estrutura existir, aí sim saímos
+    if (!elCad && !elNao) return;
 
     const aplicarEstiloGrid = (el) => {
         el.style.display = 'grid';
@@ -68,6 +71,13 @@ function renderClientes() {
     const pacotesLocais = window.pacotesCadastrados || [];
 
     const gerarCard = (c) => {
+        const pac = pacotesLocais.find(p => String(p.id) === String(c.pacoteId));
+
+        const totalServ = pac ? (pac.sessoes || pac.quantidadeSessoes || pac.quantidade_sessoes || 0) : 0;
+        const usadoServ = c.sessoesUsadas || 0;
+        const pendServ = Math.max(0, totalServ - usadoServ);
+        const pct = totalServ ? Math.round((usadoServ / totalServ) * 100) : 0;
+
         const badgeVinculo = c.temUsuario
                 ? `<span class="badge" style="background-color: #e8f8e8; color: #28a745; border: 1px solid #28a745; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;"><i class="fas fa-check-circle"></i> Com Acesso</span>`
                 : `<span class="badge" style="background-color: #fcebeb; color: #dc3545; border: 1px solid #dc3545; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;"><i class="fas fa-exclamation-circle"></i> Sem Acesso</span>`;
@@ -76,7 +86,6 @@ function renderClientes() {
                 ? `<button onclick="event.stopPropagation(); abrirModalCriarUsuario(${c.id}, '${c.nome}')" class="btn-primary" style="background: #17a2b8; border-color: #17a2b8; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(23,162,184,0.2);"><i class="fas fa-key"></i> Criar Acesso</button>`
                 : '';
 
-        // 1. Atualização: O botão de Vender Pacote só existe se for cadastrado. Se não for, fica vazio ('')
         const btnVenderPacote = c.temUsuario
                 ? `<button onclick="event.stopPropagation(); abrirModalVenderPacote(${c.id}, '${c.nome}')" class="btn-secundario" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"><i class="fas fa-box-open"></i> Vender Pacote</button>`
                 : '';
@@ -111,7 +120,6 @@ function renderClientes() {
         let blocoDestaqueHtml = '';
 
         if (c.temUsuario) {
-            // Se tem usuário, mostra a lista de pacotes normal
             blocoDestaqueHtml = `<div style="margin-bottom: 15px; font-size: 0.9rem; color: #777; padding: 10px; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px;"><i class="fas fa-box" style="color:#ccc; margin-right: 5px;"></i> <strong>Pacote:</strong> Sem pacote ativo</div>`;
 
             if (c.pacotes && c.pacotes.length > 0) {
@@ -140,7 +148,6 @@ function renderClientes() {
                 }).join('');
             }
         } else {
-            // Se NÃO tem usuário, exibe um alerta focado em conversão
             blocoDestaqueHtml = `
             <div style="background: #fffbf0; border: 1px solid #f0e0b8; border-radius: 6px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px;">
                 <div style="background: #e0a800; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 4px rgba(224,168,0,0.3);">
@@ -149,7 +156,7 @@ function renderClientes() {
                 <div>
                     <div style="font-size: 0.7rem; color: #888; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Atenção</div>
                     <div style="font-size: 0.85rem; font-weight: 600; color: #444; margin-top: 2px; line-height: 1.3;">
-                        Cliente temporário. Crie o acesso para habilitar a venda de pacotes e unificar o histórico.
+                        Cliente temporário. Crie o acesso para habilitar pacotes e unificar o histórico.
                     </div>
                 </div>
             </div>`;
@@ -157,6 +164,7 @@ function renderClientes() {
 
         return `
         <div class="cliente-card cartao-expansivel" onclick="abrirModalCliente(${c.id})" style="border: none; border-left: 5px solid #C9A96E; padding: 20px; border-radius: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; height: 100%;">
+            
             <div class="ac-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                 <div>
                     <h3 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 1.25rem; font-weight: 700;">
@@ -170,7 +178,7 @@ function renderClientes() {
                     ${badgeVinculo}
                 </div>
             </div>
-            
+
             <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px;">
                 <div style="margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 0.95rem; display: inline-block;">
                     <i class="fas fa-paw" style="color:#C9A96E; margin-right: 5px;"></i> Pets do Cliente
@@ -188,10 +196,11 @@ function renderClientes() {
                 ${btnVenderPacote}
                 ${btnAcesso}
             </div>
+            
         </div>`;
     };
 
-    // 4. Renderiza a aba de Cadastrados
+    // Renderiza a aba de Cadastrados
     if (elCad) {
         if (!cadastrados.length) {
             elCad.style.display = 'block';
@@ -202,7 +211,7 @@ function renderClientes() {
         }
     }
 
-    // 5. Renderiza a aba de Não Cadastrados
+    // Renderiza a aba de Não Cadastrados
     if (elNao) {
         if (!naoCadastrados.length) {
             elNao.style.display = 'block';
@@ -220,7 +229,7 @@ function abrirModalCriarUsuario(id, nome) {
     if (typeof fecharFocoCliente === 'function')
         fecharFocoCliente();
 
-    const cliente = listaClientes.find(c => c.id === id);
+    const cliente = listaClientes.find(c => c.id == id);
 
     document.getElementById('id-cliente-acesso').value = id;
     document.getElementById('nome-cliente-acesso').textContent = nome;
@@ -456,93 +465,125 @@ function abrirModalCliente(id) {
     clienteSendoEditado = listaClientes.find(c => c.id === id);
 
     if (!clienteSendoEditado) {
-        console.error("Cliente não encontrado!");
+        console.error("Cliente não encontrado na listaClientes!");
         return;
     }
 
     const container = document.getElementById('conteudo-modal-cliente');
     const btnEdicao = document.getElementById('btn-modo-edicao');
     const footer = document.getElementById('footer-edicao-cliente');
+    const btnCadastrarPet = document.querySelector('button[onclick="abrirModalNovoPetParaCliente()"]');
 
-    // Reset de estado do modal
-    if (footer)
-        footer.classList.add('hidden');
-    if (btnEdicao)
-        btnEdicao.classList.remove('hidden');
+    const temCadastro = clienteSendoEditado.temUsuario === true;
 
-    // 1. FICHA TÉCNICA DOS PETS (Para todos os clientes)
-    let htmlPets = '';
-    if (clienteSendoEditado.pets && clienteSendoEditado.pets.length > 0) {
-        htmlPets = clienteSendoEditado.pets.map(p => `
-            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px;">
-                    <strong style="color: #C9A96E; font-size: 1.15rem;"><i class="fas fa-paw"></i> ${p.nome}</strong>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
-                        <span class="badge" style="background: #2a2a2a; color: #ddd; font-size: 0.7rem;">${p.tipo || 'PET'}</span>
-                        <span class="badge" style="background: #2a2a2a; color: #ddd; font-size: 0.7rem;">${p.raca || 'S/R'}</span>
-                        <span class="badge" style="background: #2a2a2a; color: #ddd; font-size: 0.7rem;">Porte ${p.porte || 'N/I'}</span>
-                    </div>
-                </div>
-                <textarea id="obs-pet-${p.id}" rows="2" placeholder="Observações do pet..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #111; color: #eee; font-size: 0.85rem;">${p.obs || ''}</textarea>
-                <div style="text-align: right; margin-top: 8px;">
-                    <button onclick="salvarObsPet(${p.id}, this)" class="btn-primary" style="background: #17a2b8; font-size: 0.8rem; padding: 4px 10px;">
-                        <i class="fas fa-save"></i> Salvar Obs
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        htmlPets = '<div style="padding: 15px; text-align: center; color: #666;">Nenhum pet vinculado.</div>';
+    // --- CONTROLE DE PERMISSÕES DOS BOTÕES DO CABEÇALHO ---
+    if (footer) footer.classList.add('hidden');
+    
+    if (btnEdicao) {
+        if (temCadastro) btnEdicao.classList.remove('hidden');
+        else btnEdicao.classList.add('hidden');
+    }
+    
+    if (btnCadastrarPet) {
+        if (temCadastro) btnCadastrarPet.classList.remove('hidden');
+        else btnCadastrarPet.classList.add('hidden');
     }
 
-    // 2. INFORMAÇÕES DE USUÁRIO (Apenas para Cadastrados)
-    let htmlUsuario = '';
-    if (clienteSendoEditado.temUsuario && clienteSendoEditado.usuario) {
-        const u = clienteSendoEditado.u;
+    // --- LISTA DE PETS (Editável para Cadastrados, Leitura para Sem Cadastro) ---
+    let htmlPets = '';
+    if (clienteSendoEditado.pets && clienteSendoEditado.pets.length > 0) {
+        htmlPets = clienteSendoEditado.pets.map(p => {
+            let blocoObs = '';
+            
+            if (temCadastro) {
+                // Cliente CADASTRADO: Campo de digitação e botão salvar
+                blocoObs = `
+                <div style="margin-bottom: 10px;">
+                    <textarea id="obs-pet-${p.id}" rows="2" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #111; color: #eee;" placeholder="Observações e histórico clínico...">${p.obs || ''}</textarea>
+                </div>
+                <div style="text-align: right;">
+                    <button onclick="salvarObsPet(${p.id}, this)" class="btn-primary" style="background: #17a2b8; border: none; font-size: 0.85rem; padding: 5px 12px; border-radius: 4px;">
+                        <i class="fas fa-save"></i> Salvar Obs
+                    </button>
+                </div>`;
+            } else {
+                // Cliente SEM CADASTRO: Apenas visualização da observação
+                blocoObs = `
+                <div style="background: #111; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+                    <span style="color: #aaa; font-size: 0.8rem; display: block; margin-bottom: 4px;"><i class="fas fa-info-circle"></i> Observações:</span>
+                    <div style="color: #eee; font-size: 0.9rem; font-style: ${p.obs ? 'normal' : 'italic'};">${p.obs || 'Nenhuma observação registrada.'}</div>
+                </div>`;
+            }
 
-        // Formatação da Data de Criação (Suporta Array do Java ou String)
-        let dataMembro = 'Não informada';
-        const dRaw = u.dataCriacao || u.data_criacao;
+            return `
+            <div style="background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                    <strong style="color: #C9A96E; font-size: 1.1rem;"><i class="fas fa-paw"></i> ${p.nome}</strong>
+                    <div style="display: flex; gap: 5px;">
+                        <span class="badge" style="background: #333; color: #ccc;">${p.tipo || 'N/A'}</span>
+                        <span class="badge" style="background: #333; color: #ccc;">${p.raca || 'S/R'}</span>
+                        <span class="badge" style="background: #333; color: #ccc;">Porte ${p.porte || 'N/A'}</span>
+                    </div>
+                </div>
+                ${blocoObs}
+            </div>`;
+        }).join('');
+    } else {
+        htmlPets = '<div style="padding: 15px; text-align: center; color: #888;">Nenhum pet cadastrado.</div>';
+    }
+
+    // --- INFORMAÇÕES DE USUÁRIO (APENAS PARA CLIENTES CADASTRADOS) ---
+    let htmlUsuario = '';
+    if (temCadastro && clienteSendoEditado.usuario) {
+        const u = clienteSendoEditado.usuario;
+        
+        let dataCriacao = 'Não informada';
+        const dRaw = u.dataCriacao || u.data_criacao || clienteSendoEditado.dataCadastro;
         if (dRaw) {
-            if (Array.isArray(dRaw))
-                dataMembro = `${dRaw[2]}/${dRaw[1]}/${dRaw[0]}`;
-            else
-                dataMembro = new Date(dRaw).toLocaleDateString('pt-BR');
+            try {
+                if (Array.isArray(dRaw)) dataCriacao = `${String(dRaw[2]).padStart(2, '0')}/${String(dRaw[1]).padStart(2, '0')}/${dRaw[0]}`;
+                else {
+                    const d = new Date(dRaw);
+                    if (!isNaN(d.getTime())) dataCriacao = d.toLocaleDateString('pt-BR');
+                    else dataCriacao = dRaw;
+                }
+            } catch(e) { dataCriacao = dRaw; }
         }
 
         htmlUsuario = `
-            <h5 style="color: #17a2b8; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 15px; margin-top: 20px;">
-                <i class="fas fa-user-shield"></i> Dados de Acesso ao App
-            </h5>
-            <div style="background: rgba(23, 162, 184, 0.05); border: 1px solid rgba(23, 162, 184, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <span style="font-size: 0.7rem; color: #888; display: block; text-transform: uppercase;">E-mail de Login</span>
-                    <strong style="color: #eee; font-size: 0.9rem;">${u.email}</strong>
-                </div>
-                <div>
-                    <span style="font-size: 0.7rem; color: #888; display: block; text-transform: uppercase;">CPF</span>
-                    <strong style="color: #eee; font-size: 0.9rem;">${u.cpf ? u.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : '---'}</strong>
-                </div>
-                <div>
-                    <span style="font-size: 0.7rem; color: #888; display: block; text-transform: uppercase;">Membro Desde</span>
-                    <strong style="color: #eee; font-size: 0.9rem;">${dataMembro}</strong>
-                </div>
-                <div>
-                    <span style="font-size: 0.7rem; color: #888; display: block; text-transform: uppercase;">Status</span>
-                    <span style="color: ${u.ativo ? '#28a745' : '#dc3545'}; font-size: 0.85rem; font-weight: bold;">
-                        ${u.ativo ? '● Ativo' : '● Bloqueado'}
-                    </span>
-                </div>
+        <h5 style="color: #17a2b8; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 10px; margin-top: 20px;">
+            <i class="fas fa-user-shield"></i> Dados de Acesso ao App
+        </h5>
+        <div style="background: rgba(23, 162, 184, 0.05); border: 1px solid rgba(23, 162, 184, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px;">
+            <div>
+                <span style="font-size: 0.75rem; color: #888; display: block; text-transform: uppercase;">E-mail</span>
+                <strong style="color: #eee; font-size: 0.9rem; word-break: break-all;">${u.email || 'Não informado'}</strong>
             </div>
-        `;
+            <div>
+                <span style="font-size: 0.75rem; color: #888; display: block; text-transform: uppercase;">CPF</span>
+                <strong style="color: #eee; font-size: 0.9rem;">${u.cpf ? u.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : 'Não informado'}</strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: #888; display: block; text-transform: uppercase;">Membro Desde</span>
+                <strong style="color: #eee; font-size: 0.9rem;">${dataCriacao}</strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: #888; display: block; text-transform: uppercase; margin-bottom: 4px;">Status</span>
+                <span class="badge" style="background: ${u.ativo ? 'rgba(40,167,69,0.2)' : 'rgba(220,53,69,0.2)'}; color: ${u.ativo ? '#28a745' : '#dc3545'}; border: 1px solid ${u.ativo ? '#28a745' : '#dc3545'}; font-size: 0.75rem;">
+                    ${u.ativo ? 'Ativa' : 'Bloqueada'}
+                </span>
+            </div>
+        </div>`;
     }
+    // Se NÃO tem cadastro, a variável htmlUsuario permanece vazia (''), exibindo apenas cliente e pet.
 
-    // 3. MONTAGEM DO CONTEÚDO
+    // --- RENDERIZAÇÃO FINAL ---
     container.innerHTML = `
         <div id="view-mode">
             <div style="margin-bottom: 20px;">
-                <h4 style="color: #eee; margin: 0 0 5px 0; font-size: 1.35rem;">${clienteSendoEditado.nome}</h4>
-                <div style="color: #aaa;"><i class="fab fa-whatsapp" style="color: #25d366;"></i> ${clienteSendoEditado.telefone}</div>
+                <h4 style="color: #eee; margin: 0 0 5px 0; font-size: 1.3rem;">${clienteSendoEditado.nome}</h4>
+                <div style="color: #aaa; font-size: 0.95rem;"><i class="fab fa-whatsapp" style="color: #25d366;"></i> ${clienteSendoEditado.telefone}</div>
+                ${temCadastro ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; margin-top: 8px; display: inline-block;"><i class="fas fa-check-circle"></i> Possui Login no App</span>` : ''}
             </div>
 
             ${htmlUsuario}
@@ -550,21 +591,20 @@ function abrirModalCliente(id) {
             <h5 style="color: #C9A96E; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 10px;">
                 <i class="fas fa-map-marker-alt"></i> Endereço
             </h5>
-            <div style="color: #ccc; font-size: 0.9rem; margin-bottom: 25px; background: #111; padding: 10px; border-radius: 6px;">
+            <div style="color: #ccc; font-size: 0.9rem; margin-bottom: 20px; background: #111; padding: 12px; border-radius: 6px; border: 1px solid #222;">
                 ${clienteSendoEditado.endereco ? `
-                    <p style="margin: 2px 0;">${clienteSendoEditado.endereco.logradouro}, ${clienteSendoEditado.endereco.numero}</p>
-                    <p style="margin: 2px 0;">${clienteSendoEditado.endereco.bairro} - ${clienteSendoEditado.endereco.cidade}/${clienteSendoEditado.endereco.uf}</p>
-                ` : '<p style="color: #666; font-style: italic;">Endereço não informado.</p>'}
+                    <p style="margin: 3px 0;">${clienteSendoEditado.endereco.logradouro}, ${clienteSendoEditado.endereco.numero}</p>
+                    <p style="margin: 3px 0;">${clienteSendoEditado.endereco.bairro} - ${clienteSendoEditado.endereco.cidade}</p>
+                ` : '<p style="color: #666; font-style: italic;">Endereço não cadastrado.</p>'}
             </div>
             
-            <h5 style="color: #eee; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 15px;">
-                <i class="fas fa-dog"></i> Ficha dos Pets
-            </h5>
+            <h5 style="color: #eee; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 15px;"><i class="fas fa-dog"></i> Pets do Cliente</h5>
             ${htmlPets}
         </div>
     `;
 
-    btnEdicao.onclick = () => alternarParaEdicao();
+    if(btnEdicao) btnEdicao.onclick = () => alternarParaEdicao();
+
     document.getElementById('modal-detalhes-cliente').classList.remove('hidden');
 }
 

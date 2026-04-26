@@ -42,6 +42,9 @@ async function carregarPacotesAdmin() {
                     <div style="display: flex; align-items: center; gap: 15px; text-align: right;">
                         <strong style="color: #28a745; font-size: 1.05rem;">R$ ${p.valor.toFixed(2)}</strong>
                         
+                        <button onclick="editarPacote(${p.id})" title="Editar Pacote" style="background: transparent; border: none; color: #17a2b8; cursor: pointer; font-size: 1.1rem; transition: 0.2s; padding: 5px;" onmouseover="this.style.color='#117a8b'" onmouseout="this.style.color='#17a2b8'">
+                                <i class="fas fa-edit"></i>
+                            </button>
                         <button onclick="excluirPacote(${p.id}, '${p.nome}', ${sessoes})" title="Excluir Pacote" style="background: transparent; border: none; color: #dc3545; cursor: pointer; font-size: 1.1rem; transition: 0.2s; padding: 5px;" onmouseover="this.style.color='#a71d2a'" onmouseout="this.style.color='#dc3545'">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -103,6 +106,93 @@ async function salvarPacoteAdmin(e) {
         }
     } catch (erro) {
         console.error("Erro na requisição cadastrar pacote:", erro);
+        alert('Falha na comunicação com o servidor.');
+    } finally {
+        btnSubmit.innerHTML = textoOriginal;
+        btnSubmit.disabled = false;
+    }
+}
+
+function editarPacote(id) {
+    // 1. Busca o pacote na variável global populada por carregarPacotesAdmin()
+    const pacotes = window.pacotesCadastrados || [];
+    const pacote = pacotes.find(p => p.id === id);
+
+    if (!pacote) {
+        alert("Erro: Pacote não encontrado na memória.");
+        return;
+    }
+
+    // 2. Preenche os campos de texto e números
+    document.getElementById('edit-pacote-id').value = pacote.id;
+    document.getElementById('edit-pacote-nome').value = pacote.nome;
+    document.getElementById('edit-pacote-sessoes').value = pacote.sessoes || pacote.quantidadeSessoes || '';
+    document.getElementById('edit-pacote-validade').value = pacote.validade || '';
+    document.getElementById('edit-pacote-valor').value = pacote.valor || '';
+
+    // 3. Clona as opções de serviços do Select de "Novo Pacote" para garantir os dados atualizados
+    const selectNovo = document.getElementById('novo-pacote-servico');
+    const selectEdit = document.getElementById('edit-pacote-servico');
+
+    if (selectNovo && selectEdit) {
+        selectEdit.innerHTML = selectNovo.innerHTML;
+
+        // Marca o serviço atual do pacote como selecionado
+        const servicoId = pacote.servico ? pacote.servico.id : '';
+        if (servicoId) {
+            selectEdit.value = servicoId;
+        }
+    }
+
+    // 4. Exibe o modal
+    document.getElementById('modal-editar-pacote').classList.remove('hidden');
+}
+
+function fecharModalEditarPacote() {
+    document.getElementById('modal-editar-pacote').classList.add('hidden');
+    document.getElementById('form-editar-pacote').reset();
+}
+
+async function salvarEdicaoPacote(e) {
+    e.preventDefault(); // Impede recarregamento da página
+
+    const id = document.getElementById('edit-pacote-id').value;
+    const nome = document.getElementById('edit-pacote-nome').value;
+    const sessoes = document.getElementById('edit-pacote-sessoes').value;
+    const validade = document.getElementById('edit-pacote-validade').value;
+    const valor = document.getElementById('edit-pacote-valor').value;
+    const servicoId = document.getElementById('edit-pacote-servico').value;
+
+    const params = new URLSearchParams();
+    params.append('id', id);
+    params.append('nome', nome);
+    params.append('sessoes', sessoes);
+    params.append('validade', validade);
+    params.append('valor', valor);
+    params.append('servicoId', servicoId);
+
+    const btnSubmit = document.querySelector('#form-editar-pacote button[type="submit"]');
+    const textoOriginal = btnSubmit.innerHTML;
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+    btnSubmit.disabled = true;
+
+    try {
+        const res = await fetch('../api/pacotes/atualizar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params
+        });
+
+        if (res.ok) {
+            alert('✅ Pacote atualizado com sucesso!');
+            fecharModalEditarPacote();
+            carregarPacotesAdmin(); // Atualiza a lista na tela
+        } else {
+            const msg = await res.text();
+            alert('❌ Erro ao atualizar pacote:\n' + msg);
+        }
+    } catch (erro) {
+        console.error("Erro ao atualizar pacote:", erro);
         alert('Falha na comunicação com o servidor.');
     } finally {
         btnSubmit.innerHTML = textoOriginal;
