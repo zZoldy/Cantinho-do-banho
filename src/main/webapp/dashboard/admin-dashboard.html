@@ -987,6 +987,10 @@
                 <p style="color:#666;font-size:.82rem;margin-bottom:20px">Aceite para confirmar e abrir WhatsApp, ou recuse para notificar o cliente.</p>
                 <div class="filtros-bar-sm">
                     <input type="text" id="busca-novos" placeholder="🔍 Buscar por pet ou dono..." oninput="renderNovos()"/>
+                    <select id="ordenacao-novos" onchange="renderNovos()">
+                        <option value="asc">🔼 Crescente (Atrasados > Hoje > Próximos)</option>
+                        <option value="desc">🔽 Decrescente (Próximos > Hoje > Atrasados)</option>
+                    </select>
                 </div>
                 <div id="lista-novos"></div>
             </section>
@@ -1000,6 +1004,10 @@
                     <select id="filtro-func-agenda" onchange="renderAgenda()">
                         <option value="">Todos os funcionários</option>
                     </select>
+                    <select id="ordenacao-agenda" onchange="renderAgenda()">
+                        <option value="asc">🔼 Crescente (Atrasados > Hoje > Próximos)</option>
+                        <option value="desc">🔽 Decrescente (Próximos > Hoje > Atrasados)</option>
+                    </select>
                 </div>
                 <div id="lista-agenda"></div>
             </section>
@@ -1010,6 +1018,10 @@
                 <p style="color:#666;font-size:.82rem;margin-bottom:20px">Pedidos recusados. Ajuste a data e confirme para mover para a Agenda Confirmada.</p>
                 <div class="filtros-bar-sm">
                     <input type="text" id="busca-pend" placeholder="🔍 Buscar..." oninput="renderPendentes()"/>
+                    <select id="ordenacao-pend" onchange="renderPendentes()">
+                        <option value="asc">🔼 Crescente (Atrasados > Hoje > Próximos)</option>
+                        <option value="desc">🔽 Decrescente (Próximos > Hoje > Atrasados)</option>
+                    </select>
                 </div>
                 <div id="lista-pendentes"></div>
             </section>
@@ -1020,6 +1032,13 @@
                     <h3><i class="fas fa-dog" style="color:#C9A96E;margin-right:8px"></i>Retirada do Pet</h3>
                 </div>
                 <p style="color:#666;font-size:.82rem;margin-bottom:20px">Pets que finalizaram o serviço e aguardam o dono para retirada.</p>
+                <div class="filtros-bar-sm" style="margin-bottom: 15px;">
+                    <input type="text" id="busca-retirada" placeholder="🔍 Buscar pet..." oninput="renderRetirada()"/>
+                    <select id="ordenacao-retirada" onchange="renderRetirada()">
+                        <option value="asc">🔼 Crescente (Atrasados > Hoje > Próximos)</option>
+                        <option value="desc">🔽 Decrescente (Próximos > Hoje > Atrasados)</option>
+                    </select>
+                </div>
                 <div id="lista-retirada"></div>
             </section>
 
@@ -1080,9 +1099,38 @@
                 <div class="page-header">
                     <h3>Controle Financeiro</h3>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <select id="filtro-periodo-pag" class="input-select-sm" onchange="renderPagamentos()">
-                            <option value="mes">Este mês</option><option value="semana">Esta semana</option><option value="ano">Este ano</option><option value="todos">Todos</option>
+
+                        <select id="filtro-periodo-pag" class="input-select-sm" onchange="alternarInputsDataPag()">
+                            <option value="mes">Este mês</option>
+                            <option value="semana">Esta semana</option>
+                            <option value="ano">Este ano</option>
+                            <option value="especifico">Selecionar Mês</option>
+                            <option value="todos">Mostrar Tudo</option>
                         </select>
+
+                        <div id="container-filtro-especifico" class="hidden" style="display: flex; gap: 5px;">
+                            <select id="filtro-mes-select" class="input-select-sm" onchange="renderPagamentos()">
+                                <option value="01">Janeiro</option>
+                                <option value="02">Fevereiro</option>
+                                <option value="03">Março</option>
+                                <option value="04">Abril</option>
+                                <option value="05" selected>Maio</option>
+                                <option value="06">Junho</option>
+                                <option value="07">Julho</option>
+                                <option value="08">Agosto</option>
+                                <option value="09">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                            <select id="filtro-ano-select" class="input-select-sm" onchange="renderPagamentos()">
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                        </div>
+
                         <button onclick="exportarPagamentosPDF()" style="background:none;border:1px solid #333;color:#888;border-radius:6px;padding:6px 12px;font-size:.78rem;cursor:pointer;display:flex;align-items:center;gap:5px;transition:.2s" onmouseover="this.style.borderColor = '#C9A96E';this.style.color = '#C9A96E'" onmouseout="this.style.borderColor = '#333';this.style.color = '#888'"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
                     </div>
                 </div>
@@ -2390,6 +2438,7 @@
                 }
 
                 if (page === 'pagamentos') {
+                    await carregarAgendaDoBanco(false);
                     await carregarVendasPacotes();
                     await carregarDespesas();
                 }
@@ -2972,39 +3021,80 @@
                 }
             }
 
-// O Motor de Renderização do Financeiro
+            function alternarInputsDataPag() {
+                const periodo = document.getElementById('filtro-periodo-pag').value;
+                const container = document.getElementById('container-filtro-especifico');
+
+                if (periodo === 'especifico') {
+                    container.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden');
+                }
+
+                renderPagamentos();
+            }
+
             function renderPagamentos() {
                 const periodo = document.getElementById('filtro-periodo-pag')?.value || 'mes';
-                const ano = hoje.getFullYear().toString();
+                const anoHoje = hoje.getFullYear().toString();
+                const mesHojeIso = typeof mesMes !== 'undefined' ? mesMes : `${anoHoje}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
 
                 // 1. Unir todas as bases de dados disponíveis globalmente
                 const vendas = typeof listaVendasPacotes !== 'undefined' ? listaVendasPacotes : [];
                 const despesas = typeof listaDespesas !== 'undefined' ? listaDespesas : [];
-                // historico, agenda e retirada vêm do seu agendamento.js
-                const todosItens = [...(typeof historico !== 'undefined' ? historico : []),
+                const todosItens = [
+                    ...(typeof historico !== 'undefined' ? historico : []),
                     ...(typeof agenda !== 'undefined' ? agenda : []),
                     ...(typeof retirada !== 'undefined' ? retirada : []),
-                    ...vendas, ...despesas];
+                    ...vendas,
+                    ...despesas
+                ];
 
-                // 2. Filtrar por Período
+                // Função segura para pegar a data YYYY-MM-DD ignorando fuso horário
+                const formatarDataLocal = (d) => {
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                };
+
+                // 2. Filtrar por Período Inteligente (Resolve o ID 6 e formatações BR)
                 let listaFiltrada = todosItens.filter(item => {
+                    if (periodo === 'todos')
+                        return true; // Mostra TUDO sem filtro
+
                     let dataRef = item.data || item.dataVenda || item.dataCriacao || item.dataCompra;
                     if (!dataRef)
                         return false;
                     if (dataRef.includes('T'))
                         dataRef = dataRef.split('T')[0];
 
+                    // Normaliza a data para YYYY-MM-DD se ela vier como DD/MM/YYYY
+                    let dataIso = dataRef;
+                    if (dataRef.includes('/')) {
+                        const partes = dataRef.split('/');
+                        if (partes[0].length === 2) {
+                            dataIso = `${partes[2]}-${partes[1]}-${partes[0]}`;
+                        }
+                    }
+
                     if (periodo === 'mes')
-                        return dataRef.startsWith(mesMes); // mesMes vem das vars globais
+                        return dataIso.startsWith(mesHojeIso);
+
+                    if (periodo === 'especifico') {
+                        const m = document.getElementById('filtro-mes-select')?.value || String(hoje.getMonth() + 1).padStart(2, '0');
+                        const a = document.getElementById('filtro-ano-select')?.value || anoHoje;
+                        return dataIso.startsWith(`${a}-${m}`);
+                    }
+
                     if (periodo === 'semana') {
                         const seg = new Date(hoje);
                         seg.setDate(hoje.getDate() - hoje.getDay() + 1);
                         const dom = new Date(seg);
                         dom.setDate(seg.getDate() + 6);
-                        return dataRef >= seg.toISOString().split('T')[0] && dataRef <= dom.toISOString().split('T')[0];
+                        return dataIso >= formatarDataLocal(seg) && dataIso <= formatarDataLocal(dom);
                     }
+
                     if (periodo === 'ano')
-                        return dataRef.startsWith(ano);
+                        return dataIso.startsWith(anoHoje);
+
                     return true;
                 });
 
@@ -3013,58 +3103,73 @@
                 let htmlReceitas = '';
                 let htmlDespesas = '';
 
+                // Ordenação decrescente por data
                 listaFiltrada.sort((a, b) => {
-                    const d1 = a.data || a.dataVenda || a.dataCriacao || a.dataCompra;
-                    const d2 = b.data || b.dataVenda || b.dataCriacao || b.dataCompra;
-                    return (d2 || '').localeCompare(d1 || '');
+                    let d1 = a.data || a.dataVenda || a.dataCriacao || a.dataCompra || '';
+                    let d2 = b.data || b.dataVenda || b.dataCriacao || b.dataCompra || '';
+
+                    // Transforma pra ISO antes de ordenar para garantir precisão
+                    if (d1.includes('/')) {
+                        const p1 = d1.split('/');
+                        d1 = `${p1[2]}-${p1[1]}-${p1[0]}`;
+                    }
+                    if (d2.includes('/')) {
+                        const p2 = d2.split('/');
+                        d2 = `${p2[2]}-${p2[1]}-${p2[0]}`;
+                    }
+
+                    return d2.localeCompare(d1);
                 });
 
                 listaFiltrada.forEach(item => {
                     const isDespesa = item.tipoMovimentacao === 'DESPESA' || item.custoTotal !== undefined;
                     const isVenda = !!(item.dataVenda || item.itens || item.dataCriacao) && !isDespesa;
 
-                    const valor = item.valor || item.valorPago || item.valorTotal || item.custoTotal || 0;
-                    const status = item.statusPag || item.status_pagamento || item.status || (isVenda || isDespesa ? 'Pago' : 'Pendente');
+                    const valorRaw = item.valor || item.valorPago || item.valorTotal || item.custoTotal || 0;
+                    const valor = parseFloat(valorRaw) || 0;
+
+                    const status = (item.statusPag || item.status_pagamento || item.status || (isVenda || isDespesa ? 'Pago' : 'Pendente')).toUpperCase();
                     const forma = (item.formaPag || item.forma_pagamento || item.formaPagamento || '—').replace('_', ' ');
 
                     let dataLimpa = item.data || item.dataVenda || item.dataCriacao || item.dataCompra || '';
                     if (dataLimpa.includes('T'))
                         dataLimpa = dataLimpa.split('T')[0];
-                    const dataExibicao = fd(dataLimpa);
+                    const dataExibicao = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
 
-                    if (status.toUpperCase() === 'PAGO' || status.toUpperCase() === 'CONCLUÍDO') {
+                    // Cálculo Financeiro
+                    if (status === 'PAGO' || status === 'CONCLUÍDO') {
                         if (isDespesa)
                             totalDespesas += valor;
                         else
                             totalReceitas += valor;
                     }
 
+                    // ============================================
+                    // MONTAGEM DAS DESPESAS (Agora com <tr> e <td>)
+                    // ============================================
                     if (isDespesa) {
                         const fornecedor = item.fornecedor || 'Fornecedor / Diversos';
                         const descricao = item.nomeProduto ? `Compra de ${item.quantidade}x ${item.nomeProduto}` : (item.descricao || 'Despesa');
 
-                        // 🟢 Lógica dos Botões de Ação
-                        const btnPagar = status.toUpperCase() === 'PENDENTE'
-                                ? `<button onclick="baixarDespesa(${item.id})" title="Marcar como Pago" style="background:none; border:none; color:#28a745; cursor:pointer; margin-right:10px; font-size: 1.1rem;"><i class="fas fa-check-circle"></i></button>`
-                                : '';
-
-                        const btnExcluir = `<button onclick="excluirDespesa(${item.id})" title="Excluir Despesa" style="background:none; border:none; color:#dc3545; cursor:pointer; font-size: 1.1rem;"><i class="fas fa-trash"></i></button>`;
+                        const btnPagar = status === 'PENDENTE' ? `<button class="btn-secundario" style="padding: 4px 8px; font-size: 0.8rem;">Pagar</button>` : '';
+                        const badgeCor = status === 'PAGO' ? 'background: rgba(40,167,69,0.15); color: #28a745; border: 1px solid #28a745;' : 'background: rgba(220,53,69,0.15); color: #dc3545; border: 1px solid #dc3545;';
 
                         htmlDespesas += `
-                <tr>
-                    <td><strong>${fornecedor}</strong></td>
-                    <td>${descricao}</td>
-                    <td style="color: #dc3545; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
-                    <td>${dataExibicao}</td>
-                    <td style="color: ${status.toUpperCase() === 'PAGO' ? '#28a745' : '#dc3545'}; font-weight:bold;">${status.toUpperCase()}</td>
-                    <td style="text-align:right">
-                        ${btnPagar}
-                        ${btnExcluir}
-                    </td>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;"><strong>${fornecedor}</strong></td>
+                    <td style="padding: 12px; color: #666;">${descricao}</td>
+                    <td style="padding: 12px; color: #dc3545; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
+                    <td style="padding: 12px;">${dataExibicao}</td>
+                    <td style="padding: 12px;"><span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span></td>
+                    <td style="padding: 12px; text-align: right;">${btnPagar}</td>
                 </tr>
             `;
-                    } else {
-                        let nomePrincipal = isVenda ? `🛒 Venda #${item.id || ''}` : (item.pet || '—');
+                    }
+                    // ============================================
+                    // MONTAGEM DAS RECEITAS (Agora com <tr> e <td>)
+                    // ============================================
+                    else {
+                        let nomePrincipal = isVenda ? `🛒 Venda #${item.id || ''}` : `<i class="fas fa-paw" style="color:#C9A96E;"></i> ${item.pet || '—'}`;
                         let cliente = isVenda ? (item.clienteNome || item.cliente || '—') : (item.dono || '—');
                         let descricao = '';
 
@@ -3073,33 +3178,40 @@
                                 const qtdItens = item.itens.reduce((sum, i) => sum + i.quantidade, 0);
                                 const nomes = item.itens.map(i => i.nomeProdutoOuServico || i.nome).join(', ');
                                 descricao = nomes.length > 25 ? nomes.substring(0, 25) + '...' : nomes;
-                                descricao += ` <span style="color:#C9A96E; font-size:0.75rem;">(${qtdItens} itens)</span>`;
+                                descricao += ` <small style="color:#888;">(${qtdItens} itens)</small>`;
                             } else {
                                 descricao = `📦 Pacote: ${item.pacoteNome || 'Personalizado'}`;
                             }
                         } else {
-                            descricao = item.servico || '—';
+                            descricao = `<span class="badge" style="background: rgba(0,0,0,0.05); border: 1px solid #ddd;">${item.servico || '—'}</span>`;
                         }
 
+                        const badgeCor = (status === 'PAGO' || status === 'CONCLUÍDO')
+                                ? 'background: rgba(40,167,69,0.15); color: #28a745; border: 1px solid #28a745;'
+                                : 'background: rgba(255,193,7,0.15); color: #ffc107; border: 1px solid #ffc107;';
+
                         htmlReceitas += `
-                <tr>
-                    <td><strong>${nomePrincipal}</strong><br><small style="color:#888">${cliente}</small></td>
-                    <td>${descricao}</td>
-                    <td>R$ ${valor.toFixed(2)}</td>
-                    <td>${forma}</td>
-                    <td>${dataExibicao}</td>
-                    <td style="color: ${status.toUpperCase() === 'PAGO' ? '#28a745' : '#dc3545'}; font-weight:bold;">${status.toUpperCase()}</td>
-                    <td style="text-align:right">
-                        <button class="btn-visualizar" onclick="abrirModalVisualizacaoPag(${item.id}, ${isVenda})" title="Ver Detalhes">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;">
+                        <div style="font-weight: bold; font-size: 0.95rem; color: #333;">${nomePrincipal}</div>
+                        <div style="color: #777; font-size: 0.8rem;"><i class="fas fa-user" style="color: #ccc;"></i> ${cliente}</div>
                     </td>
+                    <td style="padding: 12px;">${descricao}</td>
+                    <td style="padding: 12px; color: #28a745; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
+                    <td style="padding: 12px; color: #666;">${forma}</td>
+                    <td style="padding: 12px;">${dataExibicao}</td>
+                    <td style="padding: 12px;">
+                        <span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span>
+                    </td>
+                    <td style="padding: 12px; text-align: right;"></td>
                 </tr>
             `;
                     }
                 });
 
-                // Atualiza Tela
+                // ============================================
+                // ATUALIZAÇÃO DA TELA
+                // ============================================
                 const elPago = document.getElementById('pag-total-pago');
                 const elDespesa = document.getElementById('pag-total-despesa');
                 const elGeral = document.getElementById('pag-total-geral');
@@ -3112,16 +3224,18 @@
                 if (elGeral) {
                     const lucro = totalReceitas - totalDespesas;
                     elGeral.textContent = `R$ ${lucro.toFixed(2)}`;
-                    elGeral.style.color = lucro >= 0 ? '#C9A96E' : '#dc3545';
+                    elGeral.style.color = lucro >= 0 ? '#28a745' : '#dc3545';
                 }
 
                 const tbodyReceitas = document.getElementById('tbody-receitas');
-                if (tbodyReceitas)
-                    tbodyReceitas.innerHTML = htmlReceitas || `<tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Nenhuma entrada/receita encontrada.</td></tr>`;
+                if (tbodyReceitas) {
+                    tbodyReceitas.innerHTML = htmlReceitas || `<tr><td colspan="7" style="text-align:center; padding: 30px; color: #888;">Nenhuma entrada encontrada para este período.</td></tr>`;
+                }
 
                 const tbodyDespesas = document.getElementById('tbody-despesas');
-                if (tbodyDespesas)
-                    tbodyDespesas.innerHTML = htmlDespesas || `<tr><td colspan="5" style="text-align:center; padding:20px; color:#888;">Nenhuma saída/despesa encontrada.</td></tr>`;
+                if (tbodyDespesas) {
+                    tbodyDespesas.innerHTML = htmlDespesas || `<tr><td colspan="6" style="text-align:center; padding: 30px; color: #888;">Nenhuma despesa encontrada para este período.</td></tr>`;
+                }
             }
 
             async function baixarDespesa(id) {

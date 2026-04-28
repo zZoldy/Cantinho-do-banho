@@ -80,7 +80,7 @@ public class ClienteDAO {
     public List<Cliente> listarTodos() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT DISTINCT c FROM Cliente c LEFT JOIN FETCH c.pets", Cliente.class)
+            return em.createQuery("SELECT DISTINCT c FROM Cliente c LEFT JOIN FETCH c.pets ORDER BY c.nome ASC", Cliente.class)
                     .getResultList();
         } finally {
             em.close();

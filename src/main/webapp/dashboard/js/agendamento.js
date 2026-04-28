@@ -136,7 +136,19 @@ async function carregarAgendaDoBanco(silencioso = false) {
 
 function renderNovos() {
     const busca = (document.getElementById('busca-novos')?.value || '').toLowerCase();
-    const lista = novos.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
+    const ordem = document.getElementById('ordenacao-novos')?.value || 'asc';
+    const lista = novos.filter(a => {
+        const nomePet = a.pet || '';
+        const nomeDono = a.dono || '';
+        const nomeServico = a.servico || '';
+        return (nomePet + nomeDono + nomeServico).toLowerCase().includes(busca);
+    }).sort((a, b) => {
+        const dhA = (a.data || '') + (a.hora || '');
+        const dhB = (b.data || '') + (b.hora || '');
+        // Se ordem for 'desc', inverte o sentido da comparação
+        return ordem === 'desc' ? dhB.localeCompare(dhA) : dhA.localeCompare(dhB);
+    });
+
     const el = document.getElementById('lista-novos');
 
     if (!el)
@@ -169,13 +181,9 @@ function renderNovos() {
         }
         const horaPedida = (a.hora || '').substring(0, 5);
 
-        // ==========================================================
-        // 🟢 VALIDAÇÃO PADRONIZADA (Limite da Loja + Choque de Hora)
-        // ==========================================================
         let horasLoja = obterHorariosDoDia(dataReqIso);
         const lojaFechada = horasLoja.length === 0;
 
-        // Limites do expediente
         let abertura = "00:00";
         let fechamento = "23:59";
         let foraDoHorario = false;
@@ -188,7 +196,6 @@ function renderNovos() {
             }
         }
 
-        // Verifica se JÁ TEM alguém Confirmado/Retirada nesse dia/hora
         const jaTemAgendamento = agenda.some(ag => {
             let agIso = ag.data;
             if (ag.data && ag.data.includes('/')) {
@@ -202,12 +209,8 @@ function renderNovos() {
         const isDataPassada = dataReqIso < hojeIso;
         const isHoraPassadaHoje = dataReqIso === hojeIso && horaPedida < horaAtual;
 
-        // O Veredito final
         const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && !foraDoHorario && !jaTemAgendamento;
 
-        // ==========================================================
-        // 🟢 LAYOUT ORIGINAL DA CAIXA (Avisos e Radar)
-        // ==========================================================
         let boxDisponibilidade = "";
         if (isDisponivel) {
             boxDisponibilidade = `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(40,167,69,0.1); border-left: 3px solid #28a745; font-size: 0.85rem;">
@@ -292,12 +295,17 @@ function renderAgenda() {
     const busca = (document.getElementById('busca-agenda')?.value || '').toLowerCase();
     const filData = document.getElementById('filtro-data-agenda')?.value || '';
     const filFunc = document.getElementById('filtro-func-agenda')?.value || '';
+    const ordem = document.getElementById('ordenacao-agenda')?.value || 'asc';
 
     const isFuncionario = (perfil);
     const nomeLogado = (logado);
 
     const lista = agenda.filter(a => {
-        const matchBusca = (a.pet + a.dono + a.servico).toLowerCase().includes(busca);
+        const nomePet = a.pet || '';
+        const nomeDono = a.dono || '';
+        const nomeServico = a.servico || '';
+
+        const matchBusca = (nomePet + nomeDono + nomeServico).toLowerCase().includes(busca);
         const matchData = filData ? a.data === filData : true;
 
         let matchFunc = true;
@@ -306,7 +314,11 @@ function renderAgenda() {
         }
 
         return matchBusca && matchData && matchFunc;
-    }).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+    }).sort((a, b) => {
+        const dhA = (a.data || '') + (a.hora || '');
+        const dhB = (b.data || '') + (b.hora || '');
+        return ordem === 'desc' ? dhB.localeCompare(dhA) : dhA.localeCompare(dhB);
+    });
 
     const el = document.getElementById('lista-agenda');
     if (!el)
@@ -456,8 +468,19 @@ function renderAgenda() {
 
 function renderPendentes() {
     const busca = (document.getElementById('busca-pend')?.value || '').toLowerCase();
-    const lista = pendentes.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
+    const ordem = document.getElementById('ordenacao-pend')?.value || 'asc';
     const el = document.getElementById('lista-pendentes');
+
+    const lista = pendentes.filter(a => {
+        const nomePet = a.pet || '';
+        const nomeDono = a.dono || '';
+        const nomeServico = a.servico || '';
+        return (nomePet + nomeDono + nomeServico).toLowerCase().includes(busca);
+    }).sort((a, b) => {
+        const dhA = (a.data || '') + (a.hora || '');
+        const dhB = (b.data || '') + (b.hora || '');
+        return ordem === 'desc' ? dhB.localeCompare(dhA) : dhA.localeCompare(dhB);
+    });
 
     if (!el)
         return;
@@ -552,19 +575,26 @@ function renderPendentes() {
     }).join('');
 
     lista.forEach(a => {
-        // 🟢 AJUSTE 4: A chamada inicial agora só envia o ID
         verificarDisponibilidade(a.id);
     });
 }
 
 function renderRetirada() {
-    // 1. Pega o valor da barra de busca (se você tiver uma na aba de retirada)
     const busca = (document.getElementById('busca-retirada')?.value || '').toLowerCase();
 
-    // 2. Filtra a lista 'retirada' (que o nosso carregarAgendaDoBanco já alimenta automaticamente)
-    const lista = retirada.filter(a => (a.pet + a.dono + a.servico).toLowerCase().includes(busca));
+    const ordem = document.getElementById('ordenacao-retirada')?.value || 'asc';
 
-    // 3. Acha a div principal onde os cards vão aparecer
+    const lista = retirada.filter(a => {
+        const nomePet = a.pet || '';
+        const nomeDono = a.dono || '';
+        const nomeServico = a.servico || '';
+        return (nomePet + nomeDono + nomeServico).toLowerCase().includes(busca);
+    }).sort((a, b) => {
+        const dhA = (a.data || '') + (a.hora || '');
+        const dhB = (b.data || '') + (b.hora || '');
+        return ordem === 'desc' ? dhB.localeCompare(dhA) : dhA.localeCompare(dhB);
+    });
+
     const el = document.getElementById('lista-retirada');
     if (!el)
         return;
@@ -574,11 +604,8 @@ function renderRetirada() {
         return;
     }
 
-    // 4. Desenha os cards
     el.innerHTML = lista.map(a => {
-        // Formata o valor cobrado para mostrar bonitinho (ex: 150.5 -> 150,50)
         const valorFormatado = a.valor ? parseFloat(a.valor).toFixed(2).replace('.', ',') : '0,00';
-        // Define a cor do texto do pagamento (Vermelho se pendente, Verde se pago)
         const corPagamento = (a.status_pagamento === 'Pago') ? '#5ac75a' : '#c77a7a';
 
         return `
