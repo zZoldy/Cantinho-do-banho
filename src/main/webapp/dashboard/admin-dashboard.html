@@ -1158,6 +1158,26 @@
                             <div><span class="card-resumo-valor" id="pag-total-geral">R$ 0</span><span class="card-resumo-label">Saldo Líquido</span></div>
                         </div>
                     </div>
+
+                    <div class="tabela-wrapper" style="background: #111; border-radius: 8px; border: 1px solid #333; padding: 15px;">
+                        <h4 style="margin: 0 0 15px 0; color: #eee; font-size: 1.1rem; border-bottom: 1px solid #222; padding-bottom: 10px;">
+                            <i class="fas fa-list-ul" style="color: #C9A96E; margin-right: 5px;"></i> Extrato Geral
+                        </h4>
+                        <div style="overflow-x: auto;">
+                            <table class="tabela" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr>
+                                        <th>Descrição / Cliente</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Data</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-todas-transacoes"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="aba-receber" class="fin-conteudo">
@@ -3039,7 +3059,7 @@
                 const anoHoje = hoje.getFullYear().toString();
                 const mesHojeIso = typeof mesMes !== 'undefined' ? mesMes : `${anoHoje}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
 
-                // 1. Unir todas as bases de dados disponíveis globalmente
+                // 1. Unir todas as bases de dados
                 const vendas = typeof listaVendasPacotes !== 'undefined' ? listaVendasPacotes : [];
                 const despesas = typeof listaDespesas !== 'undefined' ? listaDespesas : [];
                 const todosItens = [
@@ -3050,15 +3070,14 @@
                     ...despesas
                 ];
 
-                // Função segura para pegar a data YYYY-MM-DD ignorando fuso horário
                 const formatarDataLocal = (d) => {
                     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                 };
 
-                // 2. Filtrar por Período Inteligente (Resolve o ID 6 e formatações BR)
+                // 2. Filtro de Data Inteligente
                 let listaFiltrada = todosItens.filter(item => {
                     if (periodo === 'todos')
-                        return true; // Mostra TUDO sem filtro
+                        return true;
 
                     let dataRef = item.data || item.dataVenda || item.dataCriacao || item.dataCompra;
                     if (!dataRef)
@@ -3066,7 +3085,6 @@
                     if (dataRef.includes('T'))
                         dataRef = dataRef.split('T')[0];
 
-                    // Normaliza a data para YYYY-MM-DD se ela vier como DD/MM/YYYY
                     let dataIso = dataRef;
                     if (dataRef.includes('/')) {
                         const partes = dataRef.split('/');
@@ -3102,13 +3120,13 @@
                 let totalDespesas = 0;
                 let htmlReceitas = '';
                 let htmlDespesas = '';
+                let htmlTodasTransacoes = ''; // <-- Variável do Extrato Geral Adicionada
 
-                // Ordenação decrescente por data
+                // 3. Ordenação decrescente por data
                 listaFiltrada.sort((a, b) => {
                     let d1 = a.data || a.dataVenda || a.dataCriacao || a.dataCompra || '';
                     let d2 = b.data || b.dataVenda || b.dataCriacao || b.dataCompra || '';
 
-                    // Transforma pra ISO antes de ordenar para garantir precisão
                     if (d1.includes('/')) {
                         const p1 = d1.split('/');
                         d1 = `${p1[2]}-${p1[1]}-${p1[0]}`;
@@ -3121,6 +3139,7 @@
                     return d2.localeCompare(d1);
                 });
 
+                // 4. Montar as tabelas com as tags HTML (<tr> e <td>)
                 listaFiltrada.forEach(item => {
                     const isDespesa = item.tipoMovimentacao === 'DESPESA' || item.custoTotal !== undefined;
                     const isVenda = !!(item.dataVenda || item.itens || item.dataCriacao) && !isDespesa;
@@ -3136,7 +3155,6 @@
                         dataLimpa = dataLimpa.split('T')[0];
                     const dataExibicao = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
 
-                    // Cálculo Financeiro
                     if (status === 'PAGO' || status === 'CONCLUÍDO') {
                         if (isDespesa)
                             totalDespesas += valor;
@@ -3144,29 +3162,55 @@
                             totalReceitas += valor;
                     }
 
+                    const badgeCor = (status === 'PAGO' || status === 'CONCLUÍDO')
+                            ? 'background: rgba(40,167,69,0.15); color: #28a745; border: 1px solid #28a745;'
+                            : (isDespesa ? 'background: rgba(220,53,69,0.15); color: #dc3545; border: 1px solid #dc3545;' : 'background: rgba(255,193,7,0.15); color: #ffc107; border: 1px solid #ffc107;');
+
                     // ============================================
-                    // MONTAGEM DAS DESPESAS (Agora com <tr> e <td>)
+                    // 1. EXTRATO GERAL (Aba Visão Geral)
+                    // ============================================
+                    const tipoIcon = isDespesa ? '<span style="color:#dc3545; font-weight: 600;"><i class="fas fa-arrow-up"></i> Saída</span>' : '<span style="color:#28a745; font-weight: 600;"><i class="fas fa-arrow-down"></i> Entrada</span>';
+                    const valorSinal = isDespesa ? '-' : '+';
+                    const corValor = isDespesa ? '#dc3545' : '#28a745';
+
+                    let descGeral = '';
+                    if (isDespesa) {
+                        descGeral = item.fornecedor ? `<strong>${item.fornecedor}</strong> <br><small style="color:#aaa">${item.descricao || 'Despesa'}</small>` : `<strong>${item.descricao || 'Despesa'}</strong>`;
+                    } else {
+                        descGeral = isVenda ? `<strong>🛒 Venda #${item.id || ''}</strong> <br><small style="color:#aaa">${item.clienteNome || item.cliente || 'Consumidor'}</small>` : `<strong><i class="fas fa-paw" style="color:#C9A96E"></i> ${item.pet || 'Pet'}</strong> <br><small style="color:#aaa">${item.dono || 'Cliente'}</small>`;
+                    }
+
+                    htmlTodasTransacoes += `
+            <tr style="border-bottom: 1px solid #333;">
+                <td style="padding: 12px; line-height: 1.4; color: #eee;">${descGeral}</td>
+                <td style="padding: 12px;">${tipoIcon}</td>
+                <td style="padding: 12px; color: ${corValor}; font-weight: bold;">${valorSinal} R$ ${valor.toFixed(2)}</td>
+                <td style="padding: 12px; color: #ccc;">${dataExibicao}</td>
+                <td style="padding: 12px;"><span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span></td>
+            </tr>
+        `;
+
+                    // ============================================
+                    // 2. MONTAGEM DAS DESPESAS (Aba Contas a Pagar)
                     // ============================================
                     if (isDespesa) {
                         const fornecedor = item.fornecedor || 'Fornecedor / Diversos';
                         const descricao = item.nomeProduto ? `Compra de ${item.quantidade}x ${item.nomeProduto}` : (item.descricao || 'Despesa');
-
                         const btnPagar = status === 'PENDENTE' ? `<button class="btn-secundario" style="padding: 4px 8px; font-size: 0.8rem;">Pagar</button>` : '';
-                        const badgeCor = status === 'PAGO' ? 'background: rgba(40,167,69,0.15); color: #28a745; border: 1px solid #28a745;' : 'background: rgba(220,53,69,0.15); color: #dc3545; border: 1px solid #dc3545;';
 
                         htmlDespesas += `
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px;"><strong>${fornecedor}</strong></td>
-                    <td style="padding: 12px; color: #666;">${descricao}</td>
+                <tr style="border-bottom: 1px solid #333;">
+                    <td style="padding: 12px; color: #eee;"><strong>${fornecedor}</strong></td>
+                    <td style="padding: 12px; color: #aaa;">${descricao}</td>
                     <td style="padding: 12px; color: #dc3545; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
-                    <td style="padding: 12px;">${dataExibicao}</td>
+                    <td style="padding: 12px; color: #ccc;">${dataExibicao}</td>
                     <td style="padding: 12px;"><span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span></td>
                     <td style="padding: 12px; text-align: right;">${btnPagar}</td>
                 </tr>
             `;
                     }
                     // ============================================
-                    // MONTAGEM DAS RECEITAS (Agora com <tr> e <td>)
+                    // 3. MONTAGEM DAS RECEITAS (Aba Contas a Receber)
                     // ============================================
                     else {
                         let nomePrincipal = isVenda ? `🛒 Venda #${item.id || ''}` : `<i class="fas fa-paw" style="color:#C9A96E;"></i> ${item.pet || '—'}`;
@@ -3183,26 +3227,20 @@
                                 descricao = `📦 Pacote: ${item.pacoteNome || 'Personalizado'}`;
                             }
                         } else {
-                            descricao = `<span class="badge" style="background: rgba(0,0,0,0.05); border: 1px solid #ddd;">${item.servico || '—'}</span>`;
+                            descricao = `<span class="badge" style="background: #333; color: #ccc;">${item.servico || '—'}</span>`;
                         }
 
-                        const badgeCor = (status === 'PAGO' || status === 'CONCLUÍDO')
-                                ? 'background: rgba(40,167,69,0.15); color: #28a745; border: 1px solid #28a745;'
-                                : 'background: rgba(255,193,7,0.15); color: #ffc107; border: 1px solid #ffc107;';
-
                         htmlReceitas += `
-                <tr style="border-bottom: 1px solid #eee;">
+                <tr style="border-bottom: 1px solid #333;">
                     <td style="padding: 12px;">
-                        <div style="font-weight: bold; font-size: 0.95rem; color: #333;">${nomePrincipal}</div>
-                        <div style="color: #777; font-size: 0.8rem;"><i class="fas fa-user" style="color: #ccc;"></i> ${cliente}</div>
+                        <div style="font-weight: bold; font-size: 0.95rem; color: #eee;">${nomePrincipal}</div>
+                        <div style="color: #aaa; font-size: 0.8rem;"><i class="fas fa-user" style="color: #888;"></i> ${cliente}</div>
                     </td>
-                    <td style="padding: 12px;">${descricao}</td>
+                    <td style="padding: 12px; color: #eee;">${descricao}</td>
                     <td style="padding: 12px; color: #28a745; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
-                    <td style="padding: 12px; color: #666;">${forma}</td>
-                    <td style="padding: 12px;">${dataExibicao}</td>
-                    <td style="padding: 12px;">
-                        <span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span>
-                    </td>
+                    <td style="padding: 12px; color: #ccc;">${forma}</td>
+                    <td style="padding: 12px; color: #ccc;">${dataExibicao}</td>
+                    <td style="padding: 12px;"><span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span></td>
                     <td style="padding: 12px; text-align: right;"></td>
                 </tr>
             `;
@@ -3225,6 +3263,12 @@
                     const lucro = totalReceitas - totalDespesas;
                     elGeral.textContent = `R$ ${lucro.toFixed(2)}`;
                     elGeral.style.color = lucro >= 0 ? '#28a745' : '#dc3545';
+                }
+
+                // Injeta a tabela unificada na Visão Geral
+                const tbodyTodas = document.getElementById('tbody-todas-transacoes');
+                if (tbodyTodas) {
+                    tbodyTodas.innerHTML = htmlTodasTransacoes || `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #888;">Nenhuma transação encontrada para este período.</td></tr>`;
                 }
 
                 const tbodyReceitas = document.getElementById('tbody-receitas');
