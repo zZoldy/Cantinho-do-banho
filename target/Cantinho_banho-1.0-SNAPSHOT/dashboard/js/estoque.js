@@ -218,17 +218,6 @@ function desmascararMoeda(valorMascara) {
     return limpo || '0.00';
 }
 
-
-
-
-
-
-
-
-
-
-
-
 // ==========================================
 // LÓGICA DE FORNECEDORES (CONFIGURAÇÕES)
 // ==========================================
