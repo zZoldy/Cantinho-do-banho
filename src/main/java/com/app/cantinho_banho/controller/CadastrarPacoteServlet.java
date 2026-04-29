@@ -22,11 +22,13 @@ public class CadastrarPacoteServlet extends HttpServlet {
 
         try {
             String nome = request.getParameter("nome");
-            if (!Function.validarInicioNaoLetra(nome)) {
+            if (Function.isInicioBarraInvertida(nome)) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("Erro: O nome do pacote deve iniciar com uma letra.");
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Nome não pode iniciar com barra invertida.");
                 return;
             }
+            
             int sessoes = Integer.parseInt(request.getParameter("sessoes"));
             int validade = Integer.parseInt(request.getParameter("validade"));
             double valor = Double.parseDouble(request.getParameter("valor"));

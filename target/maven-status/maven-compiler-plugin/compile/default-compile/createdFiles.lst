@@ -59,6 +59,7 @@ com\app\cantinho_banho\controller\ExcluirServicoServlet.class
 com\app\cantinho_banho\dao\EstoqueDAO.class
 com\app\cantinho_banho\dao\VendaPacoteDAO.class
 com\app\cantinho_banho\controller\AtualizarAgendamentoServlet.class
+com\app\cantinho_banho\controller\CadastrarVendaServlet.class
 com\app\cantinho_banho\dao\ClienteDAO.class
 com\app\cantinho_banho\model\NotaFiscal.class
 com\app\cantinho_banho\controller\ExcluirProdutoServlet.class

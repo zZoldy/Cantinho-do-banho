@@ -2,6 +2,7 @@ package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.ConfigEmpresaDAO;
 import com.app.cantinho_banho.model.ConfigEmpresa;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -26,11 +27,23 @@ public class SalvarConfigEmpresaServlet extends HttpServlet {
             }
 
             config.setRazaoSocial(request.getParameter("razaoSocial"));
+            if (Function.isInicioBarraInvertida(config.getRazaoSocial())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A Razão Social não pode iniciar com barra invertida.");
+                return;
+            }
             config.setCnpj(request.getParameter("cnpj"));
+            if (Function.isInicioBarraInvertida(config.getCnpj())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O CNPJ não pode iniciar com barra invertida.");
+                return;
+            }
+
             config.setInscricaoEstadual(request.getParameter("ie"));
             config.setCertificadoSenha(request.getParameter("senhaCertificado"));
 
-            // 🟢 Lógica para ler o arquivo do certificado
             Part filePart = request.getPart("certificado");
             if (filePart != null && filePart.getSize() > 0) {
                 byte[] bytes = filePart.getInputStream().readAllBytes();

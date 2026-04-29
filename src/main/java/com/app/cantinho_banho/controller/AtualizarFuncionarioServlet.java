@@ -5,6 +5,7 @@ import com.app.cantinho_banho.dao.UsuarioDAO;
 import com.app.cantinho_banho.model.Endereco;
 import com.app.cantinho_banho.model.Funcionario;
 import com.app.cantinho_banho.model.Usuario;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -30,21 +31,69 @@ public class AtualizarFuncionarioServlet extends HttpServlet {
             }
 
             String nome = request.getParameter("nome");
+            if (Function.isInicioBarraInvertida(nome)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Nome não pode iniciar com barra invertida.");
+                return;
+            }
+
             String email = request.getParameter("email");
+            if (Function.isInicioBarraInvertida(email)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O E-mail não pode iniciar com barra invertida.");
+                return;
+            }
+
             String cpf = request.getParameter("cpf");
             String rg = request.getParameter("rg");
             String perfil = request.getParameter("perfil");
             String funcao = request.getParameter("funcao");
+            if (Function.isInicioBarraInvertida(funcao)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A Função não pode iniciar com barra invertida.");
+                return;
+            }
+
             String salario = request.getParameter("salario");
 
             Endereco endFunc = new Endereco();
             endFunc.setCep(request.getParameter("cep"));
             endFunc.setLogradouro(request.getParameter("logradouro"));
+            if (Function.isInicioBarraInvertida(endFunc.getLogradouro())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Logradouro não pode iniciar com barra invertida.");
+                return;
+            }
+
             endFunc.setNumero(request.getParameter("numero"));
+            if (Function.isInicioBarraInvertida(endFunc.getNumero())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Número não pode iniciar com barra invertida.");
+                return;
+            }
+
             endFunc.setBairro(request.getParameter("bairro"));
+            if (Function.isInicioBarraInvertida(endFunc.getBairro())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Bairro não pode iniciar com barra invertida.");
+                return;
+            }
+
             endFunc.setCidade(request.getParameter("cidade"));
             endFunc.setUf(request.getParameter("uf"));
             endFunc.setComplemento(request.getParameter("complemento"));
+            if (Function.isInicioBarraInvertida(endFunc.getComplemento())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Complemento não pode iniciar com barra invertida.");
+                return;
+            }
 
             java.util.ArrayList<String> camposFaltando = new java.util.ArrayList<>();
 

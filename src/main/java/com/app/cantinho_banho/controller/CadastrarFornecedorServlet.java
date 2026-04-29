@@ -27,7 +27,7 @@ public class CadastrarFornecedorServlet extends HttpServlet {
             if (Function.isInicioBarraInvertida(nomeDigitado)) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.setContentType("text/plain;charset=UTF-8");
-                response.getWriter().write("A Razão Social não pode iniciar com barra invertida.");
+                response.getWriter().write("O Nome não pode iniciar com barra invertida.");
                 return;
             }
 

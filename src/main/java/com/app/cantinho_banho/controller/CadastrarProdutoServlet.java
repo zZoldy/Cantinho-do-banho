@@ -6,6 +6,7 @@ import com.app.cantinho_banho.dao.ProdutoDAO;
 import com.app.cantinho_banho.model.Estoque;
 import com.app.cantinho_banho.model.Fornecedor;
 import com.app.cantinho_banho.model.Produto;
+import com.app.cantinho_banho.resources.Function;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -24,6 +25,13 @@ public class CadastrarProdutoServlet extends HttpServlet {
 
         try {
             String nome = request.getParameter("nome");
+            if (Function.isInicioBarraInvertida(nome)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write(" O Nome não pode iniciar com barra invertida.");
+                return;
+            }
+
             String precoVendasStr = request.getParameter("precoVenda");
             String fornecedorIdStr = request.getParameter("fornecedorId");
             String qtdInicialStr = request.getParameter("qtdInicial");
@@ -65,7 +73,7 @@ public class CadastrarProdutoServlet extends HttpServlet {
                 despesaInicial.setDescricao("Estoque Inicial: " + quantidadeEstoque + "x " + produto.getNome());
 
                 try {
-                    despesaInicial.setValor(Double.parseDouble(custoStr)); 
+                    despesaInicial.setValor(Double.parseDouble(custoStr));
                 } catch (NumberFormatException ex) {
                     despesaInicial.setValor(0.0);
                 }
@@ -73,7 +81,7 @@ public class CadastrarProdutoServlet extends HttpServlet {
                 despesaInicial.setFormaPagamento(formaPag != null && !formaPag.isEmpty() ? formaPag : "DINHEIRO");
                 despesaInicial.setStatus("PAGO");
                 despesaInicial.setDataCriacao(java.time.LocalDateTime.now());
-                despesaInicial.setFornecedor(produto.getFornecedor() != null ? produto.getFornecedor().getRazaoSocial(): "Fornecedor Avulso");
+                despesaInicial.setFornecedor(produto.getFornecedor() != null ? produto.getFornecedor().getRazaoSocial() : "Fornecedor Avulso");
                 despesaInicial.setTipoMovimentacao("DESPESA");
 
                 new com.app.cantinho_banho.dao.DespesaDAO().salvar(despesaInicial);

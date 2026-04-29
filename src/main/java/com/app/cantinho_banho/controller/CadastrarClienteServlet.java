@@ -16,46 +16,95 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/api/clientes/cadastrar")
 public class CadastrarClienteServlet extends HttpServlet {
-    
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        
+
         try {
             String nome = request.getParameter("nome");
-            if (!Function.validarInicioNaoLetra(nome)) {
+            if (Function.isInicioBarraInvertida(nome)) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("Erro: O nome do pacote deve iniciar com uma letra.");
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Nome não pode iniciar com barra invertida.");
                 return;
             }
+
             String telefone = request.getParameter("telefone");
             String email = request.getParameter("email");
+            if (Function.isInicioBarraInvertida(email)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O E-mail não pode iniciar com barra invertida.");
+                return;
+            }
+
             String cpf = request.getParameter("cpf");
-            
             String cep = request.getParameter("cep");
+            if (Function.isInicioBarraInvertida(cep)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O CEP não pode iniciar com barra invertida.");
+                return;
+            }
+
             String logradouro = request.getParameter("logradouro");
+            if (Function.isInicioBarraInvertida(logradouro)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Logradouro não pode iniciar com barra invertida.");
+                return;
+            }
+
             String numero = request.getParameter("numero");
+            if (Function.isInicioBarraInvertida(numero)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Número não pode iniciar com barra invertida.");
+                return;
+            }
+
             String bairro = request.getParameter("bairro");
+            if (Function.isInicioBarraInvertida(bairro)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Bairro não pode iniciar com barra invertida.");
+                return;
+            }
+
             String cidade = request.getParameter("cidade");
+            if (Function.isInicioBarraInvertida(cidade)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A Cidade não pode iniciar com barra invertida.");
+                return;
+            }
+
             String uf = request.getParameter("uf");
-            
+            if (Function.isInicioBarraInvertida(uf)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A UF não pode iniciar com barra invertida.");
+                return;
+            }
+
             ClienteDAO clienteDAO = new ClienteDAO();
-            
+
             Long id = clienteDAO.existeTelefone(telefone);
             Cliente cliente = null;
-            
+
             if (id > 0) {
                 cliente = clienteDAO.buscarPorId(id);
-            } 
-            
+            }
+
             if (cliente == null) {
                 cliente = new Cliente();
                 cliente.setNome(nome);
                 cliente.setTelefone(telefone);
             }
-            
+
             if (cep != null && !cep.trim().isEmpty()) {
                 Endereco endereco = new Endereco();
                 endereco.setCep(cep);
@@ -64,30 +113,30 @@ public class CadastrarClienteServlet extends HttpServlet {
                 endereco.setBairro(bairro);
                 endereco.setCidade(cidade);
                 endereco.setUf(uf);
-                
+
                 cliente.setEndereco(endereco);
             }
-            
+
             String senhaGerada = null;
-            
+
             if (email != null && !email.trim().isEmpty() && cpf != null && !cpf.trim().isEmpty()) {
                 UsuarioDAO usuarioDAO = new UsuarioDAO();
-                
+
                 if (usuarioDAO.existeEmail(email)) {
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                     response.getWriter().write("Este e-mail já está em uso.");
                     return;
                 }
-                
+
                 if (usuarioDAO.existeCpf(cpf)) {
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                     response.getWriter().write("Este CPF já está em uso.");
                     return;
                 }
-                
+
                 senhaGerada = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
                 String senhaCriptografada = BCrypt.hashpw(senhaGerada, BCrypt.gensalt());
-                
+
                 Usuario usuario = new Usuario();
                 usuario.setNome(nome);
                 usuario.setEmail(email);
@@ -96,21 +145,21 @@ public class CadastrarClienteServlet extends HttpServlet {
                 usuario.setPerfil("Cliente");
                 usuario.setAtivo(true);
                 usuario.setReset_password(true);
-                
+
                 cliente.setUsuario(usuario);
             }
-            
+
             clienteDAO.salvar(cliente);
-            
+
             String json = String.format("{\"senha\": \"%s\", \"telefone\": \"%s\", \"status\": \"sucesso\"}",
                     senhaGerada != null ? senhaGerada : "",
                     cliente.getTelefone() != null ? cliente.getTelefone() : "");
-            
+
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(json);
-            
+
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

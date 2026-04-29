@@ -8,6 +8,7 @@ import com.app.cantinho_banho.dao.ClienteDAO;
 import com.app.cantinho_banho.dao.PetDAO;
 import com.app.cantinho_banho.model.Cliente;
 import com.app.cantinho_banho.model.Pet;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import java.util.stream.Collectors;
 import javax.servlet.annotation.WebServlet;
@@ -35,10 +36,36 @@ public class CadastrarPetServlet extends HttpServlet {
             }
 
             pet.setNome(extrairCampo(jsonStr, "nome"));
+            if (Function.isInicioBarraInvertida(pet.getNome())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Nome não pode iniciar com barra invertida.");
+                return;
+            }
             pet.setTipo(extrairCampo(jsonStr, "tipo"));
+            if (Function.isInicioBarraInvertida(pet.getNome())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Tipo não pode iniciar com barra invertida.");
+                return;
+            }
+
             pet.setRaca(extrairCampo(jsonStr, "raca"));
+            if (Function.isInicioBarraInvertida(pet.getRaca())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A Raça não pode iniciar com barra invertida.");
+                return;
+            }
+
             pet.setPorte(extrairCampo(jsonStr, "porte"));
             pet.setObs(extrairCampo(jsonStr, "obs"));
+            if (Function.isInicioBarraInvertida(pet.getObs())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A Observação não pode iniciar com barra invertida.");
+                return;
+            }
 
             Long clienteId = Long.parseLong(extrairCampo(jsonStr, "clienteId"));
             Cliente cliente = new ClienteDAO().buscarPorId(clienteId);

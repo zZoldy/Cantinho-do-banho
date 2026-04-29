@@ -229,7 +229,7 @@ async function listarFornecedores() {
             listaFornecedoresLocal = await response.json();
         }
     } catch (e) {
-        console.error("Erro ao carregar estoque:", e);
+        console.error("Erro ao carregar fornecedores:", e);
     }
 }
 
@@ -424,10 +424,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // LÓGICA DE DESPESA 
 // ==========================================
 
-function abrirModalDespesa() {
+async function abrirModalDespesa() {
     const modal = document.getElementById('modal-despesa-manual');
     if (modal) {
         document.getElementById('form-despesa-manual').reset();
+        await listarFornecedores();
         modal.classList.remove('hidden');
     }
 }
@@ -438,7 +439,6 @@ function fecharModalDespesa() {
         modal.classList.add('hidden');
 }
 
-// Salvar a Despesa
 async function salvarDespesaManual(e) {
     e.preventDefault();
     const form = e.target;
@@ -474,3 +474,47 @@ async function salvarDespesaManual(e) {
         console.error("Erro na comunicação:", err);
     }
 }
+
+function filtrarFornecedoresDropdown() {
+    const input = document.getElementById('despesa-fornecedor');
+    const dropdown = document.getElementById('dropdown-fornecedores');
+    if (!input || !dropdown)
+        return;
+
+    const filtro = input.value.toLowerCase();
+    const fornecedoresAtuais = typeof listaFornecedoresLocal !== 'undefined' ? listaFornecedoresLocal : [];
+
+    const filtrados = fornecedoresAtuais.filter(f => f.nome.toLowerCase().includes(filtro));
+
+    if (filtrados.length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+
+    dropdown.innerHTML = filtrados.map(f => `
+        <li onclick="selecionarFornecedorDropdown('${f.nome}')" style="padding: 10px 15px; color: #eee; cursor: pointer; border-bottom: 1px solid #222; transition: 0.2s; font-size: 0.9rem;" onmouseover="this.style.background='#333'; this.style.color='#C9A96E';" onmouseout="this.style.background='transparent'; this.style.color='#eee';">
+            <i class="fas fa-building" style="color:#C9A96E; margin-right: 8px;"></i> ${f.nome}
+        </li>
+    `).join('');
+
+    dropdown.classList.remove('hidden');
+}
+
+function selecionarFornecedorDropdown(nome) {
+    const input = document.getElementById('despesa-fornecedor');
+    const dropdown = document.getElementById('dropdown-fornecedores');
+
+    if (input)
+        input.value = nome;
+    if (dropdown)
+        dropdown.classList.add('hidden');
+}
+
+document.addEventListener('click', function (e) {
+    const input = document.getElementById('despesa-fornecedor');
+    const dropdown = document.getElementById('dropdown-fornecedores');
+
+    if (input && dropdown && e.target !== input && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});

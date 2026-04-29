@@ -4,6 +4,7 @@ import com.app.cantinho_banho.dao.AgendamentoDAO;
 import com.app.cantinho_banho.dao.FuncionarioDAO;
 import com.app.cantinho_banho.model.Agendamento;
 import com.app.cantinho_banho.model.Funcionario;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import java.time.LocalTime;
 import javax.servlet.annotation.WebServlet;
@@ -18,7 +19,7 @@ public class AtualizarAgendamentoServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
-        
+
         try {
             Long id = Long.parseLong(request.getParameter("id"));
             AgendamentoDAO dao = new AgendamentoDAO();
@@ -32,6 +33,12 @@ public class AtualizarAgendamentoServlet extends HttpServlet {
                 String hEntrada = request.getParameter("entrada_pet");
                 String hSaida = request.getParameter("saida_pet");
                 String obsInternas = request.getParameter("obs");
+                if (Function.isInicioBarraInvertida(obsInternas)) {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    response.setContentType("text/plain;charset=UTF-8");
+                    response.getWriter().write("A Observação do Agendamento não pode iniciar com barra invertida.");
+                    return;
+                }
 
                 if (strValor != null && !strValor.isEmpty()) {
                     a.setValor(Double.parseDouble(strValor));
@@ -56,7 +63,7 @@ public class AtualizarAgendamentoServlet extends HttpServlet {
                 } else {
                     a.setFuncionario(null);
                 }
-                
+
                 dao.salvarOuAtualizar(a);
                 com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
                 response.setStatus(HttpServletResponse.SC_OK);
@@ -64,8 +71,8 @@ public class AtualizarAgendamentoServlet extends HttpServlet {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             }
         } catch (NumberFormatException e) {
-            e.printStackTrace();
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(500);
+            response.getWriter().write("Erro: " + e.getMessage());
         }
     }
 }

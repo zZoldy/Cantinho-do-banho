@@ -875,6 +875,7 @@
                 <a href="#" class="nav-item" data-page="pendentes"><i class="fas fa-clock"></i> Pendentes <span class="nav-badge" id="badge-pend">0</span></a>
                 <a href="#" class="nav-item" data-page="agenda"><i class="fas fa-calendar-check"></i> Agenda Confirmada</a>
                 <a href="#" class="nav-item" data-page="retirada"><i class="fas fa-dog"></i> Retirada do Pet <span class="nav-badge" id="badge-retirada">0</span></a>
+                <a href="#" class="nav-item" data-page="finalizados"><i class="fas fa-history"></i> Histórico</a>
                 <a href="#" class="nav-item" data-page="estoques"><i class="fas fa-boxes"></i> Estoque</a>
                 <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="funcionarios"><i class="fas fa-users"></i> Funcionários</a>
@@ -921,9 +922,12 @@
                         <div class="card-resumo-icon amarelo"><i class="fas fa-clock"></i></div>
                         <div><span class="card-resumo-valor" id="dash-pendentes">0</span><span class="card-resumo-label">Pendentes</span></div>
                     </div>
-                    <div class="card-resumo">
+                    <div class="card-resumo" onclick="navigateTo('finalizados')" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform = 'scale(1.02)'" onmouseout="this.style.transform = 'scale(1)'">
                         <div class="card-resumo-icon roxo"><i class="fas fa-paw"></i></div>
-                        <div><span class="card-resumo-valor" id="dash-total-hist">0</span><span class="card-resumo-label">Total Realizados</span></div>
+                        <div>
+                            <span class="card-resumo-valor" id="dash-total-hist">0</span>
+                            <span class="card-resumo-label">Total Realizados</span>
+                        </div>
                     </div>
                     <div class="card-resumo" id="card-fat-mes">
                         <div class="card-resumo-icon verde"><i class="fas fa-dollar-sign"></i></div>
@@ -1040,6 +1044,33 @@
                     </select>
                 </div>
                 <div id="lista-retirada"></div>
+            </section>
+
+            <!-- ═══════════════ FINALIZADOS ═══════════════ -->
+            <section class="page hidden" id="page-finalizados">
+                <div class="page-header">
+                    <h3><i class="fas fa-check-double" style="color: #28a745; margin-right: 8px;"></i> Agendamentos Finalizados</h3>
+                </div>
+
+                <div class="filtros-bar-sm" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-size: 0.8rem; color: #888; margin-bottom: 4px; display: block;">Buscar por Cliente</label>
+                        <input type="text" id="filtro-cliente-fin" placeholder="Nome do dono..." class="form-ctrl" oninput="renderFinalizados()">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="font-size: 0.8rem; color: #888; margin-bottom: 4px; display: block;">Buscar por Pet</label>
+                        <input type="text" id="filtro-pet-fin" placeholder="Nome do pet..." class="form-ctrl" oninput="renderFinalizados()">
+                    </div>
+                    <div style="width: auto;">
+                        <label style="font-size: 0.8rem; color: #888; margin-bottom: 4px; display: block;">Ordenação</label>
+                        <select id="ordenacao-finalizados" class="form-ctrl" onchange="renderFinalizados()">
+                            <option value="desc">🔽 Mais Recentes Primeiro</option>
+                            <option value="asc">🔼 Mais Antigos Primeiro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="lista-finalizados"></div>
             </section>
 
             <!-- ═══════════════ CLIENTES ═══════════════ -->
@@ -2129,9 +2160,13 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" style="position: relative;">
                             <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Fornecedor / Destino</label>
-                            <input type="text" name="fornecedor" class="form-ctrl" placeholder="Ex: EDP, Imobiliária, Funcionário...">
+
+                            <input type="text" id="despesa-fornecedor" name="fornecedor" class="form-ctrl" placeholder="Selecione ou digite um novo..." autocomplete="off" oninput="filtrarFornecedoresDropdown()" onfocus="filtrarFornecedoresDropdown()">
+
+                            <ul id="dropdown-fornecedores" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; background: #1a1a1a; border: 1px solid #333; border-top: none; border-radius: 0 0 6px 6px; max-height: 160px; overflow-y: auto; z-index: 1000; list-style: none; padding: 0; margin: 0; box-shadow: 0 8px 16px rgba(0,0,0,0.5);">
+                            </ul>
                         </div>
 
                         <div class="form-group">
@@ -2220,6 +2255,60 @@
             </div>
         </div>
 
+        <!-- ═══ MODAL VENDAS ═══ -->
+        <div class="modal-overlay hidden" id="modal-venda">
+            <div class="modal modal-sm" style="border-top: 5px solid #28a745;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-shopping-cart" style="color: #28a745; margin-right: 8px;"></i> Nova Venda</h3>
+                    <button type="button" onclick="fecharModalVenda()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <form id="form-venda" onsubmit="salvarVenda(event)">
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Cliente (Opcional)</label>
+                            <input type="text" id="venda-cliente" class="form-ctrl" placeholder="Ex: João (Dono do Rex) ou deixe em branco">
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Produto <span style="color:red">*</span></label>
+                            <select id="venda-produto" class="form-ctrl" required onchange="calcularTotalVenda()">
+                                <option value="">Carregando produtos...</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Quantidade <span style="color:red">*</span></label>
+                                <input type="number" id="venda-qtd" class="form-ctrl" min="1" value="1" required oninput="calcularTotalVenda()">
+                            </div>
+                            <div class="field" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Total (R$)</label>
+                                <input type="text" id="venda-total" class="form-ctrl" readonly style="background: #1a1a1a; color: #28a745; font-weight: bold; border-color: #28a745;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Forma de Pagamento</label>
+                            <select id="venda-forma-pag" class="form-ctrl">
+                                <option value="DINHEIRO">Dinheiro</option>
+                                <option value="PIX">PIX</option>
+                                <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                                <option value="CARTAO_DEBITO">Cartão de Débito</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="fecharModalVenda()" class="btn-secundario">Cancelar</button>
+                        <button type="submit" class="btn-primary" style="background:#28a745; border-color:#28a745;">
+                            <i class="fas fa-check"></i> Concluir Venda
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script>
             // ═══════════════════════════════════════════════════
             // DADOS
@@ -2228,6 +2317,7 @@
             let agenda = [];
             let pendentes = [];
             let retirada = [];
+            let finalizados = [];
             let historico = [];
             let clientes = [];
             let pacotes = [];
@@ -2319,6 +2409,20 @@
                         await carregarClientesDoBanco();
 
                         await carregarAgendaDoBanco(true);
+
+                        const pageFinalizados = document.getElementById('page-finalizados');
+                        if (pageFinalizados && !pageFinalizados.classList.contains('hidden')) {
+                            if (typeof renderFinalizados === 'function') {
+                                renderFinalizados();
+                            }
+                        }
+
+                        const pageDash = document.getElementById('page-dashboard');
+                        if (pageDash && !pageDash.classList.contains('hidden')) {
+                            if (typeof renderDashboard === 'function') {
+                                renderDashboard();
+                            }
+                        }
                     }
 
                     if (event.data === "ATUALIZAR_HORARIO") {
@@ -2330,7 +2434,7 @@
                         if (typeof renderPendentes === 'function')
                             renderPendentes();
 
-                        if (typeof carregarHorariosDoBanco() === 'function')
+                        if (typeof carregarHorariosDoBanco === 'function')
                             renderPendentes();
                     }
 
@@ -2363,6 +2467,10 @@
 
                         if (typeof carregarFornecedoresParaModal === 'function') {
                             carregarFornecedoresParaModal();
+                        }
+
+                        if (typeof listarFornecedores === 'function') {
+                            listarFornecedores();
                         }
                     }
 
@@ -2412,7 +2520,7 @@
             // ═══════════════════════════════════════════════════
             // NAVEGAÇÃO
             // ═══════════════════════════════════════════════════
-            const pageTitles = {dashboard: 'Dashboard', novos: 'Novos Pedidos', agenda: 'Agenda Confirmada', pendentes: 'Pendentes', clientes: 'Clientes Cadastrados', estoques: 'Estoque', funcionarios: 'Funcionários', pagamentos: 'Pagamentos', config: 'Configurações'};
+            const pageTitles = {dashboard: 'Dashboard', novos: 'Novos Pedidos', agenda: 'Agenda Confirmada', pendentes: 'Pendentes', finalizados: 'Finalizados', clientes: 'Clientes Cadastrados', estoques: 'Estoque', funcionarios: 'Funcionários', pagamentos: 'Pagamentos', config: 'Configurações'};
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', e => {
                     e.preventDefault();
@@ -2447,6 +2555,14 @@
                     await listarClientesBD();
                 }
 
+                if (page === 'retirada') {
+                    await carregarAgendaDoBanco(false);
+                }
+
+                if (page === 'finalizados') {
+                    await carregarAgendaDoBanco(false);
+                }
+
                 if (page === 'funcionarios') {
                     await carregarFuncionariosDoBanco(isAdm);
                 }
@@ -2471,7 +2587,19 @@
                 document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
                 document.getElementById('page-' + page)?.classList.remove('hidden');
                 document.getElementById('pageTitle').textContent = pageTitles[page] || page;
-                ({dashboard: renderDashboard, novos: renderNovos, agenda: renderAgenda, pendentes: renderPendentes, clientes: renderClientes, estoques: renderEstoque, funcionarios: renderFuncionarios, pagamentos: renderPagamentos, config: renderConfiguracoes})[page]?.();
+                ({
+                    dashboard: renderDashboard,
+                    novos: renderNovos,
+                    agenda: renderAgenda,
+                    pendentes: renderPendentes,
+                    retirada: renderRetirada,
+                    finalizados: renderFinalizados,
+                    clientes: renderClientes,
+                    estoques: renderEstoque,
+                    funcionarios: renderFuncionarios,
+                    pagamentos: renderPagamentos,
+                    config: renderConfiguracoes
+                })[page]?.();
             }
             function toggleSidebar() {
                 document.getElementById('sidebar').classList.toggle('open');
@@ -2760,6 +2888,106 @@
               </div>`).join('') : '<div style="text-align:center; padding:20px; color:#888;"><i class="fas fa-history" style="font-size:2rem; margin-bottom:10px; color:#ccc;"></i><p>Nenhum serviço concluído ainda</p></div>';
                 }
                 renderFatChart();
+            }
+
+            async function abrirModalVenda() {
+                const modal = document.getElementById('modal-venda');
+                if (modal) {
+                    document.getElementById('form-venda').reset();
+                    document.getElementById('venda-total').value = 'R$ 0,00';
+
+                    if (typeof carregarEstoque === 'function')
+                        await carregarEstoque();
+
+                    const selectProd = document.getElementById('venda-produto');
+                    selectProd.innerHTML = '<option value="">Selecione um produto...</option>';
+
+                    const produtosNoEstoque = typeof estoques !== 'undefined' ? estoques : [];
+                    const disponiveis = produtosNoEstoque.filter(p => p.quantidade > 0);
+
+                    if (disponiveis.length === 0) {
+                        selectProd.innerHTML = '<option value="">Nenhum produto com estoque disponível</option>';
+                    } else {
+                        disponiveis.forEach(p => {
+                            const opt = document.createElement('option');
+                            opt.value = p.id;
+
+                            const preco = p.precoVenda || p.valor || p.preco || 0;
+                            opt.dataset.preco = preco;
+
+                            opt.textContent = `${p.nome} (Estoque: ${p.quantidade}) - R$ ${parseFloat(preco).toFixed(2).replace('.', ',')}`;
+                            selectProd.appendChild(opt);
+                        });
+                    }
+
+                    modal.classList.remove('hidden');
+                }
+            }
+
+            function fecharModalVenda() {
+                document.getElementById('modal-venda')?.classList.add('hidden');
+            }
+
+            function calcularTotalVenda() {
+                const selectProd = document.getElementById('venda-produto');
+                const inputQtd = document.getElementById('venda-qtd');
+                const inputTotal = document.getElementById('venda-total');
+
+                if (selectProd.selectedIndex > 0) {
+                    const opcao = selectProd.options[selectProd.selectedIndex];
+                    const preco = parseFloat(opcao.dataset.preco) || 0;
+                    const qtd = parseInt(inputQtd.value) || 1;
+
+                    const total = preco * qtd;
+                    inputTotal.value = `R$ ${total.toFixed(2).replace('.', ',')}`;
+                } else {
+                    inputTotal.value = 'R$ 0,00';
+                }
+            }
+
+            async function salvarVenda(event) {
+                event.preventDefault();
+
+                const produtoId = document.getElementById('venda-produto').value;
+                const qtd = document.getElementById('venda-qtd').value;
+                const cliente = document.getElementById('venda-cliente').value || 'Consumidor Final';
+                const formaPag = document.getElementById('venda-forma-pag').value;
+
+                const dadosVenda = {
+                    produtoId: parseInt(produtoId),
+                    quantidade: parseInt(qtd),
+                    clienteNome: cliente,
+                    formaPagamento: formaPag,
+                    dataVenda: new Date().toISOString()
+                };
+
+                try {
+                    const response = await fetch('../api/vendas/salvar', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(dadosVenda)
+                    });
+
+                    if (response.ok) {
+                        fecharModalVenda();
+
+                        if (typeof carregarEstoque === 'function')
+                            await carregarEstoque();
+                        if (typeof carregarVendasPacotes === 'function')
+                            await carregarVendasPacotes();
+
+                        const paginaAtual = document.querySelector('.nav-item.active')?.getAttribute('data-page');
+                        if (paginaAtual === 'estoques' && typeof renderEstoque === 'function')
+                            renderEstoque();
+                        if (paginaAtual === 'pagamentos' && typeof renderPagamentos === 'function')
+                            renderPagamentos();
+
+                    } else {
+                        alert('Erro ao registrar a venda. Verifique se há estoque suficiente no servidor.');
+                    }
+                } catch (e) {
+                    console.error("Erro ao salvar a venda:", e);
+                }
             }
             // ═══════════════════════════════════════════════════
             // HIST FILTRO

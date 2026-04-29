@@ -637,6 +637,122 @@ function renderRetirada() {
     }).join('');
 }
 
+function renderFinalizados() {
+    const buscaCliente = (document.getElementById('filtro-cliente-fin')?.value || '').toLowerCase();
+    const buscaPet = (document.getElementById('filtro-pet-fin')?.value || '').toLowerCase();
+    const ordem = document.getElementById('ordenacao-finalizados')?.value || 'desc';
+
+    // Puxa do array histórico global do sistema
+    const listaHistorico = typeof historico !== 'undefined' ? historico : [];
+
+    const lista = listaHistorico.filter(a => {
+        const nomeDono = (a.dono || '').toLowerCase();
+        const nomePet = (a.pet || '').toLowerCase();
+
+        // Verifica se o texto digitado bate com o cliente E com o pet
+        const matchCliente = nomeDono.includes(buscaCliente);
+        const matchPet = nomePet.includes(buscaPet);
+
+        return matchCliente && matchPet;
+    }).sort((a, b) => {
+        const dhA = (a.data || '') + (a.hora || '');
+        const dhB = (b.data || '') + (b.hora || '');
+        return ordem === 'desc' ? dhB.localeCompare(dhA) : dhA.localeCompare(dhB);
+    });
+
+    const el = document.getElementById('lista-finalizados');
+    if (!el) return;
+
+    if (!lista.length) {
+        el.innerHTML = `<div class="empty-state" style="padding: 40px; text-align: center; border: 1px dashed #333; border-radius: 8px;">
+            <i class="fas fa-history" style="font-size: 2.5rem; color: #555; margin-bottom: 15px;"></i>
+            <p style="color: #aaa;">Nenhum agendamento finalizado encontrado com estes filtros.</p>
+        </div>`;
+        return;
+    }
+
+    el.innerHTML = lista.map(a => {
+        // Formatação da data
+        let dataLimpa = a.data || '';
+        if (dataLimpa.includes('T')) dataLimpa = dataLimpa.split('T')[0];
+
+        let dataExibicao = '--/--/----';
+        if (dataLimpa) {
+            dataExibicao = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
+        }
+
+        const valorFormatado = a.valor ? parseFloat(a.valor).toFixed(2).replace('.', ',') : '0,00';
+        const funcionario = (a.funcionario && a.funcionario !== 'null') ? a.funcionario : 'Não informado';
+        const formaPag = (a.formaPag || a.forma_pagamento || 'Não informada').replace('_', ' ');
+
+        // Link do WhatsApp
+        let linkWhats = '<span style="opacity: 0.5;"><i class="fas fa-phone-slash"></i> S/ Contato</span>';
+        if (a.contato) {
+            const numeroLimpo = typeof cleanTel === 'function' ? cleanTel(a.contato) : a.contato.replace(/\D/g, '');
+            linkWhats = `<a href="https://wa.me/55${numeroLimpo}" target="_blank" style="color:#25d366; text-decoration: none;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`;
+        }
+
+        // === MAPEAMENTO DOS HORÁRIOS DO SEU JSON ===
+        const horaAgendada = a.hora || '--:--';
+        const horaEntrada = a.entrada_pet || '--:--';
+        const horaSaida = a.saida_pet || '--:--';
+
+        return `
+            <div class="agenda-card" style="border-left: 5px solid #28a745; opacity: 0.9; margin-bottom: 15px; background: #1a1a1a;">
+                <div class="ac-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <div>
+                        <div class="ac-pet" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; color: #eee;">
+                            <i class="fas fa-paw" style="color:#C9A96E; margin-right:6px; font-size: 0.9rem;"></i>${a.pet} 
+                            <small style="font-weight: normal; color: #888;">(${a.tipo || 'Pet'})</small>
+                        </div>
+                        <div class="ac-dono" style="font-size: 0.9rem; color: #aaa;">
+                            <i class="fas fa-user" style="color:#C9A96E; margin-right: 4px;"></i> ${a.dono} &nbsp;|&nbsp; ${linkWhats}
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #28a745; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">
+                            <i class="fas fa-check-double"></i> Finalizado
+                        </span>
+                        <div style="font-size:.75rem; color:#888; margin-top:6px;">
+                            <i class="far fa-calendar-check"></i> ${dataExibicao} às ${horaAgendada}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border: 1px solid #333; display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.9rem;">
+                    <div style="flex: 1; min-width: 120px;">
+                        <strong style="color: #888; font-size: 0.75rem; display: block; text-transform: uppercase;">Serviço</strong>
+                        <span style="color: #eee;">${a.servico || '—'}</span>
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <strong style="color: #888; font-size: 0.75rem; display: block; text-transform: uppercase;">Funcionário</strong>
+                        <span style="color: #eee;">${funcionario}</span>
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <strong style="color: #888; font-size: 0.75rem; display: block; text-transform: uppercase;">Valor Final</strong>
+                        <span style="color: #28a745; font-weight: bold;">R$ ${valorFormatado}</span>
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <strong style="color: #888; font-size: 0.75rem; display: block; text-transform: uppercase;">Pagamento</strong>
+                        <span style="color: #eee;">${formaPag}</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 12px; display: flex; gap: 20px; font-size: 0.85rem; padding-left: 5px;">
+                    <div style="color: #aaa;">
+                        <i class="fas fa-sign-in-alt" style="color: #C9A96E; margin-right: 4px;"></i> Chegada Real: <span style="color:#eee; font-weight:600;">${horaEntrada}</span>
+                    </div>
+                    <div style="color: #aaa;">
+                        <i class="fas fa-sign-out-alt" style="color: #28a745; margin-right: 4px;"></i> Saída Real: <span style="color:#eee; font-weight:600;">${horaSaida}</span>
+                    </div>
+                </div>
+                
+                ${a.obs ? `<div style="margin-top: 12px; font-size: 0.85rem; color: #aaa; font-style: italic; border-left: 2px solid #C9A96E; padding-left: 8px;"><i class="fas fa-info-circle" style="color:#C9A96E; margin-right:4px;"></i>${a.obs}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
 function renderServicos() {
     const lista = document.getElementById('lista-servicos');
     if (!lista)
@@ -1001,7 +1117,7 @@ async function salvarAgendaManual(id, btn) {
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Erro ao salvar os dados no banco.");
+        alert("Erro: ", erro);
         btn.innerHTML = originalHTML;
         btn.disabled = false;
         btn.style.opacity = '1';
@@ -1120,7 +1236,7 @@ async function concluirAtendimento(id, btn) {
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Falha de comunicação com o servidor.");
+        alert("Erro: ", erro);
         btn.innerHTML = originalHTML;
         btn.disabled = false;
         btn.style.opacity = '1';

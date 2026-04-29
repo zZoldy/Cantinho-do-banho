@@ -4,11 +4,9 @@ import com.app.cantinho_banho.dao.AgendamentoDAO;
 import com.app.cantinho_banho.dao.FuncionarioDAO;
 import com.app.cantinho_banho.dao.VendaPacoteDAO;
 import com.app.cantinho_banho.model.Agendamento;
-import com.app.cantinho_banho.model.Cliente;
 import com.app.cantinho_banho.model.Funcionario;
-import com.app.cantinho_banho.model.Pacote;
-import com.app.cantinho_banho.model.Servico;
 import com.app.cantinho_banho.model.VendaPacote;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import java.time.LocalTime;
 import javax.servlet.annotation.WebServlet;
@@ -43,6 +41,12 @@ public class ConcluirAgendamentoServlet extends HttpServlet {
             }
 
             String obsInternas = request.getParameter("obs");
+            if (Function.isInicioBarraInvertida(obsInternas)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A Observação não pode iniciar com barra invertida.");
+                return;
+            }
 
             AgendamentoDAO dao = new AgendamentoDAO();
             Agendamento a = dao.buscarPorId(id);
@@ -87,16 +91,11 @@ public class ConcluirAgendamentoServlet extends HttpServlet {
                 if ("Pacote".equals(formaPag) && "Confirmado".equals(statusAnteriorBanco) && "Retirada".equals(novoStatus)) {
 
                     VendaPacoteDAO vendaDAO = new VendaPacoteDAO();
-                    // Busca a venda que possui o serviço específico deste agendamento
                     VendaPacote vendaAtiva = vendaDAO.buscarVendaAtiva(a.getPet().getDono().getId(), a.getServico().getId());
 
                     if (vendaAtiva != null) {
-                        // Deduz a sessão da venda específica
                         vendaAtiva.setSessoesRestantes(vendaAtiva.getSessoesRestantes() - 1);
                         vendaDAO.atualizar(vendaAtiva);
-
-                        // Não precisamos mais atualizar o 'cliente' aqui, 
-                        // pois ele não tem mais campos de pacote.
                     }
                 }
                 // ==============================================================

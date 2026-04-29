@@ -22,13 +22,21 @@ public class CadastrarDespesaServlet extends HttpServlet {
         try {
             Despesa d = new Despesa();
             d.setDescricao(request.getParameter("descricao"));
-            if (!Function.validarInicioNaoLetra(d.getDescricao())) {
+            if (Function.isInicioBarraInvertida(d.getDescricao())) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("Erro: O Descrição deve iniciar com uma letra.");
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("A Descrição não pode iniciar com barra invertida.");
                 return;
             }
             d.setValor(Double.parseDouble(request.getParameter("valor")));
             d.setFornecedor(request.getParameter("fornecedor"));
+            if (Function.isInicioBarraInvertida(d.getFornecedor())) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Fornecedor não pode iniciar com barra invertida.");
+                return;
+            }
+
             d.setFormaPagamento(request.getParameter("formaPagamento"));
             d.setStatus(request.getParameter("status"));
             d.setDataCriacao(LocalDateTime.now());

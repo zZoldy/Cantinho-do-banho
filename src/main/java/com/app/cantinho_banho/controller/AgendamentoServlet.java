@@ -8,6 +8,7 @@ import com.app.cantinho_banho.model.Agendamento;
 import com.app.cantinho_banho.model.Cliente;
 import com.app.cantinho_banho.model.Pet;
 import com.app.cantinho_banho.model.Servico;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -24,9 +25,30 @@ public class AgendamentoServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         String nomeDono = request.getParameter("nomeDono");
+        if (Function.isInicioBarraInvertida(nomeDono)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("text/plain;charset=UTF-8");
+            response.getWriter().write("O Nome do Dono não pode iniciar com barra invertida.");
+            return;
+        }
+
         String telefone = request.getParameter("telefone");
         String nomePet = request.getParameter("nomePet");
+        if (Function.isInicioBarraInvertida(nomePet)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("text/plain;charset=UTF-8");
+            response.getWriter().write("O Nome do Pet não pode iniciar com barra invertida.");
+            return;
+        }
+
         String racaPet = request.getParameter("racaPet");
+        if (Function.isInicioBarraInvertida(racaPet)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("text/plain;charset=UTF-8");
+            response.getWriter().write("A Raça do Pet não pode iniciar com barra invertida.");
+            return;
+        }
+
         String portePet = request.getParameter("portePet");
         String tipoPet = request.getParameter("tipo");
 

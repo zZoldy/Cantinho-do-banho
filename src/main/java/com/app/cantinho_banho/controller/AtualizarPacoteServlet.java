@@ -4,6 +4,7 @@ import com.app.cantinho_banho.dao.PacoteDAO;
 import com.app.cantinho_banho.dao.ServicoDAO;
 import com.app.cantinho_banho.model.Pacote;
 import com.app.cantinho_banho.model.Servico;
+import com.app.cantinho_banho.resources.Function;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -23,6 +24,13 @@ public class AtualizarPacoteServlet extends HttpServlet {
         try {
             Long id = Long.parseLong(req.getParameter("id"));
             String nome = req.getParameter("nome");
+            if (Function.isInicioBarraInvertida(nome)) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.setContentType("text/plain;charset=UTF-8");
+                resp.getWriter().write("O Nome não pode iniciar com barra invertida.");
+                return;
+            }
+            
             int sessoes = Integer.parseInt(req.getParameter("sessoes"));
             int validade = Integer.parseInt(req.getParameter("validade"));
             Double valor = Double.parseDouble(req.getParameter("valor"));
@@ -33,7 +41,7 @@ public class AtualizarPacoteServlet extends HttpServlet {
 
             // 1. Busca o pacote existente no banco
             Pacote pacote = pacoteDAO.buscarPorId(id);
-            
+
             if (pacote == null) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.getWriter().write("Pacote não encontrado.");

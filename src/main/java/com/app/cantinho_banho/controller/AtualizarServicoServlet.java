@@ -2,6 +2,7 @@ package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.ServicoDAO;
 import com.app.cantinho_banho.model.Servico;
+import com.app.cantinho_banho.resources.Function;
 import java.io.IOException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -18,6 +19,13 @@ public class AtualizarServicoServlet extends HttpServlet {
         try {
             Long id = Long.parseLong(request.getParameter("id"));
             String nome = request.getParameter("nome");
+            if (Function.isInicioBarraInvertida(nome)) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("O Nome não pode iniciar com barra invertida.");
+                return;
+            }
+            
             String valorStr = request.getParameter("valor");
 
             ServicoDAO dao = new ServicoDAO();
