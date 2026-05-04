@@ -2,6 +2,7 @@ package com.app.cantinho_banho.model;
 
 import java.io.Serializable;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -31,6 +32,9 @@ public class ConfigEmpresa implements Serializable {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "endereco_id")
     private Endereco endereco;
+
+    @Column(name = "limite_por_horario", columnDefinition = "INT DEFAULT 3")
+    private int limitePorHorario = 3;
 
     public Long getId() {
         return id;
@@ -112,6 +116,12 @@ public class ConfigEmpresa implements Serializable {
         this.endereco = endereco;
     }
     
-    
+    public int getLimitePorHorario() {
+        return limitePorHorario;
+    }
+
+    public void setLimitePorHorario(int limitePorHorario) {
+        this.limitePorHorario = limitePorHorario;
+    }
 
 }

@@ -2,13 +2,16 @@ package com.app.cantinho_banho.controller;
 
 import com.app.cantinho_banho.dao.AgendamentoDAO;
 import com.app.cantinho_banho.dao.ClienteDAO;
+import com.app.cantinho_banho.dao.ConfigEmpresaDAO;
 import com.app.cantinho_banho.dao.PetDAO;
 import com.app.cantinho_banho.dao.ServicoDAO;
 import com.app.cantinho_banho.model.Agendamento;
 import com.app.cantinho_banho.model.Cliente;
+import com.app.cantinho_banho.model.ConfigEmpresa;
 import com.app.cantinho_banho.model.Pet;
 import com.app.cantinho_banho.model.Servico;
 import com.app.cantinho_banho.resources.Function;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -60,12 +63,31 @@ public class AgendamentoServlet extends HttpServlet {
         String horaStr = request.getParameter("hora");
 
         ClienteDAO clienteDAO = new ClienteDAO();
-
         AgendamentoDAO agendamentoDAO = new AgendamentoDAO();
 
         try {
             LocalDate data = LocalDate.parse(dataStr);
             LocalTime hora = LocalTime.parse(horaStr);
+
+            // =================================================================
+            // NOVA LÓGICA DE AGENDAMENTO FLEXÍVEL (LIMITE POR HORÁRIO)
+            // =================================================================
+            ConfigEmpresaDAO configDAO = new ConfigEmpresaDAO();
+            ConfigEmpresa config = configDAO.obterConfiguracao();
+            
+            // Assume 1 como limite padrão caso a configuração não exista no banco ainda
+            int limitePorHorario = (config != null && config.getLimitePorHorario() > 0) ? config.getLimitePorHorario() : 1;
+            
+            // Conta os agendamentos ativos para a mesma data e hora
+            long agendamentosAtuais = agendamentoDAO.contarAgendamentosPorHorario(data, hora);
+
+            if (agendamentosAtuais >= limitePorHorario) {
+                response.setStatus(HttpServletResponse.SC_CONFLICT);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"erro\":\"Limite de agendamentos atingido para este horário.\"}");
+                return;
+            }
+            // =================================================================
 
             Cliente cliente = new Cliente();
             Pet pet = null;
@@ -79,12 +101,10 @@ public class AgendamentoServlet extends HttpServlet {
                         PetDAO petDAO = new PetDAO();
                         pet = petDAO.buscarPorNomeEDono(nomePet, cliente.getId());
                     } else {
-                        cliente = null;
                         cliente = new Cliente();
                         cliente.setNome(nomeDono);
                         cliente.setTelefone(telefone);
                     }
-
                 } else {
                     cliente.setNome(nomeDono);
                     cliente.setTelefone(telefone);
@@ -114,10 +134,14 @@ public class AgendamentoServlet extends HttpServlet {
 
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
 
-            response.getWriter().write("Agendamento confirmado para: " + dataStr + " às " + horaStr);
+            // Retorno em JSON para facilitar o frontend a processar mensagens de sucesso vs erros
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"status\":\"success\", \"mensagem\":\"Agendamento confirmado para: " + dataStr + " às " + horaStr + "\"}");
+
         } catch (Exception e) {
-            response.setStatus(500);
-            response.getWriter().write("Erro: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"erro\":\"" + e.getMessage() + "\"}");
         }
     }
 }

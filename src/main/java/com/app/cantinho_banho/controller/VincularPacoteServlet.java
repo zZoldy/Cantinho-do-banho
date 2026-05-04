@@ -7,7 +7,6 @@ import com.app.cantinho_banho.model.Cliente;
 import com.app.cantinho_banho.model.Pacote;
 import com.app.cantinho_banho.model.VendaPacote;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;

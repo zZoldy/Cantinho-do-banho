@@ -6,6 +6,8 @@ package com.app.cantinho_banho.dao;
 
 import com.app.cantinho_banho.model.Agendamento;
 import com.app.cantinho_banho.model.Cliente;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import javax.persistence.EntityManager;
 
@@ -71,9 +73,9 @@ public class AgendamentoDAO {
             em.getTransaction().begin();
 
             if (cliente != null) {
-                em.merge(cliente); 
+                em.merge(cliente);
             }
-            em.merge(agendamento); 
+            em.merge(agendamento);
 
             em.getTransaction().commit();
 
@@ -82,6 +84,18 @@ public class AgendamentoDAO {
                 em.getTransaction().rollback();
             }
             throw new Exception("Erro ao salvar transação conjunta: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
+    public long contarAgendamentosPorHorario(LocalDate data, LocalTime hora) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery("SELECT COUNT(a) FROM Agendamento a WHERE a.data = :data AND a.hora = :hora AND a.status != 'CANCELADO'", Long.class)
+                    .setParameter("data", data)
+                    .setParameter("hora", hora)
+                    .getSingleResult();
         } finally {
             em.close();
         }

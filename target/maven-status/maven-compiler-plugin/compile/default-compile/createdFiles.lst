@@ -1,3 +1,4 @@
+com\app\cantinho_banho\controller\ObterLimiteAgendamentoServlet.class
 com\app\cantinho_banho\model\Venda.class
 com\app\cantinho_banho\dao\HorarioFuncionamentoDAO.class
 com\app\cantinho_banho\model\Fornecedor.class
@@ -33,6 +34,7 @@ com\app\cantinho_banho\dao\DespesaDAO.class
 com\app\cantinho_banho\controller\ListarVendasServlet.class
 com\app\cantinho_banho\controller\ListarEstoqueServlet.class
 com\app\cantinho_banho\controller\CadastroFuncionarioServlet.class
+com\app\cantinho_banho\controller\ListarPetsHistoricoServlet.class
 com\app\cantinho_banho\dao\PetDAO.class
 com\app\cantinho_banho\dao\ProdutoDAO.class
 com\app\cantinho_banho\model\Usuario.class

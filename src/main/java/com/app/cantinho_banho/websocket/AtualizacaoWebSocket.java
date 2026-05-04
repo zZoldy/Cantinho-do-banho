@@ -58,8 +58,7 @@ public class AtualizacaoWebSocket {
             }
         }
     }
-    
-    
+
     public static void notificarTodosCadPet() {
         for (Session s : sessoes) {
             if (s.isOpen()) {
@@ -125,6 +124,18 @@ public class AtualizacaoWebSocket {
             if (s.isOpen()) {
                 try {
                     s.getBasicRemote().sendText("ATUALIZAR_DESPESA");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void notificarTodosConfigEmpresa() {
+        for (Session s : sessoes) {
+            if (s.isOpen()) {
+                try {
+                    s.getBasicRemote().sendText("ATUALIZAR_CONFIG_EMPRESA");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

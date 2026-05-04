@@ -21,7 +21,7 @@ public class SalvarConfigEmpresaServlet extends HttpServlet {
         try {
             request.setCharacterEncoding("UTF-8");
             ConfigEmpresaDAO dao = new ConfigEmpresaDAO();
-            ConfigEmpresa config = dao.obterConfiguracao(); // Busca a única linha existente
+            ConfigEmpresa config = dao.obterConfiguracao();
             if (config == null) {
                 config = new ConfigEmpresa();
             }
@@ -50,7 +50,15 @@ public class SalvarConfigEmpresaServlet extends HttpServlet {
                 config.setCertificadoPfx(bytes);
             }
 
+            String limiteHorarioStr = request.getParameter("limitePorHorario");
+            if (limiteHorarioStr != null && !limiteHorarioStr.trim().isEmpty()) {
+                config.setLimitePorHorario(Integer.parseInt(limiteHorarioStr));
+            } else {
+                config.setLimitePorHorario(5);
+            }
+
             dao.salvar(config);
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosConfigEmpresa();
             response.setStatus(200);
         } catch (Exception e) {
             response.setStatus(500);

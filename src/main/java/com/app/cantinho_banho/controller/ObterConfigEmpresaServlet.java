@@ -34,11 +34,13 @@ public class ObterConfigEmpresaServlet extends HttpServlet {
             json.append("\"inscricaoEstadual\":\"").append(escapeJson(config.getInscricaoEstadual())).append("\",");
             json.append("\"inscricaoMunicipal\":\"").append(escapeJson(config.getInscricaoMunicipal())).append("\",");
             json.append("\"certificadoSenha\":\"").append(escapeJson(config.getCertificadoSenha())).append("\",");
-            json.append("\"ambiente\":").append(config.getAmbiente() != null ? config.getAmbiente() : 2);
+            json.append("\"ambiente\":").append(config.getAmbiente() != null ? config.getAmbiente() : 2).append(",");
+            json.append("\"limitePorHorario\":").append(config.getLimitePorHorario());
+
             json.append("}");
 
             response.getWriter().write(json.toString());
-            
+
         } catch (Exception e) {
             response.setStatus(500);
             response.getWriter().write("{\"erro\": \"Erro ao buscar configuracoes: " + escapeJson(e.getMessage()) + "\"}");
@@ -46,10 +48,12 @@ public class ObterConfigEmpresaServlet extends HttpServlet {
     }
 
     private String escapeJson(String texto) {
-        if (texto == null) return "";
+        if (texto == null) {
+            return "";
+        }
         return texto.replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\n", "\\n")
-                    .replace("\r", "");
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "");
     }
 }

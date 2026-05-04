@@ -178,7 +178,7 @@ function conectarWebSocket() {
     const protocolo = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const host = window.location.host;
 
-    const urlWebSocket = `${protocolo}${host}/ws/notificacoes`;
+    const urlWebSocket = `${protocolo}${host}/Cantinho_banho-1.0-SNAPSHOT/ws/notificacoes`;
 
     const ws = new WebSocket(urlWebSocket);
 

@@ -2231,6 +2231,13 @@
                                     <option value="1">Produção (Real)</option>
                                 </select>
                             </div>
+
+
+                            <div class="field">
+                                <label class="form-label">Limite de Agendamentos (por hora)</label>
+                                <input type="number" id="limitePorHorario" name="limitePorHorario" min="1" class="form-ctrl" required>
+                                <small style="opacity: 0.6; font-size: 0.75rem;">Capacidade simultânea de pets.</small>
+                            </div>
                         </div>
 
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
@@ -2393,9 +2400,9 @@
                 const protocolo = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
                 const host = window.location.host;
 
-                const urlWebSocket = `${protocolo}${host}/ws/notificacoes`;
+                const urlWebSocket = `${protocolo}${host}/Cantinho_banho-1.0-SNAPSHOT/ws/notificacoes`;
                 const ws = new WebSocket(urlWebSocket);
-                
+
                 ws.onopen = function () {
                     console.log("Conectado ao servidor de atualizações em tempo real!");
                 };
@@ -2495,6 +2502,27 @@
                             abrirModalCliente(clienteSendoEditado.id);
                     }
 
+
+                    if (event.data === "ATUALIZAR_CONFIG_EMPRESA") {
+                        await carregarDadosEmpresaConfig();
+                        await carregarLimiteAgendamento();
+
+                        if (typeof renderDashboard() === 'function')
+                            renderDashboard();
+                        if (typeof renderClientes() === 'function')
+                            renderClientes();
+                        if (typeof renderNovos === 'function')
+                            renderNovos();
+                        if (typeof renderPendentes === 'function')
+                            renderPendentes();
+                        if (typeof renderPagamentos() === 'function')
+                            renderPagamentos();
+                        if (typeof renderConfiguracoes() === 'function')
+                            renderPendentes();
+
+                    }
+
+
                 };
 
                 ws.onclose = function () {
@@ -2536,13 +2564,17 @@
                 }
 
                 if (page === 'novos') {
+                    await carregarAgendaDoBanco(false);
                     await listarClientesBD();
                     await listarHorariosDoBanco();
+                    await carregarLimiteAgendamento();
                 }
 
                 if (page === 'pendentes') {
+                    await carregarAgendaDoBanco(false);
                     await listarClientesBD();
                     await listarHorariosDoBanco();
+                    await carregarLimiteAgendamento();
                 }
 
                 if (page === 'agenda') {
@@ -3846,7 +3878,6 @@
                     const empresa = await response.json();
                     dadosEmpresaAtual = empresa;
 
-                    // Se o objeto estiver vazio (empresa não configurada)
                     if (!empresa.cnpj) {
                         resumoEl.innerHTML = `
                 <div style="text-align: center; padding: 20px;">
@@ -3878,9 +3909,6 @@
             </div>
         `;
 
-                    // Preenche automaticamente os campos do Modal de Edição
-                    preencherCamposModalEmpresa(empresa);
-
                 } catch (erro) {
                     console.error(erro);
                     resumoEl.innerHTML = `<p style="color: #dc3545;"><i class="fas fa-times"></i> Erro ao carregar dados fiscais.</p>`;
@@ -3896,12 +3924,13 @@
                     document.getElementById('empresa-ie').value = empresa.inscricaoEstadual || '';
                 if (document.getElementById('empresa-cert-senha'))
                     document.getElementById('empresa-cert-senha').value = empresa.certificadoSenha || '';
-                // Nota: O campo input file (certificado) não pode ser preenchido via JS por segurança do navegador
+                if (document.getElementById('limitePorHorario'))
+                    document.getElementById('limitePorHorario').value = empresa.limitePorHorario || 1;
             }
 
-// Funções de controle do Modal (Caso ainda não as tenha definido)
             function abrirModalConfigEmpresa() {
                 document.getElementById('modal-config-empresa').classList.remove('hidden');
+                preencherCamposModalEmpresa(dadosEmpresaAtual);
             }
 
             function fecharModalConfigEmpresa() {
@@ -3909,7 +3938,7 @@
             }
 
             async function salvarDadosEmpresa(event) {
-                event.preventDefault(); // Impede o recarregamento da página
+                event.preventDefault();
 
                 const btn = document.querySelector('button[form="form-empresa"]');
                 const originalHTML = btn.innerHTML;
@@ -3918,7 +3947,6 @@
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gravando Dados...';
 
-                // Criamos o FormData para suportar o upload do arquivo
                 const formData = new FormData();
 
                 // Adicionamos os campos de texto (os nomes devem bater com o request.getParameter do Servlet)
@@ -3926,6 +3954,7 @@
                 formData.append('cnpj', document.getElementById('empresa-cnpj').value);
                 formData.append('ie', document.getElementById('empresa-ie').value);
                 formData.append('senhaCertificado', document.getElementById('empresa-cert-senha').value);
+                formData.append('limitePorHorario', document.getElementById('limitePorHorario').value);
 
                 // Capturamos o arquivo do certificado se o usuário selecionou um novo
                 const certInput = document.getElementById('empresa-cert-file');
@@ -3937,8 +3966,6 @@
                     const response = await fetch('../api/config/empresa/salvar', {
                         method: 'POST',
                         body: formData
-                                // ⚠️ ATENÇÃO: Não definimos 'Content-Type' aqui. 
-                                // O navegador definirá automaticamente como 'multipart/form-data' com o boundary correto.
                     });
 
                     if (response.ok) {

@@ -1,11 +1,12 @@
 let ultimoHashDados = "";
 let horariosSemana = [];
 let servicosCadastrados = [];
+let limitePorHorarioGlobal = 3;
 
 function pararAnimacaoSync(icone) {
     if (icone) {
         icone.classList.remove('fa-spin');
-        // Se não deu erro (não tá vermelho), volta pro cinza discreto
+
         if (icone.style.color !== 'rgb(199, 122, 122)' && icone.style.color !== '#c77a7a') {
             icone.style.color = '#ccc';
         }
@@ -134,6 +135,19 @@ async function carregarAgendaDoBanco(silencioso = false) {
 }
 }
 
+async function carregarLimiteAgendamento() {
+    try {
+        const resposta = await fetch('../api/config/limite');
+        if (resposta.ok) {
+            const dados = await resposta.json();
+            limitePorHorarioGlobal = dados.limitePorHorario || 3;
+        }
+    } catch (erro) {
+        console.error("Erro ao carregar o limite de horários:", erro);
+        limitePorHorarioGlobal = 3;
+    }
+}
+
 function renderNovos() {
     const busca = (document.getElementById('busca-novos')?.value || '').toLowerCase();
     const ordem = document.getElementById('ordenacao-novos')?.value || 'asc';
@@ -145,7 +159,6 @@ function renderNovos() {
     }).sort((a, b) => {
         const dhA = (a.data || '') + (a.hora || '');
         const dhB = (b.data || '') + (b.hora || '');
-        // Se ordem for 'desc', inverte o sentido da comparação
         return ordem === 'desc' ? dhB.localeCompare(dhA) : dhA.localeCompare(dhB);
     });
 
@@ -161,6 +174,8 @@ function renderNovos() {
 
     const clientesCadastrados = typeof listaClientes !== 'undefined' ? listaClientes : [];
 
+    const limitePorHorario = limitePorHorarioGlobal;
+
     const agora = new Date();
     const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
     const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
@@ -168,7 +183,7 @@ function renderNovos() {
     el.innerHTML = lista.map(a => {
         const telContato = cleanTel(a.contato || '');
         let cli = clientesCadastrados.find(c => (telContato.length >= 8 && cleanTel(c.telefone || '') === telContato) || (c.nome === a.dono));
-        const temPacote = verificarPacoteValido(a.dono, a.servico);
+        const temPacote = typeof verificarPacoteValido === 'function' ? verificarPacoteValido(a.dono, a.servico) : false;
 
         const linkWhats = a.contato
                 ? `<a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none; font-weight: 500;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`
@@ -181,7 +196,7 @@ function renderNovos() {
         }
         const horaPedida = (a.hora || '').substring(0, 5);
 
-        let horasLoja = obterHorariosDoDia(dataReqIso);
+        let horasLoja = typeof obterHorariosDoDia === 'function' ? obterHorariosDoDia(dataReqIso) : [];
         const lojaFechada = horasLoja.length === 0;
 
         let abertura = "00:00";
@@ -196,7 +211,7 @@ function renderNovos() {
             }
         }
 
-        const jaTemAgendamento = agenda.some(ag => {
+        const agendamentosNesteHorario = agenda.filter(ag => {
             let agIso = ag.data;
             if (ag.data && ag.data.includes('/')) {
                 const p = ag.data.split('/');
@@ -204,20 +219,21 @@ function renderNovos() {
             }
             const agHora = (ag.hora || '').substring(0, 5);
             return agIso === dataReqIso && agHora === horaPedida && (ag.status === 'Confirmado' || ag.status === 'Retirada');
-        });
+        }).length;
 
+        const limiteAtingido = agendamentosNesteHorario >= limitePorHorario;
         const isDataPassada = dataReqIso < hojeIso;
         const isHoraPassadaHoje = dataReqIso === hojeIso && horaPedida < horaAtual;
 
-        const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && !foraDoHorario && !jaTemAgendamento;
+        const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && !foraDoHorario && !limiteAtingido;
 
         let boxDisponibilidade = "";
         if (isDisponivel) {
             boxDisponibilidade = `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(40,167,69,0.1); border-left: 3px solid #28a745; font-size: 0.85rem;">
-                   <strong style="color: #28a745;"><i class="fas fa-check-circle"></i> Horário Livre!</strong> <span style="opacity: 0.8;">Pode aceitar o pedido sem conflitos.</span>
+                   <strong style="color: #28a745;"><i class="fas fa-check-circle"></i> Horário Livre!</strong> <span style="opacity: 0.8;">(${agendamentosNesteHorario}/${limitePorHorario} vagas ocupadas)</span>
                </div>`;
         } else {
-            const proximosLivres = buscarProximosHorariosLivres(dataReqIso, 3);
+            const proximosLivres = typeof buscarProximosHorariosLivres === 'function' ? buscarProximosHorariosLivres(dataReqIso, 3) : [];
             let sugestoesTexto = proximosLivres.length > 0
                     ? proximosLivres.map(s => {
                         const diaFmt = s.data.split('-').reverse().join('/');
@@ -232,8 +248,8 @@ function renderNovos() {
                 tituloErro = "O tempo já passou! 🕰️";
             else if (foraDoHorario)
                 tituloErro = `Fora do expediente (${abertura} - ${fechamento})!`;
-            else if (jaTemAgendamento)
-                tituloErro = "Já existe cliente nesta hora!";
+            else if (limiteAtingido)
+                tituloErro = `Limite atingido (${limitePorHorario} pets nesta hora)!`;
 
             boxDisponibilidade = `<div style="margin-top: 12px; padding: 10px; border-radius: 6px; background: rgba(220,53,69,0.1); border-left: 3px solid #dc3545; font-size: 0.85rem;">
                    <strong style="color: #dc3545;"><i class="fas fa-times-circle"></i> ${tituloErro}</strong>
@@ -267,7 +283,7 @@ function renderNovos() {
                     <strong>Serviço Solicitado:</strong> <span class="badge" style="background: #C9A96E; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: normal;">${a.servico}</span>
                 </div>
                 <div style="font-size: 0.9rem; margin-bottom: 5px;">
-                    <i class="far fa-calendar-alt" style="color:#17a2b8; margin-right: 5px;"></i> <strong>Data sugerida:</strong> ${fd(a.data)} às ${horaPedida}
+                    <i class="far fa-calendar-alt" style="color:#17a2b8; margin-right: 5px;"></i> <strong>Data sugerida:</strong> ${typeof fd === 'function' ? fd(a.data) : a.data} às ${horaPedida}
                 </div>
                 
                 ${a.obs ? `<div style="font-size: 0.85rem; margin-top: 8px; border-left: 3px solid #C9A96E; padding-left: 8px; opacity: 0.8;"><em><i class="fas fa-info-circle" style="color:#C9A96E;"></i> ${a.obs}</em></div>` : ''}
@@ -289,6 +305,113 @@ function renderNovos() {
             </div>
         </div>`;
     }).join('');
+}
+
+function renderPendentes() {
+    const busca = (document.getElementById('busca-pend')?.value || '').toLowerCase();
+    const el = document.getElementById('lista-pendentes');
+
+    if (!el)
+        return;
+
+    const lista = pendentes
+            .filter(a => {
+                const texto = `${a.pet || ''}${a.dono || ''}${a.servico || ''}${a.contato || ''}`.toLowerCase();
+                return texto.includes(busca);
+            })
+            .sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+
+    if (!lista.length) {
+        el.innerHTML = `
+            <div class="empty-state" style="padding: 30px; text-align: center;">
+                <i class="fas fa-clock" style="font-size: 2rem; color:#c77a7a;"></i>
+                <p>Nenhum pedido pendente no momento.</p>
+            </div>`;
+        return;
+    }
+
+    const dataAtual = new Date();
+    dataAtual.setMinutes(dataAtual.getMinutes() - dataAtual.getTimezoneOffset());
+    const dataMinima = dataAtual.toISOString().split('T')[0];
+
+    el.innerHTML = lista.map(a => {
+
+        const contatoLimpo = cleanTel(a.contato || '');
+        const linkWhats = a.contato
+                ? `<a href="https://wa.me/55${contatoLimpo}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366">
+                 <i class="fab fa-whatsapp"></i> ${a.contato}
+               </a>`
+                : `<span style="color:#777">Sem contato</span>`;
+
+        return `
+        <div class="pendente-card">
+
+            <div class="pc-header">
+                <div>
+                    <div class="pc-pet">
+                        <i class="fas fa-paw" style="color:#c77a7a;margin-right:6px;font-size:.8rem"></i>
+                        ${a.pet || 'Sem nome'} <small>(${a.tipo || '-'})</small>
+                    </div>
+                    <div class="pc-dono">
+                        ${a.dono || 'Sem dono'} · ${linkWhats}
+                    </div>
+                </div>
+                <span class="badge-pend-red">Pendente</span>
+            </div>
+
+            <div class="pc-info">
+                <span><i class="fas fa-scissors"></i> ${a.servico || '-'}</span>
+                <span><i class="fas fa-calendar"></i> ${fd(a.data)} às ${a.hora || '--:--'}</span>
+                ${a.obs ? `<span><i class="fas fa-sticky-note"></i> ${a.obs}</span>` : ''}
+            </div>
+
+            <div class="section-lbl">Reagendar</div>
+
+            <div class="pc-reagen">
+                <div class="field">
+                    <label>Nova Data</label>
+                    <input 
+                        type="date" 
+                        id="pnd-data-${a.id}" 
+                        value="${a.data}" 
+                        min="${dataMinima}" 
+                        onchange="verificarDisponibilidade(${a.id})"
+                    />
+                </div>
+
+                <div class="field">
+                    <label>Nova Hora</label>
+                    <input 
+                        type="time" 
+                        id="pnd-hora-${a.id}" 
+                        value="${a.hora}" 
+                        onchange="verificarDisponibilidade(${a.id})"
+                    />
+                </div>
+
+                <div id="pnd-disp-${a.id}" style="width:100%; font-size:0.72rem; margin-top:4px;"></div>
+            </div>
+
+            <div class="pc-actions">
+                <button class="btn-confirmar-pend" onclick="confirmarPendente(${a.id})">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+
+                <button class="btn-wpp-pend" onclick="sugerirReagendamento(${a.id}, '${a.contato || ''}', '${a.dono || ''}', '${a.pet || ''}')">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
+
+                <button class="btn-excluir-pend" onclick="excluirPendente(${a.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
+        </div>`;
+    }).join('');
+
+    lista.forEach(a => {
+        verificarDisponibilidade(a.id);
+    });
 }
 
 function renderAgenda() {
@@ -466,119 +589,6 @@ function renderAgenda() {
     }).join('');
 }
 
-function renderPendentes() {
-    const busca = (document.getElementById('busca-pend')?.value || '').toLowerCase();
-    const ordem = document.getElementById('ordenacao-pend')?.value || 'asc';
-    const el = document.getElementById('lista-pendentes');
-
-    const lista = pendentes.filter(a => {
-        const nomePet = a.pet || '';
-        const nomeDono = a.dono || '';
-        const nomeServico = a.servico || '';
-        return (nomePet + nomeDono + nomeServico).toLowerCase().includes(busca);
-    }).sort((a, b) => {
-        const dhA = (a.data || '') + (a.hora || '');
-        const dhB = (b.data || '') + (b.hora || '');
-        return ordem === 'desc' ? dhB.localeCompare(dhA) : dhA.localeCompare(dhB);
-    });
-
-    if (!el)
-        return;
-    if (!lista.length) {
-        el.innerHTML = `<div class="empty-state"><i class="fas fa-clock" style="color:#555"></i><p>Nenhum pedido pendente</p></div>`;
-        return;
-    }
-
-    // Pega a lista de clientes para os crachás
-    const clientesCadastrados = listaClientes;
-
-    // Bloqueia as datas anteriores a hoje no calendário input="date"
-    const agora = new Date();
-    const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
-
-    el.innerHTML = lista.map(a => {
-        const telContato = cleanTel(a.contato || '');
-        const donoAgendamento = (a.dono || '').trim().toLowerCase();
-
-        let cli = clientesCadastrados.find(c => {
-            const telCli = cleanTel(c.telefone || '');
-            const nomeCli = (c.nome || '').trim().toLowerCase();
-            return (telContato.length >= 8 && telCli === telContato) || (nomeCli === donoAgendamento && nomeCli !== '');
-        });
-
-        const temPacote = verificarPacoteValido(a.dono, a.servico);
-
-        const linkWhats = a.contato
-                ? `<a href="https://wa.me/55${cleanTel(a.contato)}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`
-                : `<span style="opacity: 0.6;"><i class="fas fa-phone-slash"></i> Sem contato</span>`;
-
-        let dataIso = a.data;
-        if (a.data && a.data.includes('/')) {
-            const p = a.data.split('/');
-            dataIso = `${p[2]}-${p[1]}-${p[0]}`;
-        }
-
-        return `
-            <div class="pendente-card" style="border-left: 5px solid #dc3545;">
-              <div class="pc-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <div class="pc-pet" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">
-                        <i class="fas fa-paw" style="color:#dc3545;margin-right:6px;font-size:.9rem"></i>${a.pet} <small style="font-weight: normal; opacity: 0.7;">(${a.tipo})</small>
-                    </div>
-                    <div class="pc-dono" style="font-size: 0.9rem;">
-                        <i class="fas fa-user" style="color:#C9A96E; margin-right: 4px;"></i> ${a.dono} · ${linkWhats}
-                    </div>
-                </div>
-                
-                <div style="text-align:right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
-                    <span class="badge" style="background-color: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid #dc3545; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Pendente</span>
-                    ${temPacote ? `<span class="badge" style="background-color: rgba(133, 100, 4, 0.15); color: #d39e00; border: 1px solid #ffeeba; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-box-open"></i> Pacote</span>` : ''}
-                    ${cli && cli.temUsuario
-                ? `<span class="badge" style="background-color: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #c3e6cb; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-address-book"></i> Cadastrado</span>`
-                : `<span class="badge" style="background-color: rgba(150, 150, 150, 0.1); color: #888; border: 1px dashed #555; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px;"><i class="fas fa-user-slash"></i> S/ Cad.</span>`
-                }
-                </div>
-              </div>
-              
-              <div class="pc-info" style="margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.02); border-radius: 6px; border: 1px solid #eee;">
-                <div style="margin-bottom: 5px;"><strong><i class="fas fa-cut" style="color:#C9A96E;"></i> Serviço:</strong> ${a.servico}</div>
-                <div><strong><i class="fas fa-calendar-times" style="color:#dc3545;"></i> Data original:</strong> ${fd(a.data)} às ${a.hora}</div>
-                ${a.obs ? `<div style="margin-top: 8px; font-size: 0.85rem; border-left: 3px solid #C9A96E; padding-left: 6px;"><em>${a.obs}</em></div>` : ''}
-              </div>
-              
-              <div class="section-lbl" style="font-weight: 600; margin-bottom: 8px; color: #555;">Reagendar Serviço</div>
-              <div class="pc-reagen" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-                <div class="field" style="flex: 1; min-width: 130px;">
-                    <label style="font-size: 0.8rem; color: #666;">Nova Data</label>
-                    <input type="date" id="pnd-data-${a.id}" value="${dataIso}" min="${hojeIso}" onchange="verificarDisponibilidade(${a.id})" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
-                </div>
-                <div class="field" style="flex: 1; min-width: 100px;">
-                    <label style="font-size: 0.8rem; color: #666;">Nova Hora</label>
-                    <input type="time" id="pnd-hora-${a.id}" value="${a.hora}" onchange="verificarDisponibilidade(${a.id})" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"/>
-                </div>
-              </div>
-              
-              <div id="pnd-disp-${a.id}" style="width: 100%; font-size: 0.8rem; margin-bottom: 15px; min-height: 20px;"></div>
-              
-              <div class="pc-actions" style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 15px;">
-                <button class="btn-excluir-pend" onclick="excluirPendente(${a.id})" style="background: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
-                    <i class="fas fa-trash"></i>
-                </button>
-                <button class="btn-wpp-pend" onclick="sugerirReagendamento(${a.id}, '${a.contato}', '${a.dono}', '${a.pet}')" style="background: #25d366; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
-                    <i class="fab fa-whatsapp"></i> Conversar
-                </button>
-                <button id="btn-agendar-pend-${a.id}" class="btn-confirmar-pend" onclick="confirmarPendente(${a.id})" style="background: #007bff; color: #fff; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    <i class="fas fa-calendar-check"></i> Agendar
-                </button>
-              </div>
-            </div>`;
-    }).join('');
-
-    lista.forEach(a => {
-        verificarDisponibilidade(a.id);
-    });
-}
-
 function renderRetirada() {
     const busca = (document.getElementById('busca-retirada')?.value || '').toLowerCase();
 
@@ -661,7 +671,8 @@ function renderFinalizados() {
     });
 
     const el = document.getElementById('lista-finalizados');
-    if (!el) return;
+    if (!el)
+        return;
 
     if (!lista.length) {
         el.innerHTML = `<div class="empty-state" style="padding: 40px; text-align: center; border: 1px dashed #333; border-radius: 8px;">
@@ -674,7 +685,8 @@ function renderFinalizados() {
     el.innerHTML = lista.map(a => {
         // Formatação da data
         let dataLimpa = a.data || '';
-        if (dataLimpa.includes('T')) dataLimpa = dataLimpa.split('T')[0];
+        if (dataLimpa.includes('T'))
+            dataLimpa = dataLimpa.split('T')[0];
 
         let dataExibicao = '--/--/----';
         if (dataLimpa) {
@@ -840,7 +852,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function sugerirReagendamento(id, contato, dono, pet) {
-    // 1. Lê a data e a hora que o Admin escolheu nas caixinhas do card
     const inputData = document.getElementById(`pnd-data-${id}`).value;
     const inputHora = document.getElementById(`pnd-hora-${id}`).value;
 
@@ -852,7 +863,12 @@ function sugerirReagendamento(id, contato, dono, pet) {
     const dataFormatada = inputData.split('-').reverse().join('/');
     const mensagem = `*Cantinho do Banho*\n\nOlá, *${dono}*! Tudo bem?\n\nTemos um horário disponível para o(a) *${pet}* no dia *${dataFormatada}* às *${inputHora}*.\n\nPodemos confirmar esse reagendamento?`;
 
-    openWA(contato, mensagem);
+
+    if (typeof openWA === 'function') {
+        openWA(contato, mensagem);
+    } else {
+        window.open(`https://wa.me/55${cleanTel(contato)}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    }
 }
 
 function verificarDisponibilidade(id) {
@@ -860,9 +876,9 @@ function verificarDisponibilidade(id) {
     const inputHora = document.getElementById(`pnd-hora-${id}`);
     const elDisp = document.getElementById(`pnd-disp-${id}`);
 
-    // Procura o botão para travar. ATENÇÃO: No seu HTML atual, o botão de agendar NÃO TEM ID. 
-    // Por favor, adicione id="btn-agendar-pend-${a.id}" no botão "Agendar" dentro do seu renderPendentes!
-    const btnAgendar = document.getElementById(`btn-agendar-pend-${id}`);
+    // O seu botão no renderPendentes tem a classe .btn-confirmar-pend, 
+    // mas não tinha um ID específico. Sugiro adicionar o ID no HTML ou buscar pela classe:
+    const btnConfirmar = document.querySelector(`.pendente-card:has(#pnd-data-${id}) .btn-confirmar-pend`);
 
     if (!elDisp || !inputData || !inputHora)
         return;
@@ -872,8 +888,8 @@ function verificarDisponibilidade(id) {
 
     if (!dataSelecionada || !horaPedida) {
         elDisp.innerHTML = '';
-        if (btnAgendar)
-            btnAgendar.disabled = true;
+        if (btnConfirmar)
+            btnConfirmar.disabled = true;
         return;
     }
 
@@ -881,101 +897,59 @@ function verificarDisponibilidade(id) {
     const hojeIso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
     const horaAtual = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
 
-    // ==========================================================
-    // 🟢 VALIDAÇÃO PADRONIZADA (Igual ao Novos)
-    // ==========================================================
-    let horasLoja = obterHorariosDoDia(dataSelecionada);
-    const lojaFechada = horasLoja.length === 0;
+    const limitePorHorario = typeof limitePorHorarioGlobal !== 'undefined' ? limitePorHorarioGlobal : 1;
 
-    let abertura = "00:00";
-    let fechamento = "23:59";
-    let foraDoHorario = false;
+    // Obtém horários de funcionamento (Array com propriedades abertura e fechamento)
+    let horasLojaRaw = typeof obterHorariosDoDia === 'function' ? obterHorariosDoDia(dataSelecionada) : [];
+    const lojaFechada = horasLojaRaw.length === 0;
 
-    if (!lojaFechada) {
-        abertura = horasLoja[0];
-        fechamento = horasLoja[horasLoja.length - 1];
-        if (horaPedida < abertura || horaPedida > fechamento) {
-            foraDoHorario = true;
-        }
-    }
+    // Validação de intervalo (Aceita minutos quebrados)
+    const abertura = horasLojaRaw.abertura || "08:00";
+    const fechamento = horasLojaRaw.fechamento || "17:00";
+    const foraDoHorario = !lojaFechada && (horaPedida < abertura || horaPedida > fechamento);
 
-    const jaTemAgendamento = agenda.some(ag => {
+    // Contagem de ocupação
+    const agendamentosNesteHorario = agenda.filter(ag => {
         let agIso = ag.data;
         if (ag.data && ag.data.includes('/')) {
             const p = ag.data.split('/');
             agIso = `${p[2]}-${p[1]}-${p[0]}`;
         }
-        const agHora = (ag.hora || '').substring(0, 5);
-        return agIso === dataSelecionada && agHora === horaPedida && (ag.status === 'Confirmado' || ag.status === 'Retirada') && ag.id !== id;
-    });
+        const statusAg = (ag.status || '').trim().toLowerCase();
+        return agIso === dataSelecionada &&
+                (ag.hora || '').substring(0, 5) === horaPedida &&
+                (statusAg === 'confirmado' || statusAg === 'retirada') &&
+                ag.id !== id;
+    }).length;
 
+    const limiteAtingido = agendamentosNesteHorario >= limitePorHorario;
     const isDataPassada = dataSelecionada < hojeIso;
     const isHoraPassadaHoje = dataSelecionada === hojeIso && horaPedida < horaAtual;
 
-    const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && !foraDoHorario && !jaTemAgendamento;
+    const isDisponivel = !isDataPassada && !isHoraPassadaHoje && !lojaFechada && !foraDoHorario && !limiteAtingido;
 
-    // ==========================================================
-    // 🟢 LISTA VISUAL (Mantendo o seu modelo original de listar as horas)
-    // ==========================================================
-    if (dataSelecionada === hojeIso) {
-        horasLoja = horasLoja.filter(h => h > horaAtual);
-    }
-
-    const ocupadosDoDia = agenda.filter(ag => {
-        let agIso = ag.data;
-        if (ag.data && ag.data.includes('/')) {
-            const p = ag.data.split('/');
-            agIso = `${p[2]}-${p[1]}-${p[0]}`;
-        }
-        return agIso === dataSelecionada && (ag.status === 'Confirmado' || ag.status === 'Retirada') && ag.id !== id;
-    }).map(ag => (ag.hora || '').substring(0, 5));
-
-    const livres = horasLoja.filter(h => !ocupadosDoDia.includes(h));
-
-    const txtLivres = livres.length > 0
-            ? `<div style="margin-top: 4px;"><i class="fas fa-check-circle"></i> Livres: <strong>${livres.join(', ')}</strong></div>`
-            : ``;
-
-    // ==========================================================
-    // 🟢 ATUALIZA HTML E BOTÃO
-    // ==========================================================
+    // Atualização do Texto de Feedback
     if (isDisponivel) {
-        elDisp.innerHTML = `
-            <span style="color:#28a745; background: rgba(40,167,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
-                <i class="fas fa-check-circle"></i> Horário Válido!
-            </span>
-            <span style="color:#28a745; background: rgba(40,167,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
-               ${txtLivres}
-            </span>`;
-
-        if (btnAgendar) {
-            btnAgendar.disabled = false;
-            btnAgendar.style.opacity = '1';
-            btnAgendar.style.cursor = 'pointer';
+        elDisp.innerHTML = `<span style="color:#28a745;"><i class="fas fa-check-circle"></i> Horário Disponível (${agendamentosNesteHorario}/${limitePorHorario} ocupados)</span>`;
+        if (btnConfirmar) {
+            btnConfirmar.disabled = false;
+            btnConfirmar.style.opacity = '1';
         }
     } else {
-        let erro = "Horário indisponível!";
+        let erro = "Indisponível";
         if (lojaFechada)
-            erro = "Loja fechada neste dia!";
+            erro = "Loja fechada";
         else if (isDataPassada || isHoraPassadaHoje)
-            erro = "Data/hora no passado!";
+            erro = "Data/hora passada";
         else if (foraDoHorario)
-            erro = `Fora de expediente (${abertura}-${fechamento})`;
-        else if (jaTemAgendamento)
-            erro = "Já existe cliente nesta hora!";
+            erro = `Fora do expediente (${abertura}-${fechamento})`;
+        else if (limiteAtingido)
+            erro = "Limite atingido";
 
-        elDisp.innerHTML = `
-            <span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
-                <i class="fas fa-times-circle"></i> ${erro}
-            </span>
-            <span style="color:#dc3545; background: rgba(220,53,69,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block;">
-               ${txtLivres}
-            </span>`;
-
-        if (btnAgendar) {
-            btnAgendar.disabled = true;
-            btnAgendar.style.opacity = '0.5';
-            btnAgendar.style.cursor = 'not-allowed';
+        elDisp.innerHTML = `<span style="color:#dc3545;"><i class="fas fa-times-circle"></i> ${erro}</span>`;
+        if (btnConfirmar) {
+            btnConfirmar.disabled = true;
+            btnConfirmar.style.opacity = '0.5';
         }
     }
 }
@@ -989,21 +963,38 @@ async function confirmarPendente(id) {
         return;
 
     const dataFinal = novaData || item.data;
-    const horaFinal = novaHora || item.hora;
+    const horaFinal = (novaHora || item.hora || '').substring(0, 5);
 
-    const horarioOcupado = agenda.some(a => a.data === dataFinal && a.hora === horaFinal);
+    const limitePorHorario = limitePorHorarioGlobal;
 
-    if (horarioOcupado) {
-        const dataBR = dataFinal.split('-').reverse().join('/');
-        alert(`⚠️ Choque de Horários!\n\nJá existe um agendamento confirmado para o dia ${dataBR} às ${horaFinal}.\n\nPor favor, escolha um horário diferente antes de confirmar.`);
+    const dataFinalIso = dataFinal.includes('/')
+            ? dataFinal.split('/').reverse().join('-')
+            : dataFinal;
+
+    const agendamentosNesteHorario = agenda.filter(a => {
+        let agIso = a.data;
+        if (a.data && a.data.includes('/')) {
+            const p = a.data.split('/');
+            agIso = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        const agHora = (a.hora || '').substring(0, 5);
+        const horaFinalFmt = (horaFinal || '').substring(0, 5);
+        return agIso === dataFinalIso &&
+                agHora === horaFinalFmt &&
+                (a.status === 'Confirmado') &&
+                a.id !== id;
+    }).length;
+
+    if (agendamentosNesteHorario >= limitePorHorario) {
+        const dataBR = dataFinal.includes('-') ? dataFinal.split('-').reverse().join('/') : dataFinal;
+        alert(`⚠️ Limite de Horários Atingido!\n\nJá existem ${agendamentosNesteHorario} agendamento(s) confirmado(s) para o dia ${dataBR} às ${horaFinal}.\n\nPor favor, escolha um horário diferente antes de confirmar.`);
         return;
     }
 
     try {
-        // Prepara os dados para enviar ao Java
         const params = new URLSearchParams();
         params.append('id', id);
-        params.append('status', 'Confirmado')
+        params.append('status', 'Confirmado');
         if (novaData)
             params.append('data', novaData);
         if (novaHora)
@@ -1016,13 +1007,24 @@ async function confirmarPendente(id) {
         });
 
         if (resposta.ok) {
+            const dados = await resposta.json();
+
             await carregarAgendaDoBanco(true);
+
+            if (dados.linkWhatsApp) {
+                if (confirm("Agendamento confirmado!\n\nDeseja abrir o WhatsApp Web para notificar o cliente sobre a alteração/confirmação?")) {
+                    window.open(dados.linkWhatsApp, '_blank');
+                }
+            } else {
+                alert("Agendamento confirmado com sucesso!");
+            }
         } else {
-            alert("Erro ao confirmar no banco de dados.");
+            const errorData = await resposta.json().catch(() => ({}));
+            throw new Error(errorData.erro || "Erro ao confirmar no banco de dados.");
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Falha de comunicação com o servidor.");
+        alert(erro.message || "Falha de comunicação com o servidor.");
     }
 }
 
@@ -1310,7 +1312,6 @@ async function finalizarRetirada(id, btn) {
     }
 }
 
-// Formata o número do banco (ex: 150.5) para a tela (ex: 150,50)
 function formatarValorTela(valor) {
     if (!valor || isNaN(valor))
         return '';
@@ -1357,12 +1358,30 @@ function verificarPacoteValido(nomeDono, nomeServicoAgendado) {
 // ═══════════════════════════════════════════════════
 
 async function aceitarPedido(id, btn, dataReal, horaReal, pet) {
-    const horarioOcupado = agenda.some(ag => ag.data === dataReal && ag.hora === horaReal);
-    const dataBR = fd(dataReal);
+    const limitePorHorario = limitePorHorarioGlobal;
 
-    if (horarioOcupado) {
-        alert(`⚠️ Choque de Horários!\n\nJá existe um agendamento confirmado para o dia ${dataBR} às ${horaReal}.\n\nPor favor, clique em "Mover p/ Pendentes" para sugerir um novo horário ao cliente.`);
-        return; // O código morre aqui e não aceita o pedido!
+// ✅ Normalizar dataReal e truncar horaReal
+    const dataRealIso = dataReal.includes('/')
+            ? dataReal.split('/').reverse().join('-')
+            : dataReal;
+    const horaRealFmt = (horaReal || '').substring(0, 5);
+
+    const agendamentosNesteHorario = agenda.filter(ag => {
+        let agIso = ag.data;
+        if (ag.data && ag.data.includes('/')) {
+            const p = ag.data.split('/');
+            agIso = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        return agIso === dataRealIso &&
+                (ag.hora || '').substring(0, 5) === horaRealFmt &&
+                (ag.status === 'Confirmado' || ag.status === 'Retirada');
+    }).length;
+
+    const dataBR = typeof fd === 'function' ? fd(dataReal) : dataReal;
+
+    if (agendamentosNesteHorario >= limitePorHorario) {
+        alert(`⚠️ Limite de Horários Atingido!\n\nJá existem ${agendamentosNesteHorario} agendamento(s) confirmado(s) para o dia ${dataBR} às ${horaReal}.\n\nPor favor, clique em "Mover p/ Pendentes" para sugerir um novo horário ao cliente.`);
+        return;
     }
 
     if (!confirm(`Deseja CONFIRMAR o agendamento de ${pet} para o dia ${dataBR} às ${horaReal}?`))
@@ -1384,13 +1403,25 @@ async function aceitarPedido(id, btn, dataReal, horaReal, pet) {
         });
 
         if (resposta.ok) {
+            const dados = await resposta.json();
+
             await carregarAgendaDoBanco(true);
+
+            if (dados.linkWhatsApp) {
+                if (confirm("Agendamento confirmado!\n\nDeseja abrir o WhatsApp Web para notificar o cliente?")) {
+                    window.open(dados.linkWhatsApp, '_blank');
+                }
+            } else {
+                alert("Agendamento confirmado com sucesso!");
+            }
+
         } else {
-            throw new Error("Falha ao aceitar no servidor");
+            const errorData = await resposta.json().catch(() => ({}));
+            throw new Error(errorData.erro || "Falha ao aceitar no servidor");
         }
     } catch (erro) {
         console.error(erro);
-        alert("Erro ao confirmar o agendamento.");
+        alert(erro.message || "Erro ao confirmar o agendamento.");
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -1661,17 +1692,23 @@ function obterHorariosDoDia(dataIso) {
 
     let configDia = horariosSemana.find(h =>
         (h.nomeDia && h.nomeDia.toLowerCase().includes(nomeDiaCerto.toLowerCase().substring(0, 3))) ||
-                String(h.diaDaSemana) === String(diaJS === 0 ? 7 : diaJS) ||
-                String(h.diaDaSemana) === String(diaJS + 1)
+                String(h.diaDaSemana) === String(diaJS === 0 ? 7 : diaJS)
     );
 
     let horas = [];
     if (configDia && (configDia.aberto === true || String(configDia.aberto).toLowerCase() === 'true')) {
-        const start = parseInt((configDia.horaAbertura || '08:00').split(':')[0]);
-        const end = parseInt((configDia.horaFechamento || '17:00').split(':')[0]);
-        for (let i = start; i < end; i++) {
+        const abertura = configDia.horaAbertura || '08:00';
+        const fechamento = configDia.horaFechamento || '17:00';
+
+        const startH = parseInt(abertura.split(':')[0]);
+        const endH = parseInt(fechamento.split(':')[0]);
+
+        for (let i = startH; i <= endH; i++) {
             horas.push(i.toString().padStart(2, '0') + ':00');
         }
+
+        horas.abertura = abertura;
+        horas.fechamento = fechamento;
     }
     return horas;
 }

@@ -210,7 +210,6 @@ async function excluirProduto(produtoId) {
     }
 }
 
-
 function desmascararMoeda(valorMascara) {
     if (!valorMascara)
         return '0.00';

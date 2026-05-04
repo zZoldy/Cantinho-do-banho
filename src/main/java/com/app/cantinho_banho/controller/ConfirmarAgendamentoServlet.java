@@ -45,8 +45,15 @@ public class ConfirmarAgendamentoServlet extends HttpServlet {
 
                 com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
 
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().write("{\"mensagem\": \"Agendamento confirmado com sucesso!\"}");
+                String mensagem = String.format("Olá! O agendamento para o pet %s no dia %s às %s foi confirmado no Cantinho do Banho \uD83D\uDC3E",
+                        agendamento.getPet().getNome(),
+                        agendamento.getData(),
+                        agendamento.getHora());
+
+                String linkWhatsApp = "https://api.whatsapp.com/send?phone=" + agendamento.getDono().getTelefone()
+                        + "&text=" + java.net.URLEncoder.encode(mensagem, "UTF-8");
+
+                response.getWriter().write("{\"status\":\"success\", \"linkWhatsApp\":\"" + linkWhatsApp + "\"}");
             } else {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 response.getWriter().write("{\"erro\": \"Agendamento não encontrado.\"}");
