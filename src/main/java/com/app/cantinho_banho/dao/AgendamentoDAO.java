@@ -67,6 +67,28 @@ public class AgendamentoDAO {
         }
     }
 
+    public void recusar(Long id) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+
+            Agendamento agendamento = em.find(Agendamento.class, id);
+            if (agendamento != null) {
+                agendamento.setStatus("Recusado");
+                em.merge(agendamento);
+            }
+
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
+
     public void concluirComDesconto(Agendamento agendamento, Cliente cliente) throws Exception {
         EntityManager em = JPAUtil.getEntityManager();
         try {
@@ -92,7 +114,7 @@ public class AgendamentoDAO {
     public long contarAgendamentosPorHorario(LocalDate data, LocalTime hora) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT COUNT(a) FROM Agendamento a WHERE a.data = :data AND a.hora = :hora AND a.status != 'CANCELADO'", Long.class)
+            return em.createQuery("SELECT COUNT(a) FROM Agendamento a WHERE a.data = :data AND a.hora = :hora AND a.status IN ('Confirmado', 'confirmado')", Long.class)
                     .setParameter("data", data)
                     .setParameter("hora", hora)
                     .getSingleResult();

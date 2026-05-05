@@ -31,6 +31,9 @@ public class Agendamento implements Serializable {
     @JoinColumn(name = "servico_id")
     private Servico servico;
 
+    @ManyToOne
+    private VendaPacote vendaPacote;
+
     @Column(nullable = false)
     private String status; // "Pendente", "Confirmado"
 
@@ -45,6 +48,8 @@ public class Agendamento implements Serializable {
     private double valor;
 
     private String formPagamento;
+
+    private Integer sessaoUtilizada;
 
     private LocalTime entrada_pet; // HH:MM:SS
 
@@ -164,6 +169,22 @@ public class Agendamento implements Serializable {
 
     public void setStatusPagamento(String statusPagamento) {
         this.statusPagamento = statusPagamento;
+    }
+
+    public Integer getSessaoUtilizada() {
+        return sessaoUtilizada;
+    }
+
+    public void setSessaoUtilizada(Integer sessaoUtilizada) {
+        this.sessaoUtilizada = sessaoUtilizada;
+    }
+
+    public VendaPacote getVendaPacote() {
+        return vendaPacote;
+    }
+
+    public void setVendaPacote(VendaPacote vendaPacote) {
+        this.vendaPacote = vendaPacote;
     }
 
 }

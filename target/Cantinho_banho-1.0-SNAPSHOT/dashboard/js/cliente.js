@@ -59,7 +59,8 @@ function renderClientes() {
     const elNao = document.getElementById('lista-clientes-nao-cadastrados');
 
     // Se nenhum dos dois containers da nova estrutura existir, aí sim saímos
-    if (!elCad && !elNao) return;
+    if (!elCad && !elNao)
+        return;
 
     const aplicarEstiloGrid = (el) => {
         el.style.display = 'grid';
@@ -223,20 +224,178 @@ function renderClientes() {
     }
 }
 
+function renderPetsHistorico() {
+    const busca = (document.getElementById('busca-pets-hist')?.value || '').toLowerCase();
+    const el = document.getElementById('lista-pets-historico');
+
+    if (!el)
+        return;
+
+    const listaHistorico = typeof historico !== 'undefined' ? historico : [];
+
+    const petsMap = {};
+
+
+    listaHistorico.forEach(a => {
+        const nomePet = a.pet || 'Sem nome';
+        const nomeDono = a.dono || 'Sem dono';
+        const key = `${nomePet}-${nomeDono}`;
+
+        if (!petsMap[key]) {
+            petsMap[key] = {
+                pet: nomePet,
+                dono: nomeDono,
+                agendamentos: []
+            };
+        }
+        petsMap[key].agendamentos.push(a);
+    });
+
+    const listaPets = Object.values(petsMap).filter(p => {
+        return p.pet.toLowerCase().includes(busca) || p.dono.toLowerCase().includes(busca);
+    });
+
+    if (!listaPets.length) {
+        el.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1; padding: 40px; text-align: center; border: 1px dashed #333; border-radius: 8px;">
+                <i class="fas fa-paw" style="font-size: 2.5rem; color: #555; margin-bottom: 15px;"></i>
+                <p style="color: #aaa;">Nenhum histórico de pet encontrado.</p>
+            </div>`;
+        return;
+    }
+
+    el.innerHTML = listaPets.map(p => {
+        p.agendamentos.sort((a, b) => {
+            const dhB = (b.data || '') + (b.hora || '');
+            const dhA = (a.data || '') + (a.hora || '');
+            return dhB.localeCompare(dhA);
+        });
+
+        const historicoHtml = p.agendamentos.map(a => {
+            let dataLimpa = a.data || '';
+            if (dataLimpa.includes('T'))
+                dataLimpa = dataLimpa.split('T')[0];
+
+            const dataExibicao = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
+            const horaExibicao = a.hora ? a.hora.substring(0, 5) : '--:--';
+
+            let dataVendaFmt = null;
+            if (a.dataVenda) {
+                let strData = a.dataVenda; // Ex: "2026-05-04T21:24:31..."
+                let apenasData = strData;
+                let apenasHora = "";
+
+                // Se tiver o "T", separamos a data da hora
+                if (strData.includes('T')) {
+                    const partes = strData.split('T');
+                    apenasData = partes[0];
+                    apenasHora = partes[1].substring(0, 5); // Pega só o "21:24"
+                } else if (strData.includes(' ')) {
+                    const partes = strData.split(' ');
+                    apenasData = partes[0];
+                    apenasHora = partes[1].substring(0, 5);
+                }
+
+                // Formata a data para o padrão DD/MM/YYYY
+                const dataFormatada = typeof fd === 'function' ? fd(apenasData) : apenasData.split('-').reverse().join('/');
+
+                // Junta a data com a hora (se a hora existir)
+                dataVendaFmt = apenasHora ? `${dataFormatada} às ${apenasHora}` : dataFormatada;
+            }
+            const formaPag = a.formaPag || a.forma_pagamento || "";
+            const sessao = a.sessaoUtilizada;
+
+            const isPacote = (sessao !== null && sessao !== undefined && sessao !== "") || formaPag === "Pacote";
+
+            const dotStyle = `position: absolute; left: -9px; top: 0; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #1a1a1a;`;
+
+            if (isPacote) {
+                const sessao = a.sessaoUtilizada || a.sessao || '?';
+                const nomePacote = a.pacoteNome || 'Pacote não identificado';
+
+                return `
+                    <div style="margin-bottom: 25px; position: relative; padding-left: 25px; border-left: 2px solid #17a2b8;">
+                        <div style="${dotStyle} background: #17a2b8;"></div>
+                        
+                        <div style="background: rgba(23, 162, 184, 0.05); border: 1px solid rgba(23, 162, 184, 0.2); border-radius: 8px; overflow: hidden;">
+                            <div style="background: #17a2b8; padding: 6px 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
+                                    <i class="fas fa-box-open"></i> USO DE PACOTE
+                                </span>
+                                <span style="background: #fff; color: #17a2b8; padding: 2px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 900;">
+                                    SESSÃO ${sessao}
+                                </span>
+                            </div>
+
+                            <div style="padding: 12px 15px;">
+                                <div style="color: #eee; font-size: 1.1rem; font-weight: 700; margin-bottom: 5px;">${nomePacote}</div>
+                                <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: #aaa;">
+                                    <span><i class="far fa-calendar-check" style="color: #17a2b8;"></i> <strong>Dia Utilizado:</strong> ${dataExibicao} às ${horaExibicao}</span>
+                                    ${dataVendaFmt ? `<span><i class="fas fa-shopping-cart" style="color: #17a2b8;"></i> <strong>Data da Compra:</strong> ${dataVendaFmt}</span>` : ''}
+                                </div>
+                                <div style="margin-top: 8px; font-size: 0.85rem; color: #17a2b8; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                                    <i class="fas fa-check"></i> Serviço: ${a.servico || '-'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const valorFmt = parseFloat(a.valor || 0).toFixed(2).replace('.', ',');
+                return `
+                    <div style="margin-bottom: 25px; position: relative; padding-left: 25px; border-left: 2px solid #444;">
+                        <div style="${dotStyle} background: #444;"></div>
+                        
+                        <div style="background: #222; border: 1px solid #333; border-radius: 8px; padding: 12px 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: #aaa; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Serviço Avulso</span>
+                                <span style="color: #28a745; font-weight: 800; font-size: 1rem;">R$ ${valorFmt}</span>
+                            </div>
+                            <div style="color: #eee; font-weight: 600;">${a.servico}</div>
+                            <div style="font-size: 0.85rem; color: #888; margin-top: 5px;">
+                                <i class="far fa-calendar-alt"></i> Realizado em: ${dataExibicao} às ${horaExibicao}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+
+        return `
+            <div class="agenda-card" style="border-top: 4px solid #C9A96E; background: #1a1a1a; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 12px;">
+                    <div style="background: rgba(201, 169, 110, 0.1); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                        <i class="fas fa-paw" style="color: #C9A96E; font-size: 1.5rem;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0; color: #eee; font-size: 1.2rem;">${p.pet}</h3>
+                        <div style="color: #aaa; font-size: 0.9rem; margin-top: 3px;"><i class="fas fa-user" style="color:#C9A96E;"></i> Tutor: ${p.dono}</div>
+                    </div>
+                    <div>
+                        <span class="badge" style="background: #222; color: #C9A96E; border: 1px solid #C9A96E;">${p.agendamentos.length} Atendimento(s)</span>
+                    </div>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;" class="custom-scroll">
+                    ${historicoHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 // ================= FLUXO DE CRIAR ACESSO (CLIENTE) =================
 
 function abrirModalCriarUsuario(id, nome) {
     if (typeof fecharFocoCliente === 'function')
         fecharFocoCliente();
 
-    const cliente = listaClientes.find(c => c.id == id);
+    const cliente = listaClientes.find(c => c.id === id);
 
     document.getElementById('id-cliente-acesso').value = id;
     document.getElementById('nome-cliente-acesso').textContent = nome;
     document.getElementById('email-acesso').value = '';
     document.getElementById('cpf-acesso').value = '';
 
-    // 🟢 Preenchimento ou Limpeza dos campos padronizados
     document.getElementById('cep-acesso').value = cliente?.endereco?.cep || '';
     document.getElementById('numero-acesso').value = cliente?.endereco?.numero || '';
     document.getElementById('logradouro-acesso').value = cliente?.endereco?.logradouro || '';
@@ -320,17 +479,24 @@ async function salvarAcessoCliente(e) {
 }
 
 function mudarSubAbaClientes(aba) {
-    document.getElementById('container-clientes-cadastrados').classList.add('hidden');
-    document.getElementById('container-clientes-nao-cadastrados').classList.add('hidden');
     document.getElementById('btn-sub-cadastrados').classList.remove('active');
     document.getElementById('btn-sub-nao-cadastrados').classList.remove('active');
+    document.getElementById('btn-sub-pets').classList.remove('active');
+
+    document.getElementById('container-clientes-cadastrados').classList.add('hidden');
+    document.getElementById('container-clientes-nao-cadastrados').classList.add('hidden');
+    document.getElementById('container-pets-historico').classList.add('hidden');
 
     if (aba === 'cadastrados') {
-        document.getElementById('container-clientes-cadastrados').classList.remove('hidden');
         document.getElementById('btn-sub-cadastrados').classList.add('active');
-    } else {
-        document.getElementById('container-clientes-nao-cadastrados').classList.remove('hidden');
+        document.getElementById('container-clientes-cadastrados').classList.remove('hidden');
+    } else if (aba === 'nao-cadastrados') {
         document.getElementById('btn-sub-nao-cadastrados').classList.add('active');
+        document.getElementById('container-clientes-nao-cadastrados').classList.remove('hidden');
+    } else if (aba === 'pets') {
+        document.getElementById('btn-sub-pets').classList.add('active');
+        document.getElementById('container-pets-historico').classList.remove('hidden');
+        renderPetsHistorico();
     }
 }
 
@@ -477,16 +643,21 @@ function abrirModalCliente(id) {
     const temCadastro = clienteSendoEditado.temUsuario === true;
 
     // --- CONTROLE DE PERMISSÕES DOS BOTÕES DO CABEÇALHO ---
-    if (footer) footer.classList.add('hidden');
-    
+    if (footer)
+        footer.classList.add('hidden');
+
     if (btnEdicao) {
-        if (temCadastro) btnEdicao.classList.remove('hidden');
-        else btnEdicao.classList.add('hidden');
+        if (temCadastro)
+            btnEdicao.classList.remove('hidden');
+        else
+            btnEdicao.classList.add('hidden');
     }
-    
+
     if (btnCadastrarPet) {
-        if (temCadastro) btnCadastrarPet.classList.remove('hidden');
-        else btnCadastrarPet.classList.add('hidden');
+        if (temCadastro)
+            btnCadastrarPet.classList.remove('hidden');
+        else
+            btnCadastrarPet.classList.add('hidden');
     }
 
     // --- LISTA DE PETS (Editável para Cadastrados, Leitura para Sem Cadastro) ---
@@ -494,7 +665,7 @@ function abrirModalCliente(id) {
     if (clienteSendoEditado.pets && clienteSendoEditado.pets.length > 0) {
         htmlPets = clienteSendoEditado.pets.map(p => {
             let blocoObs = '';
-            
+
             if (temCadastro) {
                 // Cliente CADASTRADO: Campo de digitação e botão salvar
                 blocoObs = `
@@ -536,18 +707,23 @@ function abrirModalCliente(id) {
     let htmlUsuario = '';
     if (temCadastro && clienteSendoEditado.usuario) {
         const u = clienteSendoEditado.usuario;
-        
+
         let dataCriacao = 'Não informada';
         const dRaw = u.dataCriacao || u.data_criacao || clienteSendoEditado.dataCadastro;
         if (dRaw) {
             try {
-                if (Array.isArray(dRaw)) dataCriacao = `${String(dRaw[2]).padStart(2, '0')}/${String(dRaw[1]).padStart(2, '0')}/${dRaw[0]}`;
+                if (Array.isArray(dRaw))
+                    dataCriacao = `${String(dRaw[2]).padStart(2, '0')}/${String(dRaw[1]).padStart(2, '0')}/${dRaw[0]}`;
                 else {
                     const d = new Date(dRaw);
-                    if (!isNaN(d.getTime())) dataCriacao = d.toLocaleDateString('pt-BR');
-                    else dataCriacao = dRaw;
+                    if (!isNaN(d.getTime()))
+                        dataCriacao = d.toLocaleDateString('pt-BR');
+                    else
+                        dataCriacao = dRaw;
                 }
-            } catch(e) { dataCriacao = dRaw; }
+            } catch (e) {
+                dataCriacao = dRaw;
+            }
         }
 
         htmlUsuario = `
@@ -603,7 +779,8 @@ function abrirModalCliente(id) {
         </div>
     `;
 
-    if(btnEdicao) btnEdicao.onclick = () => alternarParaEdicao();
+    if (btnEdicao)
+        btnEdicao.onclick = () => alternarParaEdicao();
 
     document.getElementById('modal-detalhes-cliente').classList.remove('hidden');
 }

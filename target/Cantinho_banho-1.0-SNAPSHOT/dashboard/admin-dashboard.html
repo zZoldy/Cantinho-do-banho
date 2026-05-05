@@ -875,8 +875,15 @@
                 <a href="#" class="nav-item" data-page="pendentes"><i class="fas fa-clock"></i> Pendentes <span class="nav-badge" id="badge-pend">0</span></a>
                 <a href="#" class="nav-item" data-page="agenda"><i class="fas fa-calendar-check"></i> Agenda Confirmada</a>
                 <a href="#" class="nav-item" data-page="retirada"><i class="fas fa-dog"></i> Retirada do Pet <span class="nav-badge" id="badge-retirada">0</span></a>
+                <a href="#" class="nav-item" data-page="recusados"><i class="fas fa-ban"></i> Recusados <span class="nav-badge" id="badge-recusados" style="background:#dc3545">0</span></a>
                 <a href="#" class="nav-item" data-page="finalizados"><i class="fas fa-history"></i> Histórico</a>
                 <a href="#" class="nav-item" data-page="estoques"><i class="fas fa-boxes"></i> Estoque</a>
+                <a href="#" class="nav-item" data-page="vendas">
+                    <i class="fas fa-shopping-bag"></i> Vendas / NF
+                </a>
+                <a href="#" class="nav-item" data-page="boletos">
+                    <i class="fas fa-barcode"></i> Boletos
+                </a>
                 <a href="#" class="nav-item" data-page="pagamentos"><i class="fas fa-dollar-sign"></i> Pagamentos</a>
                 <a href="#" class="nav-item" data-page="funcionarios"><i class="fas fa-users"></i> Funcionários</a>
                 <a href="#" class="nav-item" data-page="config"><i class="fas fa-cogs"></i> Configurações</a>
@@ -1046,6 +1053,17 @@
                 <div id="lista-retirada"></div>
             </section>
 
+            <!-- ═══════════════ PEDIDOS RECUSADOS ═══════════════ -->
+            <section class="page hidden" id="page-recusados">
+                <div class="page-header"><h3>Agendamentos Recusados</h3></div>
+                <p style="color:#666;font-size:.82rem;margin-bottom:20px">Histórico de agendamentos que foram movidos ou cancelados.</p>
+
+                <div class="filtros-bar-sm">
+                    <input type="text" id="busca-recusados" placeholder="🔍 Buscar por pet ou dono..." oninput="renderRecusados()"/>
+                </div>
+                <div id="lista-recusados"></div>
+            </section>
+
             <!-- ═══════════════ FINALIZADOS ═══════════════ -->
             <section class="page hidden" id="page-finalizados">
                 <div class="page-header">
@@ -1090,6 +1108,9 @@
                     <button class="sub-nav-link" id="btn-sub-nao-cadastrados" onclick="mudarSubAbaClientes('nao-cadastrados')">
                         <i class="fas fa-user-slash"></i> Sem Cadastro
                     </button>
+                    <button class="sub-nav-link" id="btn-sub-pets" onclick="mudarSubAbaClientes('pets')">
+                        <i class="fas fa-paw"></i> Pets & Histórico
+                    </button>
                 </div>
 
                 <div class="filtros-bar-sm">
@@ -1102,6 +1123,9 @@
 
                 <div id="container-clientes-nao-cadastrados" class="hidden">
                     <div id="lista-clientes-nao-cadastrados" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
+                </div>
+                <div id="container-pets-historico" class="hidden">
+                    <div id="lista-pets-historico" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px"></div>
                 </div>
             </section>
 
@@ -1123,6 +1147,62 @@
                     </div>
                     <div id="lista-performance" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
                 </div>
+            </section>
+
+            <!-- ═══════════════ VENDAS E NF ═══════════════ -->
+            <section class="page hidden" id="page-vendas">
+                <div class="page-header">
+                    <h3><i class="fas fa-shopping-bag" style="color:#6f42c1;margin-right:8px"></i> Vendas e Notas Fiscais</h3>
+                    <button class="btn-primary" onclick="abrirModalNovaVendaNF()" style="background: #6f42c1; border-color: #6f42c1;">
+                        <i class="fas fa-plus"></i> Nova Venda Manual
+                    </button>
+                </div>
+
+                <div class="filtros-bar-sm" style="margin-bottom: 20px;">
+                    <input type="text" id="busca-vendas-nf" placeholder="🔍 Buscar por cliente ou produto..." class="form-ctrl" oninput="renderVendasTela()">
+                    <select id="filtro-nf-venda" class="form-ctrl" onchange="renderVendasTela()">
+                        <option value="">Status da NF (Todos)</option>
+                        <option value="true">NF Emitida</option>
+                        <option value="false">NF Pendente</option>
+                    </select>
+                </div>
+
+                <div class="tabela-wrapper">
+                    <table class="tabela">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Cliente / Consumidor</th>
+                                <th>Descrição</th>
+                                <th>Valor Total</th>
+                                <th>Status NF</th>
+                                <th style="text-align: right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-vendas-nf"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ═══════════════ BOLETOS ═══════════════ -->
+            <section class="page hidden" id="page-boletos">
+                <div class="page-header">
+                    <h3><i class="fas fa-barcode" style="color:#C9A96E;margin-right:8px"></i> Gestão de Boletos e Lembretes</h3>
+                    <button class="btn-primary" onclick="abrirModalBoleto()"><i class="fas fa-plus"></i> Novo Boleto</button>
+                </div>
+
+                <div class="filtros-bar-sm" style="margin-bottom: 20px;">
+                    <select id="filtro-status-boleto" class="form-ctrl" onchange="renderBoletosTela()">
+                        <option value="">Todos os Status</option>
+                        <option value="Pendente">Pendentes</option>
+                        <option value="Pago">Pagos</option>
+                        <option value="Atrasado">Atrasados</option>
+                        <option value="Vence Hoje">Vence Hoje</option>
+                    </select>
+                    <input type="month" id="filtro-mes-boleto" class="form-ctrl" onchange="renderBoletosTela()">
+                </div>
+
+                <div id="lista-boletos-cards"></div>
             </section>
 
             <!-- ═══════════════ PAGAMENTOS ═══════════════ -->
@@ -2316,6 +2396,43 @@
             </div>
         </div>
 
+        <!-- ═══ MODAL BOLETO ═══ -->
+        <div class="modal-overlay hidden" id="modal-boleto">
+            <div class="modal modal-sm" style="border-top: 5px solid #C9A96E;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-barcode" style="color:#C9A96E; margin-right: 8px;"></i> Cadastrar Boleto</h3>
+                    <button onclick="fecharModalBoleto()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <form id="form-boleto" onsubmit="salvarBoleto(event)">
+                    <div class="modal-body">
+                        <div class="field" style="margin-bottom: 15px;">
+                            <label class="form-label">Descrição da Conta *</label>
+                            <input type="text" id="bol-descricao" class="form-ctrl" required placeholder="Ex: Conta de Luz - Neoenergia">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="field" style="margin-bottom: 0;">
+                                <label class="form-label">Valor (R$) *</label>
+                                <input type="text" id="bol-valor" class="form-ctrl" required placeholder="R$ 0,00" oninput="if(typeof aplicarMascaraMoeda === 'function') aplicarMascaraMoeda(this)">
+                            </div>
+                            <div class="field" style="margin-bottom: 0;">
+                                <label class="form-label">Vencimento *</label>
+                                <input type="date" id="bol-vencimento" class="form-ctrl" required>
+                            </div>
+                        </div>
+                        <div class="field" style="margin-bottom: 15px;">
+                            <label class="form-label">Linha Digitável (Código de Barras)</label>
+                            <input type="text" id="bol-linha" class="form-ctrl" placeholder="Opcional">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="fecharModalBoleto()" class="btn-secundario">Cancelar</button>
+                        <button type="submit" class="btn-primary" id="btn-salvar-boleto"><i class="fas fa-save"></i> Salvar Boleto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        
         <script>
             // ═══════════════════════════════════════════════════
             // DADOS
@@ -2324,6 +2441,7 @@
             let agenda = [];
             let pendentes = [];
             let retirada = [];
+            let recusados = [];
             let finalizados = [];
             let historico = [];
             let clientes = [];
@@ -2558,9 +2676,9 @@
                     alert('Acesso restrito.');
                     return;
                 }
-
                 if (page === 'dashboard') {
                     await carregarAgendaDoBanco(false);
+                    await carregarVendasPacotes();
                 }
 
                 if (page === 'novos') {
@@ -2608,7 +2726,32 @@
 
                 if (page === 'estoques') {
                     await carregarEstoque();
+                }
 
+                if (page === 'retirada') {
+                    await carregarAgendaDoBanco(false);
+                }
+
+                if (page === 'boletos') {
+                    try {
+                        const response = await fetch('/api/boletos/listar');
+                        const boletosDoBanco = await response.json();
+                        renderBoletos(boletosDoBanco);
+                    } catch (error) {
+                        console.error("Erro ao carregar boletos", error);
+                        renderBoletos([]);
+                    }
+                }
+
+                if (page === 'vendas') {
+                    try {
+                        const response = await fetch('/api/vendas-manuais/listar');
+                        const vendasDoBanco = await response.json();
+                        renderVendasManuais(vendasDoBanco);
+                    } catch (error) {
+                        console.error("Erro ao carregar vendas", error);
+                        renderVendasManuais([]);
+                    }
                 }
 
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -2622,6 +2765,7 @@
                     agenda: renderAgenda,
                     pendentes: renderPendentes,
                     retirada: renderRetirada,
+                    recusados: renderRecusados,
                     finalizados: renderFinalizados,
                     clientes: renderClientes,
                     estoques: renderEstoque,
@@ -2698,6 +2842,7 @@
             // RENDERIZAÇÃO DO DASHBOARD PRINCIPAL
             // ═══════════════════════════════════════════════════
             function renderDashboard() {
+                // 1. Atualização dos Cards Superiores
                 const elNovos = document.getElementById('dash-novos');
                 if (elNovos)
                     elNovos.textContent = novos.length;
@@ -2718,34 +2863,136 @@
                 if (elHist)
                     elHist.textContent = historico.length;
 
-                const todos = [...historico, ...agenda];
-                const fat = todos.filter(a => a.data?.startsWith(mesMes) && a.statusPag === 'Pago')
-                        .reduce((s, a) => s + (a.valor || 0), 0);
+                // =========================================================
+                // 2. CÁLCULO DE FATURAMENTO UNIFICADO MENSAL
+                // =========================================================
+                const vendasDash = typeof listaVendasPacotes !== 'undefined' ? listaVendasPacotes : [];
+                const todosItensFaturamento = [
+                    ...(typeof historico !== 'undefined' ? historico : []),
+                    ...(typeof agenda !== 'undefined' ? agenda : []),
+                    ...(typeof retirada !== 'undefined' ? retirada : []),
+                    ...vendasDash
+                ];
+
+                let fatMes = 0;
+                todosItensFaturamento.forEach(item => {
+                    let dataRef = item.data || item.dataVenda || item.dataCriacao || item.dataCompra || '';
+                    if (dataRef.includes('T'))
+                        dataRef = dataRef.split('T')[0];
+
+                    let dataIso = dataRef;
+                    if (dataRef.includes('/')) {
+                        const partes = dataRef.split('/');
+                        if (partes[0].length === 2) {
+                            dataIso = `${partes[2]}-${partes[1]}-${partes[0]}`;
+                        }
+                    }
+
+                    if (dataIso.startsWith(mesMes)) {
+                        const statusPag = (item.statusPag || item.status_pagamento || item.status || 'Pendente').toUpperCase();
+                        if (statusPag === 'PAGO' || statusPag === 'CONCLUÍDO') {
+                            // Pega o valor, não importa a origem (banho ou pacote)
+                            const valorRaw = item.valor || item.valorPago || item.valorTotal || 0;
+                            fatMes += parseFloat(valorRaw) || 0;
+                        }
+                    }
+                });
 
                 const elFat = document.getElementById('dash-fat');
                 if (elFat)
-                    elFat.textContent = `R$ ${fat.toFixed(2)}`;
+                    elFat.textContent = `R$ ${fatMes.toFixed(2).replace('.', ',')}`;
+                // =========================================================
 
+                // 3. Renderização de Gráficos
                 if (typeof renderServChart === 'function')
                     renderServChart();
                 if (typeof renderFatChart === 'function')
                     renderFatChart();
 
-                const recentes = [...historico].sort((a, b) => (b.concluidoEm || b.data || '').localeCompare(a.concluidoEm || a.data || '')).slice(0, 30);
+                const retiradaTimeline = typeof retirada !== 'undefined' ? retirada : [];
+                const agendaTimeline = typeof agenda !== 'undefined' ? agenda : [];
+                const historicoTimeline = typeof historico !== 'undefined' ? historico : [];
+
+                // Junta apenas as listas de serviços (sem vendas de pacotes) e ordena
+                const recentes = [...historicoTimeline, ...retiradaTimeline, ...agendaTimeline].sort((a, b) => {
+                    const d1 = a.concluidoEm || a.data || '';
+                    const d2 = b.concluidoEm || b.data || '';
+                    return d2.localeCompare(d1);
+                });
+
                 const hEl = document.getElementById('dash-historico-lista');
 
                 if (hEl) {
-                    hEl.innerHTML = recentes.length ? recentes.map(a => `
-            <div class="hist-row" style="position:relative; display:flex; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
-                <span class="hist-data" style="width: 80px; font-weight:600; font-size: 0.85rem;">${fd(a.data)}</span>
-                <span class="hist-pet" style="width: 100px; font-weight:600;">${a.pet}</span>
-                <span class="hist-serv" style="flex:1; font-size: 0.85rem;">${a.servico} <span style="color:#888; margin-left:6px;">(${a.dono})</span></span>
-                <span class="hist-func" style="width: 120px; color:#555; font-size: 0.85rem;">${a.funcionario || '—'}</span>
-                <span class="hist-val" style="width: 80px; font-weight:600; color:#28a745;">${a.valor > 0 ? 'R$ ' + a.valor.toFixed(2) : '—'}</span>
-                <button onclick="excluirHistorico(${a.id})" title="Excluir do Banco de Dados" style="background:none;border:none;color:#dc3545;cursor:pointer;padding:4px 8px;font-size:1rem;margin-left:10px; transition: 0.2s;" onmouseover="this.style.color='#a71d2a'" onmouseout="this.style.color='#dc3545'">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>`).join('') : '<div style="text-align:center; padding:20px; color:#888;"><i class="fas fa-history" style="font-size:2rem; margin-bottom:10px; color:#ccc;"></i><p>Nenhum serviço concluído ainda</p></div>';
+                    hEl.innerHTML = recentes.length ? recentes.map(a => {
+
+                        // 1. Tratamento da Data
+                        let dataRaw = a.concluidoEm || a.data || '';
+                        if (dataRaw.includes('T')) {
+                            dataRaw = dataRaw.split('T')[0];
+                        }
+                        const dataExibicao = typeof fd === 'function' ? fd(dataRaw) : dataRaw.split('-').reverse().join('/');
+
+                        // 2. Extrai o Valor Numérico
+                        let valorRaw = a.valor || a.preco || a.total || 0;
+                        let valorFloat = parseFloat(String(valorRaw).replace(',', '.'));
+
+                        // 3. IDENTIFICAÇÃO DE PACOTE
+                        const usouPacote = a.vendaPacote || a.pacoteNome || a.pacoteId || a.pacote ||
+                                (a.formaPagamento && String(a.formaPagamento).toLowerCase().includes('pacote')) ||
+                                (a.formaPag && String(a.formaPag).toLowerCase().includes('pacote')) ||
+                                (valorFloat === 0 && (a.statusPag === 'Pago' || a.status === 'Concluído'));
+
+                        // 4. CONFIGURAÇÃO VISUAL DO BOX DE VALOR (A Mágica acontece aqui!)
+                        let boxValorEstilo = '';
+                        let valorConteudo = '';
+
+                        if (valorFloat > 0) {
+                            // Tem valor: Fica Verde!
+                            valorConteudo = `R$ ${valorFloat.toFixed(2).replace('.', ',')}`;
+                            boxValorEstilo = 'color: #28a745; background: rgba(40, 167, 69, 0.1); border: 1px solid transparent;';
+                        } else if (usouPacote) {
+                            // É Pacote: Fica Azul e substitui o traço!
+                            valorConteudo = 'PACOTE';
+                            boxValorEstilo = 'color: #17a2b8; background: rgba(23, 162, 184, 0.15); border: 1px solid #17a2b8; font-size: 0.85rem; letter-spacing: 1px;';
+                        } else {
+                            // Não tem valor nem pacote: Fica o tracinho cinza
+                            valorConteudo = '—';
+                            boxValorEstilo = 'color: #888; background: transparent; border: 1px solid transparent;';
+                        }
+
+                        // 5. Textos Dinâmicos do Serviço
+                        const tituloPrincipal = a.pet || 'Pet';
+                        const subtituloPrincipal = a.servico || 'Serviço'; // Removida a tag daqui
+                        const nomeCliente = a.dono || (a.cliente ? a.cliente.nome : 'Cliente');
+
+                        return `
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #1a1a1a; border: 1px solid #333; border-left: 3px solid #C9A96E; border-radius: 8px; margin-bottom: 10px; transition: transform 0.2s;">
+                                
+                                <div style="display: flex; flex-direction: column; gap: 5px; flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="color: #eee; font-weight: bold; font-size: 1.05rem;"><i class="fas fa-paw" style="color: #C9A96E;"></i> ${tituloPrincipal}</span>
+                                        <span style="color: #aaa; font-size: 0.85rem;"><i class="fas fa-user" style="color: #C9A96E;"></i> ${nomeCliente}</span>
+                                    </div>
+                                    
+                                    <div style="color: #ddd; font-size: 0.95rem; font-weight: 500;">
+                                        ${subtituloPrincipal}
+                                    </div>
+                                    
+                                    <div style="color: #777; font-size: 0.8rem; display: flex; gap: 15px;">
+                                        <span><i class="far fa-calendar-alt"></i> ${dataExibicao}</span>
+                                        ${a.funcionario ? `<span><i class="fas fa-user-tie"></i> Func.: ${a.funcionario}</span>` : ''}
+                                    </div>
+                                </div>
+
+                                <div style="text-align: right; min-width: 100px;">
+                                    <span style="font-weight: 800; font-size: 1.1rem; padding: 4px 10px; border-radius: 6px; ${boxValorEstilo}">
+                                        ${valorConteudo}
+                                    </span>
+                                </div>
+
+                            </div>
+                        `;
+                    }).join('') : '<div style="text-align: center; color: #aaa; padding: 30px;"><i class="fas fa-paw" style="font-size: 2rem; margin-bottom: 10px; color: #555;"></i><br>Nenhum serviço recente encontrado.</div>';
                 }
             }
 
@@ -2887,36 +3134,6 @@
                   </div>
                 </div>`).join('')}
             </div>`;
-            }
-
-            function renderDashboard() {
-                document.getElementById('dash-novos').textContent = novos.length;
-                document.getElementById('dash-confirmados').textContent = agenda.length;
-                document.getElementById('dash-pendentes').textContent = pendentes.length;
-                const retEl = document.getElementById('dash-retirada');
-                if (retEl)
-                    retEl.textContent = retirada.length;
-                document.getElementById('dash-total-hist').textContent = historico.length;
-                const todos = [...historico, ...agenda];
-                const fat = todos.filter(a => a.data?.startsWith(mesMes) && a.statusPag === 'Pago').reduce((s, a) => s + (a.valor || 0), 0);
-                document.getElementById('dash-fat').textContent = `R$ ${fat.toFixed(2)}`;
-
-                renderServChart();
-
-                const recentes = [...historico].sort((a, b) => (b.concluidoEm || b.data || '').localeCompare(a.concluidoEm || a.data || '')).slice(0, 30);
-                const hEl = document.getElementById('dash-historico-lista');
-                if (hEl) {
-                    hEl.innerHTML = recentes.length ? recentes.map(a => `
-              <div class="hist-row" style="position:relative; display:flex; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
-                <span class="hist-data" style="width: 80px; font-weight:600;">${fd(a.data)}</span>
-                <span class="hist-pet" style="width: 100px;">${a.pet}</span>
-                <span class="hist-serv" style="flex:1;">${a.servico} <span style="color:#888; font-size:.8rem; margin-left:6px;">(${a.dono})</span></span>
-                <span class="hist-func" style="width: 120px; color:#555;">${a.funcionario || '—'}</span>
-                <span class="hist-val" style="width: 80px; font-weight:600; color:#28a745;">${a.valor > 0 ? 'R$ ' + a.valor.toFixed(2) : '—'}</span>
-                <button onclick="excluirHistorico(${a.id})" title="Excluir do Banco de Dados" style="background:none;border:none;color:#dc3545;cursor:pointer;padding:4px 8px;font-size:1rem;margin-left:10px; transition: 0.2s;"><i class="fas fa-trash-alt"></i></button>
-              </div>`).join('') : '<div style="text-align:center; padding:20px; color:#888;"><i class="fas fa-history" style="font-size:2rem; margin-bottom:10px; color:#ccc;"></i><p>Nenhum serviço concluído ainda</p></div>';
-                }
-                renderFatChart();
             }
 
             async function abrirModalVenda() {
@@ -3337,6 +3554,7 @@
                     let dataRef = item.data || item.dataVenda || item.dataCriacao || item.dataCompra;
                     if (!dataRef)
                         return false;
+
                     if (dataRef.includes('T'))
                         dataRef = dataRef.split('T')[0];
 
@@ -3375,7 +3593,7 @@
                 let totalDespesas = 0;
                 let htmlReceitas = '';
                 let htmlDespesas = '';
-                let htmlTodasTransacoes = ''; // <-- Variável do Extrato Geral Adicionada
+                let htmlTodasTransacoes = '';
 
                 // 3. Ordenação decrescente por data
                 listaFiltrada.sort((a, b) => {
@@ -3394,7 +3612,7 @@
                     return d2.localeCompare(d1);
                 });
 
-                // 4. Montar as tabelas com as tags HTML (<tr> e <td>)
+                // 4. Montar as tabelas
                 listaFiltrada.forEach(item => {
                     const isDespesa = item.tipoMovimentacao === 'DESPESA' || item.custoTotal !== undefined;
                     const isVenda = !!(item.dataVenda || item.itens || item.dataCriacao) && !isDespesa;
@@ -3424,25 +3642,25 @@
                     // ============================================
                     // 1. EXTRATO GERAL (Aba Visão Geral)
                     // ============================================
-                    const tipoIcon = isDespesa ? '<span style="color:#dc3545; font-weight: 600;"><i class="fas fa-arrow-up"></i> Saída</span>' : '<span style="color:#28a745; font-weight: 600;"><i class="fas fa-arrow-down"></i> Entrada</span>';
+                    const tipoIcon = isDespesa ? '<i class="fas fa-arrow-up" style="color:#dc3545"></i> Saída' : '<i class="fas fa-arrow-down" style="color:#28a745"></i> Entrada';
                     const valorSinal = isDespesa ? '-' : '+';
                     const corValor = isDespesa ? '#dc3545' : '#28a745';
 
                     let descGeral = '';
                     if (isDespesa) {
-                        descGeral = item.fornecedor ? `<strong>${item.fornecedor}</strong> <br><small style="color:#aaa">${item.descricao || 'Despesa'}</small>` : `<strong>${item.descricao || 'Despesa'}</strong>`;
+                        descGeral = item.fornecedor ? `<strong>${item.fornecedor}</strong><br><small>${item.descricao || 'Despesa'}</small>` : `<strong>${item.descricao || 'Despesa'}</strong>`;
                     } else {
-                        descGeral = isVenda ? `<strong>🛒 Venda #${item.id || ''}</strong> <br><small style="color:#aaa">${item.clienteNome || item.cliente || 'Consumidor'}</small>` : `<strong><i class="fas fa-paw" style="color:#C9A96E"></i> ${item.pet || 'Pet'}</strong> <br><small style="color:#aaa">${item.dono || 'Cliente'}</small>`;
+                        descGeral = isVenda ? `<strong>🛒 Venda #${item.id || ''}</strong><br><small>${item.clienteNome || item.cliente || 'Consumidor'}</small>` : `<strong><i class="fas fa-paw"></i> ${item.pet || 'Pet'}</strong><br><small>${item.dono || 'Cliente'}</small>`;
                     }
 
                     htmlTodasTransacoes += `
-            <tr style="border-bottom: 1px solid #333;">
-                <td style="padding: 12px; line-height: 1.4; color: #eee;">${descGeral}</td>
-                <td style="padding: 12px;">${tipoIcon}</td>
-                <td style="padding: 12px; color: ${corValor}; font-weight: bold;">${valorSinal} R$ ${valor.toFixed(2)}</td>
-                <td style="padding: 12px; color: #ccc;">${dataExibicao}</td>
-                <td style="padding: 12px;"><span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span></td>
-            </tr>
+        <tr>
+            <td>${descGeral}</td>
+            <td>${tipoIcon}</td>
+            <td style="color:${corValor}; font-weight:bold;">${valorSinal} R$ ${valor.toFixed(2)}</td>
+            <td>${dataExibicao}</td>
+            <td><span class="badge" style="${badgeCor}">${status}</span></td>
+        </tr>
         `;
 
                     // ============================================
@@ -3451,24 +3669,32 @@
                     if (isDespesa) {
                         const fornecedor = item.fornecedor || 'Fornecedor / Diversos';
                         const descricao = item.nomeProduto ? `Compra de ${item.quantidade}x ${item.nomeProduto}` : (item.descricao || 'Despesa');
-                        const btnPagar = status === 'PENDENTE' ? `<button class="btn-secundario" style="padding: 4px 8px; font-size: 0.8rem;">Pagar</button>` : '';
 
+                        const btnPagar = status === 'PENDENTE' ? `
+                <button onclick="window.baixarDespesa(${item.id})" style="background-color: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: 0 2px 4px rgba(40,167,69,0.2);" onmouseover="this.style.backgroundColor='#218838'; this.style.transform='scale(1.05)';" onmouseout="this.style.backgroundColor='#28a745'; this.style.transform='scale(1)';">
+                    <i class="fas fa-check-circle"></i> Pagar
+                </button>` : '';
+
+                        const btnExcluir = `
+                <button onclick="excluirDespesa(${item.id})" style="background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 5px; font-size: 0.85rem; cursor: pointer; margin-left: 6px; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: 0 2px 4px rgba(220,53,69,0.2);" onmouseover="this.style.backgroundColor='#c82333'; this.style.transform='scale(1.05)';" onmouseout="this.style.backgroundColor='#dc3545'; this.style.transform='scale(1)';">
+                    <i class="fas fa-trash"></i>
+                </button>`;
                         htmlDespesas += `
-                <tr style="border-bottom: 1px solid #333;">
-                    <td style="padding: 12px; color: #eee;"><strong>${fornecedor}</strong></td>
-                    <td style="padding: 12px; color: #aaa;">${descricao}</td>
-                    <td style="padding: 12px; color: #dc3545; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
-                    <td style="padding: 12px; color: #ccc;">${dataExibicao}</td>
-                    <td style="padding: 12px;"><span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span></td>
-                    <td style="padding: 12px; text-align: right;">${btnPagar}</td>
-                </tr>
+            <tr>
+                <td><strong>${fornecedor}</strong></td>
+                <td>${descricao}</td>
+                <td style="font-weight:bold;">R$ ${valor.toFixed(2)}</td>
+                <td>${dataExibicao}</td>
+                <td><span class="badge" style="${badgeCor}">${status}</span></td>
+                <td style="text-align:right;">${btnPagar}${btnExcluir}</td>
+            </tr>
             `;
                     }
                     // ============================================
                     // 3. MONTAGEM DAS RECEITAS (Aba Contas a Receber)
                     // ============================================
                     else {
-                        let nomePrincipal = isVenda ? `🛒 Venda #${item.id || ''}` : `<i class="fas fa-paw" style="color:#C9A96E;"></i> ${item.pet || '—'}`;
+                        let nomePrincipal = isVenda ? `<strong>🛒 Venda #${item.id || ''}</strong>` : `<strong><i class="fas fa-paw"></i> ${item.pet || '—'}</strong>`;
                         let cliente = isVenda ? (item.clienteNome || item.cliente || '—') : (item.dono || '—');
                         let descricao = '';
 
@@ -3477,27 +3703,27 @@
                                 const qtdItens = item.itens.reduce((sum, i) => sum + i.quantidade, 0);
                                 const nomes = item.itens.map(i => i.nomeProdutoOuServico || i.nome).join(', ');
                                 descricao = nomes.length > 25 ? nomes.substring(0, 25) + '...' : nomes;
-                                descricao += ` <small style="color:#888;">(${qtdItens} itens)</small>`;
+                                descricao += ` <small>(${qtdItens} itens)</small>`;
                             } else {
                                 descricao = `📦 Pacote: ${item.pacoteNome || 'Personalizado'}`;
                             }
                         } else {
-                            descricao = `<span class="badge" style="background: #333; color: #ccc;">${item.servico || '—'}</span>`;
+                            descricao = `${item.servico || '—'}`;
                         }
 
                         htmlReceitas += `
-                <tr style="border-bottom: 1px solid #333;">
-                    <td style="padding: 12px;">
-                        <div style="font-weight: bold; font-size: 0.95rem; color: #eee;">${nomePrincipal}</div>
-                        <div style="color: #aaa; font-size: 0.8rem;"><i class="fas fa-user" style="color: #888;"></i> ${cliente}</div>
-                    </td>
-                    <td style="padding: 12px; color: #eee;">${descricao}</td>
-                    <td style="padding: 12px; color: #28a745; font-weight: bold;">R$ ${valor.toFixed(2)}</td>
-                    <td style="padding: 12px; color: #ccc;">${forma}</td>
-                    <td style="padding: 12px; color: #ccc;">${dataExibicao}</td>
-                    <td style="padding: 12px;"><span class="badge" style="${badgeCor} padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">${status}</span></td>
-                    <td style="padding: 12px; text-align: right;"></td>
-                </tr>
+            <tr>
+                <td>
+                    ${nomePrincipal}<br>
+                    <small><i class="fas fa-user"></i> ${cliente}</small>
+                </td>
+                <td>${descricao}</td>
+                <td style="font-weight:bold; color:#28a745;">R$ ${valor.toFixed(2)}</td>
+                <td>${forma}</td>
+                <td>${dataExibicao}</td>
+                <td><span class="badge" style="${badgeCor}">${status}</span></td>
+                <td style="text-align:right;"></td>
+            </tr>
             `;
                     }
                 });
@@ -3520,21 +3746,18 @@
                     elGeral.style.color = lucro >= 0 ? '#28a745' : '#dc3545';
                 }
 
-                // Injeta a tabela unificada na Visão Geral
+                // Injeta as tabelas
                 const tbodyTodas = document.getElementById('tbody-todas-transacoes');
-                if (tbodyTodas) {
-                    tbodyTodas.innerHTML = htmlTodasTransacoes || `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #888;">Nenhuma transação encontrada para este período.</td></tr>`;
-                }
+                if (tbodyTodas)
+                    tbodyTodas.innerHTML = htmlTodasTransacoes || `<tr><td colspan="5" style="text-align:center;">Nenhuma transação encontrada.</td></tr>`;
 
                 const tbodyReceitas = document.getElementById('tbody-receitas');
-                if (tbodyReceitas) {
-                    tbodyReceitas.innerHTML = htmlReceitas || `<tr><td colspan="7" style="text-align:center; padding: 30px; color: #888;">Nenhuma entrada encontrada para este período.</td></tr>`;
-                }
+                if (tbodyReceitas)
+                    tbodyReceitas.innerHTML = htmlReceitas || `<tr><td colspan="7" style="text-align:center;">Nenhuma entrada encontrada.</td></tr>`;
 
                 const tbodyDespesas = document.getElementById('tbody-despesas');
-                if (tbodyDespesas) {
-                    tbodyDespesas.innerHTML = htmlDespesas || `<tr><td colspan="6" style="text-align:center; padding: 30px; color: #888;">Nenhuma despesa encontrada para este período.</td></tr>`;
-                }
+                if (tbodyDespesas)
+                    tbodyDespesas.innerHTML = htmlDespesas || `<tr><td colspan="6" style="text-align:center;">Nenhuma despesa encontrada.</td></tr>`;
             }
 
             async function baixarDespesa(id) {
@@ -3544,7 +3767,7 @@
                 try {
                     const res = await fetch(`../api/despesas/baixar?id=${id}`, {method: 'POST'});
                     if (res.ok) {
-                        await carregarDespesas(); // Recarrega os dados e atualiza a tabela
+                        await carregarDespesas();
                         alert("Despesa marcada como paga com sucesso!");
                     } else {
                         alert("Erro ao baixar despesa.");
@@ -4002,5 +4225,6 @@
         <script src="js/cliente.js"></script>
         <script src="js/pacote.js"></script>
         <script src="js/estoque.js"></script>
+        <script src="js/boleto.js"></script>
     </body>
 </html>

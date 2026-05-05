@@ -28,6 +28,10 @@ public class ListarAgendamentosServlet extends HttpServlet {
             String telDono = (a.getPet() != null && a.getPet().getDono() != null) ? a.getPet().getDono().getTelefone() : "";
             String tipoPet = (a.getPet() != null) ? a.getPet().getTipo() : "";
 
+            boolean isPacote = a.getVendaPacote() != null;
+            String pacoteNome = isPacote ? a.getVendaPacote().getPacote().getNome() : "";
+            String dataVenda = isPacote ? a.getVendaPacote().getDataVenda().toString() : "";
+            
             String nomeFunc = (a.getFuncionario() != null && a.getFuncionario().getUsuario() != null)
                     ? a.getFuncionario().getUsuario().getNome() : "null";
 
@@ -46,10 +50,15 @@ public class ListarAgendamentosServlet extends HttpServlet {
             json.append("\"hora\":\"").append(a.getHora() != null ? a.getHora().toString() : "").append("\",");
             json.append("\"data\":\"").append(a.getData() != null ? a.getData().toString() : "").append("\",");
 
+            json.append("\"isPacote\":").append(isPacote).append(",");
+            json.append("\"pacoteNome\":\"").append(escapeJson(pacoteNome)).append("\",");
+            json.append("\"dataVenda\":\"").append(dataVenda).append("\",");
             json.append("\"entrada_pet\":\"").append(a.getEntrada_pet() != null ? a.getEntrada_pet().toString() : "").append("\",");
             json.append("\"saida_pet\":\"").append(a.getSaida_pet() != null ? a.getSaida_pet().toString() : "").append("\",");
+            json.append("\"sessaoUtilizada\":").append(a.getSessaoUtilizada() != null ? a.getSessaoUtilizada() : "null").append(",");
             json.append("\"obs\":\"").append(escapeJson(a.getObs())).append("\"");
             json.append("}");
+            
 
             if (i < lista.size() - 1) {
                 json.append(",");

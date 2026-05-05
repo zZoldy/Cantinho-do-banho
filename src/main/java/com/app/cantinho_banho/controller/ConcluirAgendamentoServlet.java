@@ -94,6 +94,12 @@ public class ConcluirAgendamentoServlet extends HttpServlet {
                     VendaPacote vendaAtiva = vendaDAO.buscarVendaAtiva(a.getPet().getDono().getId(), a.getServico().getId());
 
                     if (vendaAtiva != null) {
+                        int total = vendaAtiva.getPacote().getQuantidadeSessoes();
+                        int sessaoAtual = total - vendaAtiva.getSessoesRestantes() + 1;
+
+                        a.setVendaPacote(vendaAtiva);
+                        a.setSessaoUtilizada(sessaoAtual);
+
                         vendaAtiva.setSessoesRestantes(vendaAtiva.getSessoesRestantes() - 1);
                         vendaDAO.atualizar(vendaAtiva);
                     }

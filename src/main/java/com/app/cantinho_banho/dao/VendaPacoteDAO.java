@@ -74,7 +74,7 @@ public class VendaPacoteDAO {
                     .setMaxResults(1)
                     .getSingleResult();
         } catch (NoResultException e) {
-            return null; // Cliente não tem pacote para este serviço ou o saldo acabou
+            return null; 
         } finally {
             em.close();
         }

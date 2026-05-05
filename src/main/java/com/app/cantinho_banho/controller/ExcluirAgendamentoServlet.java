@@ -16,15 +16,14 @@ public class ExcluirAgendamentoServlet extends HttpServlet {
             Long id = Long.parseLong(request.getParameter("id"));
 
             AgendamentoDAO dao = new AgendamentoDAO();
-            
-            dao.remover(id);
-            
+            dao.recusar(id);
+
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
 
             response.setStatus(HttpServletResponse.SC_OK);
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("Erro ao excluir: " + e.getMessage());
+            response.getWriter().write("Erro ao recusar agendamento: " + e.getMessage());
         }
     }
 }

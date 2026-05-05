@@ -102,7 +102,6 @@ function enviarAgendamento(e) {
                     btnSubmit.disabled = false;
                     btnSubmit.style.opacity = '1';
                 }
-
             });
 }
 

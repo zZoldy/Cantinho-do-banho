@@ -3,6 +3,7 @@ let horariosSemana = [];
 let servicosCadastrados = [];
 let limitePorHorarioGlobal = 3;
 
+
 function pararAnimacaoSync(icone) {
     if (icone) {
         icone.classList.remove('fa-spin');
@@ -27,7 +28,6 @@ async function carregarAgendaDoBanco(silencioso = false) {
     let cursorInicio = null;
     let cursorFim = null;
 
-    // Se for um input de texto digitável, salva onde o cursor estava
     if (idFocado && (elementoFocado.tagName === 'INPUT' || elementoFocado.tagName === 'TEXTAREA')) {
         try {
             cursorInicio = elementoFocado.selectionStart;
@@ -85,7 +85,9 @@ async function carregarAgendaDoBanco(silencioso = false) {
             a.status === 'Retirada' || a.status === 'retirada'
         );
 
-        // Renderiza tudo (destrói e recria o HTML)
+        recusados = todosOsAgendamentos.filter(a =>
+            a.status === 'Recusado' || a.status === 'recusado');
+
         if (typeof renderNovos === 'function')
             renderNovos();
         if (typeof renderAgenda === 'function')
@@ -94,6 +96,8 @@ async function carregarAgendaDoBanco(silencioso = false) {
             renderPendentes();
         if (typeof renderRetirada === 'function')
             renderRetirada();
+        if (typeof renderRecusados === 'function')
+            renderRecusados();
 
         if (typeof atualizarBadges === 'function') {
             atualizarBadges();
@@ -647,6 +651,71 @@ function renderRetirada() {
     }).join('');
 }
 
+function renderRecusados() {
+    const busca = (document.getElementById('busca-recusados')?.value || '').toLowerCase();
+    const el = document.getElementById('lista-recusados');
+
+    if (!el) return;
+
+    // Filtra a lista global 'recusados' (que deve ser alimentada junto com os pendentes no websocket/fetch)
+    const lista = recusados.filter(a => {
+        const nomePet = a.pet || '';
+        const nomeDono = a.dono || '';
+        const nomeServico = a.servico || '';
+        return (nomePet + nomeDono + nomeServico).toLowerCase().includes(busca);
+    }).sort((a, b) => {
+        // Ordena dos mais recentes para os mais antigos
+        const dhA = (a.data || '') + (a.hora || '');
+        const dhB = (b.data || '') + (b.hora || '');
+        return dhB.localeCompare(dhA); 
+    });
+
+    if (!lista.length) {
+        el.innerHTML = `
+            <div class="empty-state" style="padding: 30px; text-align: center;">
+                <i class="fas fa-ban" style="font-size: 2rem; color:#6c757d; margin-bottom: 10px;"></i>
+                <p style="color: #666;">Nenhum agendamento recusado no histórico.</p>
+            </div>`;
+        return;
+    }
+
+    el.innerHTML = lista.map(a => {
+        const contatoLimpo = cleanTel(a.contato || '');
+        const linkWhats = a.contato
+                ? `<a href="https://wa.me/55${contatoLimpo}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`
+                : `<span style="opacity: 0.6;"><i class="fas fa-phone-slash"></i> Sem contato</span>`;
+
+        const horaIso = (a.hora || '').substring(0, 5);
+
+        return `
+        <div class="pendente-card" style="border-left: 5px solid #6c757d; background: #f8f9fa; opacity: 0.85; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="pc-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div class="pc-pet" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; color: #555;">
+                        <i class="fas fa-paw" style="color:#6c757d; margin-right:6px; font-size:.9rem"></i>
+                        <strike>${a.pet || 'Sem nome'}</strike> <small style="font-weight: normal; opacity: 0.7;">(${a.tipo || '-'})</small>
+                    </div>
+                    <div class="pc-dono" style="font-size: 0.9rem; color: #666;">
+                        <i class="fas fa-user" style="color:#6c757d; margin-right: 4px;"></i> ${a.dono || 'Sem dono'} · ${linkWhats}
+                    </div>
+                </div>
+                
+                <div style="text-align:right;">
+                    <span class="badge" style="background-color: rgba(108, 117, 125, 0.15); color: #6c757d; border: 1px solid #6c757d; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">
+                        <i class="fas fa-ban"></i> Recusado
+                    </span>
+                </div>
+            </div>
+
+            <div class="pc-info" style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 6px; border: 1px dashed #ccc; color: #666;">
+                <div style="margin-bottom: 5px;"><strong><i class="fas fa-cut"></i> Serviço:</strong> ${a.servico || '-'}</div>
+                <div><strong><i class="fas fa-calendar-times"></i> Solicitado originalmente para:</strong> ${typeof fd === 'function' ? fd(a.data) : a.data} às ${horaIso}</div>
+                ${a.obs ? `<div style="margin-top: 8px; font-size: 0.85rem; border-left: 3px solid #6c757d; padding-left: 6px;"><em>${a.obs}</em></div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
 function renderFinalizados() {
     const buscaCliente = (document.getElementById('filtro-cliente-fin')?.value || '').toLowerCase();
     const buscaPet = (document.getElementById('filtro-pet-fin')?.value || '').toLowerCase();
@@ -846,6 +915,7 @@ function navConfig(aba) {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         carregarAgendaDoBanco(false);
+        carregarVendasPacotes();
     } catch (e) {
         console.error('Erro na inicialização do sistema:', e);
     }
@@ -1012,9 +1082,8 @@ async function confirmarPendente(id) {
             await carregarAgendaDoBanco(true);
 
             if (dados.linkWhatsApp) {
-                if (confirm("Agendamento confirmado!\n\nDeseja abrir o WhatsApp Web para notificar o cliente sobre a alteração/confirmação?")) {
-                    window.open(dados.linkWhatsApp, '_blank');
-                }
+                window.open(dados.linkWhatsApp, '_blank');
+
             } else {
                 alert("Agendamento confirmado com sucesso!");
             }
@@ -1408,9 +1477,8 @@ async function aceitarPedido(id, btn, dataReal, horaReal, pet) {
             await carregarAgendaDoBanco(true);
 
             if (dados.linkWhatsApp) {
-                if (confirm("Agendamento confirmado!\n\nDeseja abrir o WhatsApp Web para notificar o cliente?")) {
-                    window.open(dados.linkWhatsApp, '_blank');
-                }
+                window.open(dados.linkWhatsApp, '_blank');
+
             } else {
                 alert("Agendamento confirmado com sucesso!");
             }
