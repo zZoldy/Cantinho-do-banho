@@ -33,9 +33,17 @@ public class ObterConfigEmpresaServlet extends HttpServlet {
             json.append("\"cnpj\":\"").append(escapeJson(config.getCnpj())).append("\",");
             json.append("\"inscricaoEstadual\":\"").append(escapeJson(config.getInscricaoEstadual())).append("\",");
             json.append("\"inscricaoMunicipal\":\"").append(escapeJson(config.getInscricaoMunicipal())).append("\",");
+
+            // ═══ NOVOS CAMPOS DE CONTATO ═══
+            json.append("\"emailNotificacao\":\"").append(escapeJson(config.getEmailNotificacao())).append("\",");
+            json.append("\"whatsappContato\":\"").append(escapeJson(config.getWhatsappContato())).append("\",");
+
             json.append("\"certificadoSenha\":\"").append(escapeJson(config.getCertificadoSenha())).append("\",");
+
+            // ═══ CONFIGURAÇÕES TÉCNICAS ═══
             json.append("\"ambiente\":").append(config.getAmbiente() != null ? config.getAmbiente() : 2).append(",");
-            json.append("\"limitePorHorario\":").append(config.getLimitePorHorario());
+            json.append("\"regimeTributario\":").append(config.getRegimeTributario() != null ? config.getRegimeTributario() : 1).append(",");
+            json.append("\"limitePorHorario\":").append(config.getLimitePorHorario() != null ? config.getLimitePorHorario() : 5);
 
             json.append("}");
 

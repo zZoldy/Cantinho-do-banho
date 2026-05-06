@@ -245,13 +245,17 @@ function carregarProdutosParaVenda() {
 
 async function abrirModalVenda() {
     if (typeof listarEstoque === 'function') {
-        await listarEstoque(); // Busca o estoque fresco do banco
+        await listarEstoque();
     }
+
+    if (typeof listarClientesBD() === 'function') {
+        await listarClientesBD();
+    }
+
 
     document.getElementById('modal-venda').classList.remove('hidden');
     document.getElementById('form-venda').reset();
 
-    // Garante que o dropdown comece escondido ao abrir o modal
     const dropdown = document.getElementById('dropdown-produtos-venda');
     if (dropdown) {
         dropdown.classList.add('hidden');
@@ -367,7 +371,7 @@ async function salvarVenda(event) {
         const produtoNoEstoque = listaEstoque.find(p => p.produto && p.produto.id === parseInt(produtoId));
         if (produtoNoEstoque && quantidade > produtoNoEstoque.quantidadeAtual) {
             alert(`⚠️ Operação bloqueada: Estoque insuficiente!\n\nVocê está tentando vender ${quantidade} unidades, mas só existem ${produtoNoEstoque.quantidadeAtual} disponíveis no estoque.`);
-            return; 
+            return;
         }
     }
 
@@ -412,6 +416,60 @@ async function salvarVenda(event) {
     } catch (e) {
         console.error("Erro de conexão:", e);
         alert("Erro ao tentar conectar com o servidor. Verifique se o backend está rodando.");
+    }
+}
+
+// =====================================================================
+// DROPDOWN CUSTOMIZADO DE CLIENTES (TEXTO LIVRE)
+// =====================================================================
+
+function filtrarClientesDropdown() {
+    const input = document.getElementById('venda-cliente');
+    const dropdown = document.getElementById('dropdown-clientes-venda');
+
+    if (!input || !dropdown)
+        return;
+
+    const filtro = input.value.toLowerCase();
+
+    const clientesAtuais = typeof listaClientes !== 'undefined' ? listaClientes : [];
+
+    const filtrados = clientesAtuais.filter(c => {
+        return c.nome && c.nome.toLowerCase().includes(filtro);
+    });
+
+    if (filtrados.length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+
+    dropdown.innerHTML = filtrados.map(c => {
+        const nome = c.nome || 'Sem nome';
+        const telefone = c.telefone || 'Sem telefone';
+
+        return `
+            <li onclick="selecionarClienteDropdown('${nome}')" style="padding: 10px 15px; color: #eee; cursor: pointer; border-bottom: 1px solid #222; transition: 0.2s; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center;" onmouseover="this.style.background='#333'; this.style.color='#C9A96E';" onmouseout="this.style.background='transparent'; this.style.color='#eee';">
+                <span><i class="fas fa-user" style="color:#C9A96E; margin-right: 8px;"></i> ${nome}</span>
+                <span style="background: #111; border: 1px solid #333; padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; color: #888;">
+                    <i class="fas fa-phone-alt" style="margin-right: 4px;"></i> ${telefone}
+                </span>
+            </li>
+        `;
+    }).join('');
+
+    dropdown.classList.remove('hidden');
+}
+
+function selecionarClienteDropdown(nome) {
+    const inputNome = document.getElementById('venda-cliente');
+    const dropdown = document.getElementById('dropdown-clientes-venda');
+
+    if (inputNome) {
+        inputNome.value = nome;
+    }
+
+    if (dropdown) {
+        dropdown.classList.add('hidden');
     }
 }
 
@@ -512,6 +570,9 @@ function renderBoletos(listaBoletos) {
             <div style="text-align: right; min-width: 120px;">
                 <span style="color: #eee; font-weight: 800; font-size: 1.2rem; display: block; margin-bottom: 8px;">R$ ${valorFmt}</span>
                 ${b.statusCalculado !== 'Pago' ? `<button onclick="baixarBoleto(${b.id}, this)" class="btn-primary" style="background: #28a745; border: none; padding: 6px 12px; font-size: 0.8rem;"><i class="fas fa-check"></i> Dar Baixa</button>` : ''}
+                <button onclick="excluirBoleto(${b.id})" class="btn-danger" style="background: #dc3545; color: white; border: none; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; border-radius: 4px;" title="Excluir Boleto">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         </div>`;
     }).join('');
@@ -595,5 +656,29 @@ async function baixarBoleto(id, btn) {
         alert(e.message);
         btn.innerHTML = '<i class="fas fa-check"></i> Dar Baixa';
         btn.disabled = false;
+    }
+}
+
+async function excluirBoleto(id) {
+    if (!confirm("Tem certeza que deseja excluir este boleto? Esta ação não pode ser desfeita."))
+        return;
+
+    try {
+        const resp = await fetch(`../api/boletos/excluir?id=${id}`, {method: 'DELETE'});
+        if (resp.ok) {
+            alert("Boleto excluído com sucesso!");
+            try {
+                const response = await fetch('../api/boletos/listar');
+                const boletosDoBanco = await response.json();
+                renderBoletos(boletosDoBanco);
+            } catch (error) {
+                console.error("Erro ao carregar boletos", error);
+                renderBoletos([]);
+            }
+        } else {
+            alert("Erro ao excluir o boleto.");
+        }
+    } catch (err) {
+        console.error("Erro na requisição:", err);
     }
 }

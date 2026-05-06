@@ -4,6 +4,8 @@
 let listaEstoque = [];
 let listaFornecedoresLocal = [];
 let listaDespesas = [];
+let produtoReposicaoAtual = null;
+let isSalvandoProduto = false;
 
 async function carregarDespesas() {
     try {
@@ -84,6 +86,11 @@ function renderEstoque() {
                             <i class="fas fa-trash-alt"></i>
                         </button>
 
+
+                        <button onclick="abrirModalReposicao(${item.produto.id}, '${item.produto.nome.replace(/'/g, "\\'")}', ${item.produto.precoCusto || 0}, '${item.produto.fornecedor ? item.produto.fornecedor.nome.replace(/'/g, "\\'") : 'Fornecedor não informado'}')" style="background: transparent; color: #28a745; border: 1px solid #28a745; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Repor Estoque e Gerar Despesa">
+                            <i class="fas fa-plus"></i>
+                        </button>
+
                         <button onclick="movimentarEstoque(${item.produto.id}, 'SAIDA')" style="background: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Registrar Consumo">
                             <i class="fas fa-minus"></i>
                         </button>
@@ -152,20 +159,48 @@ async function carregarFornecedoresParaModal() {
 }
 
 async function salvarProduto(e) {
-    e.preventDefault();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation(); // Impede que outros scripts disparem este mesmo form
+    }
+
+    // 2. Trava de memória (Semaforo)
+    if (isSalvandoProduto)
+        return;
+    isSalvandoProduto = true;
+
+    // 3. Desativa o botão visualmente (ajuste o seletor se necessário)
+    const btnSalvar = document.querySelector('#form-produto button[type="submit"]');
+    if (btnSalvar) {
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = "Processando...";
+    }
+
+    const nomeProduto = document.getElementById('prod-nome').value;
+    const qtdInicial = parseInt(document.getElementById('prod-qtd').value) || 0;
+
+    const selectFornecedor = document.getElementById('prod-fornecedor');
+    const fornecedorId = selectFornecedor ? selectFornecedor.value : '';
+    let fornecedorNome = 'Fornecedor não informado';
+    if (selectFornecedor && selectFornecedor.selectedIndex > 0) {
+        fornecedorNome = selectFornecedor.options[selectFornecedor.selectedIndex].text;
+    }
+
+    const custoDesmascaradoStr = desmascararMoeda(document.querySelector('input[name="custoTotal"]').value);
+    const custoTotalNum = parseFloat(custoDesmascaradoStr) || 0;
+
+    const selectForma = document.querySelector('select[name="formaPagamento"]');
+    const formaPagamento = selectForma ? selectForma.value : 'DINHEIRO';
 
     const dados = new URLSearchParams();
-    dados.append('nome', document.getElementById('prod-nome').value);
+    dados.append('nome', nomeProduto);
     dados.append('precoVenda', desmascararMoeda(document.getElementById('prod-preco').value));
-    dados.append('fornecedorId', document.getElementById('prod-fornecedor').value || '');
+    dados.append('fornecedorId', fornecedorId);
     dados.append('qtdInicial', document.getElementById('prod-qtd').value || '0');
     dados.append('qtdMinima', document.getElementById('prod-minimo').value || '5');
-
-    const inputCusto = document.querySelector('input[name="custoTotal"]');
-    const selectForma = document.querySelector('select[name="formaPagamento"]');
-
-    dados.append('custoTotal', desmascararMoeda(document.querySelector('input[name="custoTotal"]').value));
-    dados.append('formaPagamento', selectForma ? selectForma.value : 'DINHEIRO');
+    dados.append('custoTotal', custoDesmascaradoStr);
+    dados.append('formaPagamento', formaPagamento);
 
     try {
         const response = await fetch('../api/produto/cadastrar', {
@@ -175,15 +210,22 @@ async function salvarProduto(e) {
         });
 
         if (response.ok) {
-            fecharModalProduto();      // Fecha a janelinha
-            await carregarEstoque();   // Recarrega a tabela com o novo produto
-            alert("Produto cadastrado com sucesso!");
+            fecharModalProduto();
+            await carregarEstoque();
+
         } else {
             const err = await response.text();
             alert("Erro ao salvar produto: " + err);
         }
     } catch (error) {
         console.error("Erro na requisição:", error);
+        alert("Erro de conexão ao tentar salvar o produto.");
+    } finally {
+        isSalvandoProduto = false;
+        if (btnSalvar) {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = '<i class="fas fa-save"></i> Salvar Produto';
+        }
     }
 }
 
@@ -513,7 +555,247 @@ document.addEventListener('click', function (e) {
     const input = document.getElementById('despesa-fornecedor');
     const dropdown = document.getElementById('dropdown-fornecedores');
 
+    const inputCliente = document.getElementById('venda-cliente');
+    const dropdownCliente = document.getElementById('dropdown-clientes-venda');
+
     if (input && dropdown && e.target !== input && !dropdown.contains(e.target)) {
         dropdown.classList.add('hidden');
     }
+
+    if (inputCliente && dropdownCliente && e.target !== inputCliente && !dropdownCliente.contains(e.target)) {
+        dropdownCliente.classList.add('hidden');
+    }
 });
+
+// =====================================================================
+// ABRIR E FECHAR O MODAL DE REPOSIÇÃO
+// =====================================================================
+function abrirModalReposicao(produtoId, nomeProduto, precoCusto, nomeFornecedor) {
+    produtoReposicaoAtual = {
+        id: produtoId,
+        nome: nomeProduto,
+        custo: precoCusto || 0,
+        fornecedor: nomeFornecedor || 'Fornecedor não informado' //
+    };
+
+    document.getElementById('reposicao-nome-produto').innerText = nomeProduto;
+    document.getElementById('reposicao-qtd').value = 1;
+
+    calcularCustoReposicao();
+
+    document.getElementById('modal-reposicao').classList.remove('hidden');
+}
+
+function fecharModalReposicao() {
+    document.getElementById('modal-reposicao').classList.add('hidden');
+    produtoReposicaoAtual = null;
+}
+
+// =====================================================================
+// CALCULAR CUSTO EM TEMPO REAL (Chamado ao digitar a Qtd)
+// =====================================================================
+function calcularCustoReposicao() {
+    if (!produtoReposicaoAtual)
+        return;
+
+    const qtd = parseInt(document.getElementById('reposicao-qtd').value) || 0;
+    const custoTotal = qtd * produtoReposicaoAtual.custo;
+
+    document.getElementById('reposicao-custo').value = custoTotal.toFixed(2);
+}
+
+// =====================================================================
+// CONFIRMAR REPOSIÇÃO (Gera a Requisição para o Java)
+// =====================================================================
+async function confirmarReposicao() {
+    if (!produtoReposicaoAtual)
+        return;
+
+    const quantidade = parseInt(document.getElementById('reposicao-qtd').value);
+
+    if (isNaN(quantidade) || quantidade <= 0) {
+        alert("⚠️ Quantidade inválida. Digite um número maior que zero.");
+        return;
+    }
+
+    let valorSujo = document.getElementById('reposicao-custo').value;
+
+    if (!valorSujo || valorSujo.trim() === '') {
+        alert("⚠️ O Custo Total não pode ficar vazio! Digite o valor da despesa.");
+        return;
+    }
+
+    let valorLimpo = valorSujo.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    const custoTotal = parseFloat(valorLimpo);
+
+    if (isNaN(custoTotal) || custoTotal <= 0) {
+        alert("⚠️ O Custo Total calculado deu Zero ou é inválido. Verifique o valor digitado.");
+        return;
+    }
+
+    try {
+        const payloadEstoque = {
+            produtoId: produtoReposicaoAtual.id,
+            tipoMovimento: "ENTRADA",
+            quantidade: quantidade,
+            dataMovimento: new Date().toISOString()
+        };
+
+        const respEstoque = await fetch('../api/estoque/movimentar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payloadEstoque)
+        });
+
+        if (!respEstoque.ok) {
+            const erroBackend = await respEstoque.text();
+            throw new Error(`Falha no estoque. Detalhes: ${erroBackend}`);
+        }
+
+        const payloadDespesa = new URLSearchParams();
+        payloadDespesa.append('descricao', `Reposição de Estoque: ${quantidade}x ${produtoReposicaoAtual.nome}`);
+        payloadDespesa.append('valor', custoTotal.toFixed(2));
+        payloadDespesa.append('fornecedor', 'Reposição Interna');
+        payloadDespesa.append('formaPagamento', 'DINHEIRO');
+        payloadDespesa.append('status', 'PAGO');
+
+        const respDespesa = await fetch('../api/despesas/cadastrar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: payloadDespesa.toString()
+        });
+
+        if (!respDespesa.ok) {
+            alert("⚠️ O estoque foi atualizado, mas ocorreu um erro ao gerar a despesa financeira. Verifique a tela de Despesas.");
+            return;
+        }
+
+        // Tudo deu certo!
+        alert("✅ Estoque reposto e despesa gerada com sucesso!");
+
+        fecharModalReposicao(); // Fecha a tela estilizada
+
+        // Atualiza a tabela principal de estoque
+        if (typeof listarEstoque === 'function') {
+            listarEstoque();
+        }
+
+    } catch (erro) {
+        console.error("Erro na reposição:", erro);
+        alert("Erro ao tentar repor o produto: " + erro.message);
+    }
+}
+
+async function gerarRelatorioEstoque() {
+    const dados = listaEstoque;
+
+    if (dados.length === 0) {
+        alert("⚠️ Não há dados de estoque para gerar o relatório no momento.");
+        return;
+    }
+
+    const janelaPrint = window.open('', '_blank');
+
+    let html = `
+        <html>
+        <head>
+            <title>Relatório de Estoque - Cantinho do Banho</title>
+            <style>
+                @media print {
+                    @page { margin: 1cm; }
+                    body { -webkit-print-color-adjust: exact; }
+                }
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; line-height: 1.4; }
+                .header { text-align: center; border-bottom: 3px solid #C9A96E; padding-bottom: 15px; margin-bottom: 25px; }
+                .header h1 { margin: 0; color: #1a1a1a; text-transform: uppercase; letter-spacing: 2px; }
+                .header p { margin: 5px 0; color: #666; font-size: 0.9rem; }
+                
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                th { background: #1a1a1a; color: #C9A96E; padding: 12px 10px; text-align: left; font-size: 0.85rem; }
+                td { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+                tr:nth-child(even) { background: #fafafa; }
+                
+                .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+                .critico { background: #fdecea; color: #dc3545; border: 1px solid #dc3545; }
+                .ok { background: #eaf7ed; color: #28a745; border: 1px solid #28a745; }
+                
+                .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 5px; }
+                .resumo { margin-top: 20px; display: flex; gap: 20px; justify-content: flex-end; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Cantinho do Banho</h1>
+                <h2>Relatório Geral de Estoque</h2>
+                <p>Emissão: ${new Date().toLocaleString('pt-BR')}</p>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 5%">ID</th>
+                        <th style="width: 35%">Produto</th>
+                        <th style="width: 20%">Fornecedor</th>
+                        <th style="width: 10%">Qtd. Atual</th>
+                        <th style="width: 10%">Mínimo</th>
+                        <th style="width: 20%">Situação</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    let itensCriticos = 0;
+
+    dados.forEach(item => {
+        // Mapeia os campos do seu modelo (Estoque -> Produto -> Fornecedor)
+        const produto = item.produto || {};
+        const fornecedorNome = produto.fornecedor ? (produto.fornecedor.razaoSocial || produto.fornecedor.nome) : 'Não informado';
+        const isCritico = item.quantidadeAtual <= item.quantidadeMinima;
+
+        if (isCritico)
+            itensCriticos++;
+
+        html += `
+            <tr>
+                <td>#${produto.id || '---'}</td>
+                <td><strong>${produto.nome || 'Produto Sem Nome'}</strong></td>
+                <td>${fornecedorNome}</td>
+                <td style="text-align: center;">${item.quantidadeAtual}</td>
+                <td style="text-align: center;">${item.quantidadeMinima}</td>
+                <td>
+                    <span class="badge ${isCritico ? 'critico' : 'ok'}">
+                        ${isCritico ? 'Reposição Necessária' : 'Estoque Normal'}
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+
+            <div class="resumo">
+                <span>Total de Itens: ${dados.length}</span>
+                <span style="color: ${itensCriticos > 0 ? '#dc3545' : '#28a745'}">
+                    Itens Críticos: ${itensCriticos}
+                </span>
+            </div>
+
+            <div class="footer">
+                Relatório gerado por Filipe Alves Santos - Sistema Cantinho do Banho
+            </div>
+
+            <script>
+                window.onload = () => {
+                    window.print();
+                    // Opcional: window.close(); // Fecha a aba após imprimir
+                };
+            </script>
+        </body>
+        </html>
+    `;
+
+    janelaPrint.document.write(html);
+    janelaPrint.document.close();
+}

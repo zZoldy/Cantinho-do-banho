@@ -1194,6 +1194,7 @@
             <section class="page hidden" id="page-boletos">
                 <div class="page-header">
                     <h3><i class="fas fa-barcode" style="color:#C9A96E; margin-right:8px"></i> Gestão de Boletos e Lembretes</h3>
+
                     <button class="btn-primary" onclick="abrirModalBoleto()"><i class="fas fa-plus"></i> Novo Boleto</button>
                 </div>
 
@@ -1326,7 +1327,6 @@
                                     <th>Valor</th>
                                     <th>Data</th>
                                     <th>Status</th>
-                                    <th style="text-align:right">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-despesas"></tbody>
@@ -1479,6 +1479,9 @@
                 <div class="page-header">
                     <h3><i class="fas fa-boxes" style="color:#C9A96E; margin-right:8px"></i> Controle de Estoque</h3>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <button onclick="gerarRelatorioEstoque()" class="btn-relatorio" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-file-pdf"></i> Relatório de Movimentação
+                        </button>
                         <button onclick="abrirModalProduto()" style="background: #C9A96E; color: #111; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;" onmouseover="this.style.filter = 'brightness(1.1)'" onmouseout="this.style.filter = 'brightness(1)'">
                             <i class="fas fa-plus"></i> Novo Produto
                         </button>
@@ -2138,6 +2141,44 @@
             </div>
         </div>
 
+        <!-- MODAL DE REPOSIÇÃO DE ESTOQUE -->
+        <div class="modal-overlay hidden" id="modal-reposicao">
+            <div class="modal modal-sm" style="border-top: 5px solid #28a745;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-boxes" style="color: #28a745; margin-right: 8px;"></i> Repor Estoque</h3>
+                    <button type="button" onclick="fecharModalReposicao()" class="btn-fechar"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+
+                    <!-- Exibe qual produto está sendo reposto -->
+                    <p style="color: #eee; font-size: 0.95rem; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #333;">
+                        Produto: <strong id="reposicao-nome-produto" style="color: #C9A96E; font-size: 1.1rem; display: block; margin-top: 5px;"></strong>
+                    </p>
+
+                    <div class="form-group">
+                        <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Quantidade a adicionar <span style="color:red">*</span></label>
+                        <input type="number" id="reposicao-qtd" class="form-ctrl" min="1" value="1" required oninput="calcularCustoReposicao()">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Custo Total da Despesa (R$)</label>
+                        <input type="text" id="reposicao-custo" class="form-ctrl" placeholder="0,00" oninput="aplicarMascaraMoeda(this)" style="color: #dc3545; font-weight: bold; border-color: #dc3545; background: transparent;">
+                    </div>
+
+                    <p style="font-size: 0.75rem; color: #888; margin-top: 10px; text-align: center;">
+                        <i class="fas fa-info-circle"></i> Uma despesa será gerada automaticamente.
+                    </p>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="fecharModalReposicao()" class="btn-secundario">Cancelar</button>
+                    <button type="button" onclick="confirmarReposicao()" class="btn-primary" style="background:#28a745; border-color:#28a745;">
+                        <i class="fas fa-check"></i> Confirmar Reposição
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══ MODAL FORNECEDORES ═══ -->
         <div class="modal-overlay hidden" id="modal-fornecedor">
             <div class="modal" style="border-top: 5px solid #C9A96E;">
@@ -2298,11 +2339,22 @@
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <div class="field">
-                                <label class="form-label">CNPJ *</label>
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">E-mail para Alertas</label>
+                                <input type="email" id="empresa-email" class="form-ctrl" placeholder="contato@empresa.com">
+                            </div>
+                            <div class="field">
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">WhatsApp / Contato</label>
+                                <input type="text" id="empresa-whatsapp" class="form-ctrl" placeholder="(00) 00000-0000">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="field">
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">CNPJ *</label>
                                 <input type="text" id="empresa-cnpj" class="form-ctrl" placeholder="00.000.000/0000-00">
                             </div>
                             <div class="field">
-                                <label class="form-label">Inscrição Estadual</label>
+                                <label style="font-size: 0.8rem; color: #C9A96E; display: block; margin-bottom: 5px;">Inscrição Estadual</label>
                                 <input type="text" id="empresa-ie" class="form-ctrl">
                             </div>
                         </div>
@@ -2363,9 +2415,13 @@
                 <form id="form-venda" onsubmit="salvarVenda(event)">
                     <div class="modal-body">
 
-                        <div class="form-group">
+                        <div class="form-group venda-dropdown-container" style="position: relative;">
                             <label style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 5px;">Cliente (Opcional)</label>
-                            <input type="text" id="venda-cliente" class="form-ctrl" placeholder="Ex: João (Dono do Rex) ou deixe em branco">
+
+                            <input type="text" id="venda-cliente" class="form-ctrl" placeholder="Digite o nome ou busque..." autocomplete="off" oninput="filtrarClientesDropdown()" onfocus="filtrarClientesDropdown()">
+
+                            <!-- Lista que aparecerá flutuando -->
+                            <ul id="dropdown-clientes-venda" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; background: #1a1a1a; border: 1px solid #333; border-radius: 0 0 6px 6px; max-height: 220px; overflow-y: auto; z-index: 9999; box-shadow: 0 8px 15px rgba(0,0,0,0.5); padding: 0; margin: 0; list-style: none;"></ul>
                         </div>
 
                         <!-- CAMPO DE PRODUTO HÍBRIDO (COM ID OCULTO PARA O JAVA) -->
@@ -3737,25 +3793,49 @@
                         </tr>
                     `;
 
-                    // ============================================
+// ============================================
                     // 2. MONTAGEM DAS DESPESAS (Aba Contas a Pagar)
                     // ============================================
                     if (isDespesa) {
                         const fornecedor = item.fornecedor || 'Fornecedor / Diversos';
                         const descricao = item.nomeProduto ? `Compra de ${item.quantidade}x ${item.nomeProduto}` : (item.descricao || 'Despesa Geral');
 
-                        const btnPagar = status === 'PENDENTE' ? `<button class="btn-sm-primary" style="font-size:0.7rem; padding: 4px 8px;">Pagar</button>` : '';
+                        // Botão de pagar (aparece apenas se estiver PENDENTE)
+                        const btnPagar = status === 'PENDENTE'
+                                ? `<button onclick="pagarDespesa(${item.id})" style="margin-left: 10px; background: transparent; border: 1px solid #28a745; color: #28a745; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: 0.2s;" onmouseover="this.style.background='#28a745'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='#28a745';"><i class="fas fa-check"></i> Pagar</button>`
+                                : '';
 
                         htmlDespesas += `
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 12px 10px;">
-                                    <div style="font-weight: 600; color: #eee;">${fornecedor}</div>
-                                    <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">${descricao}</div>
+                            <tr style="border-bottom: 1px solid #222; transition: background 0.2s;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">
+                                
+                                <!-- COLUNA 1: FORNECEDOR / DESTINO -->
+                                <td style="padding: 15px 10px; font-weight: 600; color: #eee; font-size: 0.95rem;">
+                                    ${fornecedor}
                                 </td>
-                                <td style="padding: 12px 10px; color: #dc3545; font-weight: bold;">R$ ${valor.toFixed(2).replace('.', ',')}</td>
-                                <td style="padding: 12px 10px; color: #aaa; font-size: 0.85rem;">${dataExibicao}</td>
-                                <td style="padding: 12px 10px;"><span style="padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; ${badgeCor}">${status}</span></td>
-                                <td style="padding: 12px 10px; text-align: right;">${btnPagar}</td>
+
+                                <!-- COLUNA 2: DESCRIÇÃO -->
+                                <td style="padding: 15px 10px; color: #888; font-size: 0.85rem;">
+                                    ${descricao}
+                                </td>
+
+                                <!-- COLUNA 3: VALOR -->
+                                <td style="padding: 15px 10px; color: #dc3545; font-weight: bold; font-size: 1.05rem;">
+                                    R$ ${valor.toFixed(2).replace('.', ',')}
+                                </td>
+
+                                <!-- COLUNA 4: DATA -->
+                                <td style="padding: 15px 10px; color: #aaa; font-size: 0.9rem;">
+                                    ${dataExibicao}
+                                </td>
+
+                                <!-- COLUNA 5: STATUS -->
+                                <td style="padding: 15px 10px; display: flex; align-items: center;">
+                                    <span style="${badgeCor}">
+                                        ${status}
+                                    </span>
+                                    ${btnPagar}
+                                </td>
+
                             </tr>
                         `;
                     }
@@ -4260,6 +4340,8 @@
 
             async function carregarDadosEmpresaConfig() {
                 const resumoEl = document.getElementById('info-empresa-resumo');
+                if (!resumoEl)
+                    return;
 
                 try {
                     const response = await fetch('../api/config/empresa/obter');
@@ -4271,38 +4353,35 @@
 
                     if (!empresa.cnpj) {
                         resumoEl.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <i class="fas fa-exclamation-triangle" style="color: #ffc107; font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p style="color: #ccc;">Nenhuma empresa configurada. Clique no botão acima para cadastrar os dados fiscais.</p>
+                <div style="background: #111; border: 1px solid #C9A96E; padding: 20px; border-radius: 8px; text-align: center; color: #C9A96E;">
+                    <i class="fas fa-exclamation-circle"></i> Nenhuma empresa configurada. Clique no botão acima para cadastrar.
                 </div>`;
                         return;
                     }
 
-                    // Preenche o Resumo visual na Aba Fiscal
+                    // Renderização no tema Dark/Gold
                     resumoEl.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div>
-                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">Razão Social:</strong><br> ${empresa.razaoSocial}</p>
-                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">CNPJ:</strong><br> ${empresa.cnpj}</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #111; padding: 25px; border-radius: 12px; border: 1px solid #2a2a2a; color: #eee; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="border-right: 1px solid #333; padding-right: 15px;">
+                    <h5 style="margin: 0 0 15px 0; color: #C9A96E; font-size: 0.8rem; text-transform: uppercase;"><i class="fas fa-id-card"></i> Identificação</h5>
+                    <p style="margin: 5px 0;"><strong>Razão:</strong> ${empresa.razaoSocial}</p>
+                    <p style="margin: 5px 0;"><strong>CNPJ:</strong> ${empresa.cnpj}</p>
+                    <p style="margin: 5px 0;"><strong>Ambiente:</strong> <span style="color: ${empresa.ambiente === 1 ? '#28a745' : '#ffc107'}">${empresa.ambiente === 1 ? 'PRODUÇÃO' : 'HOMOLOGAÇÃO'}</span></p>
                 </div>
                 <div>
-                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">Inscrição Estadual:</strong><br> ${empresa.inscricaoEstadual || 'Isento'}</p>
-                    <p style="margin-bottom: 8px;"><strong style="color: #C9A96E;">Ambiente SEFAZ:</strong><br> 
-                        <span class="badge" style="background: ${empresa.ambiente === 1 ? '#28a745' : '#17a2b8'}; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem;">
-                            ${empresa.ambiente === 1 ? 'PRODUÇÃO' : 'HOMOLOGAÇÃO (Testes)'}
-                        </span>
-                    </p>
+                    <h5 style="margin: 0 0 15px 0; color: #C9A96E; font-size: 0.8rem; text-transform: uppercase;"><i class="fas fa-bullhorn"></i> Contato & Alertas</h5>
+                    <p style="margin: 5px 0;"><strong>E-mail:</strong> ${empresa.emailNotificacao || 'Não configurado'}</p>
+                    <p style="margin: 5px 0;"><strong>WhatsApp:</strong> ${empresa.whatsappContato || 'Não configurado'}</p>
+                    <p style="margin: 5px 0;"><strong>Capacidade:</strong> ${empresa.limitePorHorario} pets/hora</p>
                 </div>
             </div>
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; display: flex; align-items: center; gap: 10px; color: #888; font-size: 0.85rem;">
-                <i class="fas fa-shield-check" style="color: #28a745;"></i> 
-                Certificado Digital configurado e salvo no sistema.
+            <div style="margin-top: 15px; padding: 12px; background: rgba(201, 169, 110, 0.05); border: 1px solid #C9A96E; border-radius: 8px; color: #C9A96E; font-size: 0.85rem;">
+                <i class="fas fa-check-circle"></i> Certificado Digital carregado e operacional.
             </div>
         `;
-
                 } catch (erro) {
                     console.error(erro);
-                    resumoEl.innerHTML = `<p style="color: #dc3545;"><i class="fas fa-times"></i> Erro ao carregar dados fiscais.</p>`;
+                    resumoEl.innerHTML = `<div style="color: red;">Erro ao carregar dados fiscais.</div>`;
                 }
             }
 
@@ -4317,6 +4396,10 @@
                     document.getElementById('empresa-cert-senha').value = empresa.certificadoSenha || '';
                 if (document.getElementById('limitePorHorario'))
                     document.getElementById('limitePorHorario').value = empresa.limitePorHorario || 1;
+                if (document.getElementById('empresa-email'))
+                    document.getElementById('empresa-email').value = empresa.emailNotificacao || '';
+                if (document.getElementById('empresa-whatsapp'))
+                    document.getElementById('empresa-whatsapp').value = empresa.whatsappContato || '';
             }
 
             function abrirModalConfigEmpresa() {
@@ -4330,46 +4413,38 @@
 
             async function salvarDadosEmpresa(event) {
                 event.preventDefault();
-
                 const btn = document.querySelector('button[form="form-empresa"]');
                 const originalHTML = btn.innerHTML;
 
-                // Feedback visual
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gravando Dados...';
 
                 const formData = new FormData();
-
-                // Adicionamos os campos de texto (os nomes devem bater com o request.getParameter do Servlet)
                 formData.append('razaoSocial', document.getElementById('empresa-razao').value);
                 formData.append('cnpj', document.getElementById('empresa-cnpj').value);
                 formData.append('ie', document.getElementById('empresa-ie').value);
                 formData.append('senhaCertificado', document.getElementById('empresa-cert-senha').value);
                 formData.append('limitePorHorario', document.getElementById('limitePorHorario').value);
 
-                // Capturamos o arquivo do certificado se o usuário selecionou um novo
+                // Nomes compatíveis com o Servlet
+                formData.append('emailNotificacao', document.getElementById('empresa-email').value);
+                formData.append('whatsappContato', document.getElementById('empresa-whatsapp').value);
+
                 const certInput = document.getElementById('empresa-cert-file');
                 if (certInput.files.length > 0) {
                     formData.append('certificado', certInput.files[0]);
                 }
 
                 try {
-                    const response = await fetch('../api/config/empresa/salvar', {
-                        method: 'POST',
-                        body: formData
-                    });
-
+                    const response = await fetch('../api/config/empresa/salvar', {method: 'POST', body: formData});
                     if (response.ok) {
-                        alert("✅ Configurações fiscais atualizadas com sucesso!");
+                        alert("✅ Configurações atualizadas com sucesso!");
                         fecharModalConfigEmpresa();
-                        await carregarDadosEmpresaConfig(); // Atualiza o resumo cinza na tela
+                        await carregarDadosEmpresaConfig();
                     } else {
-                        const msgErro = await response.text();
-                        throw new Error(msgErro || "Erro desconhecido no servidor.");
+                        throw new Error(await response.text() || "Erro no servidor.");
                     }
-
                 } catch (erro) {
-                    console.error("Erro ao salvar empresa:", erro);
                     alert("Falha ao salvar: " + erro.message);
                 } finally {
                     btn.disabled = false;

@@ -39,4 +39,27 @@ public class BoletoDAO {
             em.close();
         }
     }
+
+    public void excluir(Long id) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+
+            Boleto boleto = em.find(Boleto.class, id);
+
+            if (boleto != null) {
+                em.remove(boleto);
+                em.getTransaction().commit();
+            } else {
+                em.getTransaction().rollback();
+            }
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+    }
 }

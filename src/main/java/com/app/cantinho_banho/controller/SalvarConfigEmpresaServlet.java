@@ -21,48 +21,66 @@ public class SalvarConfigEmpresaServlet extends HttpServlet {
         try {
             request.setCharacterEncoding("UTF-8");
             ConfigEmpresaDAO dao = new ConfigEmpresaDAO();
+
+            // Busca configuração existente ou cria uma nova
             ConfigEmpresa config = dao.obterConfiguracao();
             if (config == null) {
                 config = new ConfigEmpresa();
             }
-
             config.setRazaoSocial(request.getParameter("razaoSocial"));
             if (Function.isInicioBarraInvertida(config.getRazaoSocial())) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.setContentType("text/plain;charset=UTF-8");
-                response.getWriter().write("A Razão Social não pode iniciar com barra invertida.");
+                enviarRespostaErro(response, "A Razão Social não pode iniciar com barra invertida.");
                 return;
             }
+
             config.setCnpj(request.getParameter("cnpj"));
             if (Function.isInicioBarraInvertida(config.getCnpj())) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.setContentType("text/plain;charset=UTF-8");
-                response.getWriter().write("O CNPJ não pode iniciar com barra invertida.");
+                enviarRespostaErro(response, "O CNPJ não pode iniciar com barra invertida.");
                 return;
             }
 
             config.setInscricaoEstadual(request.getParameter("ie"));
-            config.setCertificadoSenha(request.getParameter("senhaCertificado"));
 
+            config.setEmailNotificacao(request.getParameter("emailNotificacao"));
+            config.setWhatsappContato(request.getParameter("whatsappContato"));
+
+            String regimeStr = request.getParameter("regimeTributario");
+            if (regimeStr != null) {
+                config.setRegimeTributario(Integer.parseInt(regimeStr));
+            }
+
+            String ambienteStr = request.getParameter("ambiente");
+            if (ambienteStr != null) {
+                config.setAmbiente(Integer.parseInt(ambienteStr));
+            }
+
+            String limiteHorarioStr = request.getParameter("limitePorHorario");
+            config.setLimitePorHorario((limiteHorarioStr != null && !limiteHorarioStr.trim().isEmpty())
+                    ? Integer.parseInt(limiteHorarioStr) : 5);
+
+            // ═══ CERTIFICADO DIGITAL ═══
+            config.setCertificadoSenha(request.getParameter("senhaCertificado"));
             Part filePart = request.getPart("certificado");
             if (filePart != null && filePart.getSize() > 0) {
                 byte[] bytes = filePart.getInputStream().readAllBytes();
                 config.setCertificadoPfx(bytes);
             }
 
-            String limiteHorarioStr = request.getParameter("limitePorHorario");
-            if (limiteHorarioStr != null && !limiteHorarioStr.trim().isEmpty()) {
-                config.setLimitePorHorario(Integer.parseInt(limiteHorarioStr));
-            } else {
-                config.setLimitePorHorario(5);
-            }
-
+            // PERSISTÊNCIA E NOTIFICAÇÃO
             dao.salvar(config);
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosConfigEmpresa();
-            response.setStatus(200);
+
+            response.setStatus(HttpServletResponse.SC_OK);
+
         } catch (Exception e) {
-            response.setStatus(500);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             e.printStackTrace();
         }
+    }
+
+    private void enviarRespostaErro(HttpServletResponse response, String mensagem) throws IOException {
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        response.setContentType("text/plain;charset=UTF-8");
+        response.getWriter().write(mensagem);
     }
 }

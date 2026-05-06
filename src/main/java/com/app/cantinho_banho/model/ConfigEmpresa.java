@@ -24,18 +24,25 @@ public class ConfigEmpresa implements Serializable {
     private String inscricaoEstadual;
     private String inscricaoMunicipal;
 
+    // Novos campos para Contato e Alertas
+    private String emailNotificacao;
+    private String whatsappContato;
+
     @Lob
     private byte[] certificadoPfx;
     private String certificadoSenha;
-    private Integer ambiente;
+
+    private Integer ambiente; // 1-Produção, 2-Homologação
+    private Integer regimeTributario; // 1-Simples, 3-Normal
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "endereco_id")
     private Endereco endereco;
 
-    @Column(name = "limite_por_horario", columnDefinition = "INT DEFAULT 3")
-    private int limitePorHorario = 3;
+    @Column(name = "limite_por_horario")
+    private Integer limitePorHorario = 5;
 
+    // --- GETTERS E SETTERS ---
     public Long getId() {
         return id;
     }
@@ -84,6 +91,22 @@ public class ConfigEmpresa implements Serializable {
         this.inscricaoMunicipal = inscricaoMunicipal;
     }
 
+    public String getEmailNotificacao() {
+        return emailNotificacao;
+    }
+
+    public void setEmailNotificacao(String emailNotificacao) {
+        this.emailNotificacao = emailNotificacao;
+    }
+
+    public String getWhatsappContato() {
+        return whatsappContato;
+    }
+
+    public void setWhatsappContato(String whatsappContato) {
+        this.whatsappContato = whatsappContato;
+    }
+
     public byte[] getCertificadoPfx() {
         return certificadoPfx;
     }
@@ -108,6 +131,14 @@ public class ConfigEmpresa implements Serializable {
         this.ambiente = ambiente;
     }
 
+    public Integer getRegimeTributario() {
+        return regimeTributario;
+    }
+
+    public void setRegimeTributario(Integer regimeTributario) {
+        this.regimeTributario = regimeTributario;
+    }
+
     public Endereco getEndereco() {
         return endereco;
     }
@@ -115,13 +146,12 @@ public class ConfigEmpresa implements Serializable {
     public void setEndereco(Endereco endereco) {
         this.endereco = endereco;
     }
-    
-    public int getLimitePorHorario() {
+
+    public Integer getLimitePorHorario() {
         return limitePorHorario;
     }
 
-    public void setLimitePorHorario(int limitePorHorario) {
+    public void setLimitePorHorario(Integer limitePorHorario) {
         this.limitePorHorario = limitePorHorario;
     }
-
 }

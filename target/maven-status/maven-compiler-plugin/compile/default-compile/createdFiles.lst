@@ -24,6 +24,7 @@ com\app\cantinho_banho\controller\ConcluirAgendamentoServlet.class
 com\app\cantinho_banho\controller\CadastrarProdutoServlet.class
 com\app\cantinho_banho\controller\ResetSenhaServlet.class
 com\app\cantinho_banho\controller\ExcluirDespesaServlet.class
+com\app\cantinho_banho\controller\ExcluirBoletoServlet.class
 com\app\cantinho_banho\controller\LoginServlet.class
 com\app\cantinho_banho\controller\AgendamentoServlet.class
 com\app\cantinho_banho\controller\ListarPacotesServlet.class
