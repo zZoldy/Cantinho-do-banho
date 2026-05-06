@@ -31,6 +31,9 @@ public class Venda implements Serializable {
     @Column(name = "data_venda")
     private LocalDateTime dataVenda;
 
+    @Column(name = "nf_emitida", columnDefinition = "boolean default false")
+    private boolean nfEmitida = false;
+
     public Long getId() {
         return id;
     }
@@ -85,5 +88,13 @@ public class Venda implements Serializable {
 
     public void setDataVenda(LocalDateTime dataVenda) {
         this.dataVenda = dataVenda;
+    }
+
+    public boolean isNfEmitida() {
+        return nfEmitida;
+    }
+
+    public void setNfEmitida(boolean nfEmitida) {
+        this.nfEmitida = nfEmitida;
     }
 }

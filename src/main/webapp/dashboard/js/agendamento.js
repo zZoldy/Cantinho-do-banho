@@ -108,7 +108,6 @@ async function carregarAgendaDoBanco(silencioso = false) {
             if (elementoParaFocar) {
                 elementoParaFocar.focus(); // Devolve o clique/foco
 
-                // Devolve a posição do cursor (para o admin não perder o que estava digitando no meio da palavra)
                 if (cursorInicio !== null && cursorFim !== null) {
                     try {
                         elementoParaFocar.setSelectionRange(cursorInicio, cursorFim);
@@ -655,7 +654,8 @@ function renderRecusados() {
     const busca = (document.getElementById('busca-recusados')?.value || '').toLowerCase();
     const el = document.getElementById('lista-recusados');
 
-    if (!el) return;
+    if (!el)
+        return;
 
     // Filtra a lista global 'recusados' (que deve ser alimentada junto com os pendentes no websocket/fetch)
     const lista = recusados.filter(a => {
@@ -667,7 +667,7 @@ function renderRecusados() {
         // Ordena dos mais recentes para os mais antigos
         const dhA = (a.data || '') + (a.hora || '');
         const dhB = (b.data || '') + (b.hora || '');
-        return dhB.localeCompare(dhA); 
+        return dhB.localeCompare(dhA);
     });
 
     if (!lista.length) {
@@ -721,14 +721,12 @@ function renderFinalizados() {
     const buscaPet = (document.getElementById('filtro-pet-fin')?.value || '').toLowerCase();
     const ordem = document.getElementById('ordenacao-finalizados')?.value || 'desc';
 
-    // Puxa do array histórico global do sistema
     const listaHistorico = typeof historico !== 'undefined' ? historico : [];
 
     const lista = listaHistorico.filter(a => {
         const nomeDono = (a.dono || '').toLowerCase();
         const nomePet = (a.pet || '').toLowerCase();
 
-        // Verifica se o texto digitado bate com o cliente E com o pet
         const matchCliente = nomeDono.includes(buscaCliente);
         const matchPet = nomePet.includes(buscaPet);
 
@@ -752,7 +750,6 @@ function renderFinalizados() {
     }
 
     el.innerHTML = lista.map(a => {
-        // Formatação da data
         let dataLimpa = a.data || '';
         if (dataLimpa.includes('T'))
             dataLimpa = dataLimpa.split('T')[0];
@@ -766,14 +763,13 @@ function renderFinalizados() {
         const funcionario = (a.funcionario && a.funcionario !== 'null') ? a.funcionario : 'Não informado';
         const formaPag = (a.formaPag || a.forma_pagamento || 'Não informada').replace('_', ' ');
 
-        // Link do WhatsApp
         let linkWhats = '<span style="opacity: 0.5;"><i class="fas fa-phone-slash"></i> S/ Contato</span>';
         if (a.contato) {
             const numeroLimpo = typeof cleanTel === 'function' ? cleanTel(a.contato) : a.contato.replace(/\D/g, '');
             linkWhats = `<a href="https://wa.me/55${numeroLimpo}" target="_blank" style="color:#25d366; text-decoration: none;"><i class="fab fa-whatsapp"></i> ${a.contato}</a>`;
         }
 
-        // === MAPEAMENTO DOS HORÁRIOS DO SEU JSON ===
+        // === MAPEAMENTO DOS HORÁRIOS ===
         const horaAgendada = a.hora || '--:--';
         const horaEntrada = a.entrada_pet || '--:--';
         const horaSaida = a.saida_pet || '--:--';
@@ -819,16 +815,24 @@ function renderFinalizados() {
                     </div>
                 </div>
 
-                <div style="margin-top: 12px; display: flex; gap: 20px; font-size: 0.85rem; padding-left: 5px;">
-                    <div style="color: #aaa;">
-                        <i class="fas fa-sign-in-alt" style="color: #C9A96E; margin-right: 4px;"></i> Chegada Real: <span style="color:#eee; font-weight:600;">${horaEntrada}</span>
+                ${a.obs ? `<div style="margin-top: 12px; font-size: 0.85rem; color: #aaa; font-style: italic; border-left: 2px solid #C9A96E; padding-left: 8px;"><i class="fas fa-info-circle" style="color:#C9A96E; margin-right:4px;"></i>${a.obs}</div>` : ''}
+
+                <!-- RODAPÉ DO CARD COM HORÁRIOS E BOTÃO PDF -->
+                <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; padding-left: 5px; border-top: 1px dashed #333; padding-top: 12px;">
+                    <div style="display: flex; gap: 20px; font-size: 0.85rem;">
+                        <div style="color: #aaa;">
+                            <i class="fas fa-sign-in-alt" style="color: #C9A96E; margin-right: 4px;"></i> Chegada: <span style="color:#eee; font-weight:600;">${horaEntrada}</span>
+                        </div>
+                        <div style="color: #aaa;">
+                            <i class="fas fa-sign-out-alt" style="color: #28a745; margin-right: 4px;"></i> Saída: <span style="color:#eee; font-weight:600;">${horaSaida}</span>
+                        </div>
                     </div>
-                    <div style="color: #aaa;">
-                        <i class="fas fa-sign-out-alt" style="color: #28a745; margin-right: 4px;"></i> Saída Real: <span style="color:#eee; font-weight:600;">${horaSaida}</span>
+                    <div>
+                        <button onclick="gerarComprovanteAgendamento(${a.id}); event.stopPropagation();" title="Imprimir Comprovante do Serviço" style="background: none; border: 1px solid rgb(51, 51, 51); color: rgb(136, 136, 136); border-radius: 6px; padding: 5px 10px; font-size: 0.72rem; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.borderColor = '#C9A96E';this.style.color = '#C9A96E'" onmouseout="this.style.borderColor = '#333';this.style.color = '#888'">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
                     </div>
                 </div>
-                
-                ${a.obs ? `<div style="margin-top: 12px; font-size: 0.85rem; color: #aaa; font-style: italic; border-left: 2px solid #C9A96E; padding-left: 8px;"><i class="fas fa-info-circle" style="color:#C9A96E; margin-right:4px;"></i>${a.obs}</div>` : ''}
             </div>
         `;
     }).join('');
@@ -1400,9 +1404,157 @@ function aplicarMascaraMoeda(input) {
     input.value = v;
 }
 
+// =====================================================================
+// MÓDULO DE RELATÓRIOS EM PDF: COMPROVANTE DE AGENDAMENTO
+// =====================================================================
+
+function gerarComprovanteAgendamento(idAgendamento) {
+    const todosServicos = (typeof historico !== 'undefined' && typeof agenda !== 'undefined') ? [...historico, ...agenda] : [];
+    
+    const agendamento = todosServicos.find(a => String(a.id) === String(idAgendamento));
+
+    if (!agendamento) {
+        alert("Agendamento não encontrado para gerar o PDF.");
+        return;
+    }
+
+    // 2. Formatação dos Dados
+    let dataLimpa = agendamento.data || agendamento.concluidoEm || '';
+    if (dataLimpa.includes('T')) dataLimpa = dataLimpa.split('T')[0];
+    const dataFmt = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
+    
+    const horaFmt = agendamento.hora ? agendamento.hora.substring(0, 5) : '--:--';
+    const horaEntrada = agendamento.entrada_pet ? agendamento.entrada_pet.substring(0, 5) : '--:--';
+    const horaSaida = agendamento.saida_pet ? agendamento.saida_pet.substring(0, 5) : '--:--';
+    
+    let valorFloat = parseFloat(String(agendamento.valor || agendamento.preco || agendamento.total || 0).replace(',', '.'));
+    const statusReal = (agendamento.statusPag || agendamento.status_pagamento || agendamento.status || 'Pendente').toUpperCase();
+    
+    const isPacote = agendamento.vendaPacote || agendamento.pacoteNome || agendamento.pacoteId || agendamento.pacote ||
+                     (agendamento.formaPagamento && String(agendamento.formaPagamento).toLowerCase().includes('pacote')) || 
+                     (agendamento.formaPag && String(agendamento.formaPag).toLowerCase().includes('pacote')) ||
+                     (valorFloat === 0 && (statusReal === 'PAGO' || statusReal === 'CONCLUÍDO' || statusReal === 'CONCLUIDO'));
+
+    const valorExibicao = isPacote ? 'Pago via Pacote' : `R$ ${valorFloat.toFixed(2).replace('.', ',')}`;
+    const func = agendamento.funcionario && String(agendamento.funcionario) !== 'null' ? agendamento.funcionario : 'Não atribuído';
+    const obs = agendamento.obs && agendamento.obs.trim() !== '' ? agendamento.obs : 'Nenhuma observação registrada.';
+
+    let formaPagExibicao = '';
+    if (isPacote) {
+        const nomeDoPacote = agendamento.pacoteNome || agendamento.pacote || 'Pacote Promocional';
+        const sessaoUtilizada = agendamento.sessaoUtilizada || agendamento.sessao || '?';
+        
+        let dataCompra = agendamento.dataVenda || agendamento.dataCompra || agendamento.dataVendaPacote || '';
+        if (dataCompra.includes('T')) dataCompra = dataCompra.split('T')[0];
+        let dataCompraFmt = dataCompra ? (typeof fd === 'function' ? fd(dataCompra) : dataCompra.split('-').reverse().join('/')) : 'Não identificada';
+
+        formaPagExibicao = `
+            Pacote: ${nomeDoPacote}<br>
+            <span style="font-size: 11px; color: #666; font-weight: normal; margin-top: 4px; display: inline-block;">
+                <i class="far fa-calendar-alt"></i> Aquisição: ${dataCompraFmt} <br>
+                <i class="fas fa-check-circle" style="color: #17a2b8; margin-top: 2px;"></i> Sessão Utilizada: ${sessaoUtilizada}
+            </span>
+        `;
+    } else {
+        const formaOriginal = agendamento.formaPag || agendamento.formaPagamento || 'Não informada';
+        formaPagExibicao = formaOriginal.replace('_', ' ');
+    }
+
+    let body = `
+        <div class="ph">
+            <div class="pt">🐾 Cantinho do Banho</div>
+            <div class="ps">Comprovante de Atendimento · #${agendamento.id || 'S/N'}</div>
+        </div>
+        
+        <div style="background:#f8f6f2; border-radius:7px; padding:16px; margin-bottom:20px; border:1px solid #e8e0d0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                    <td style="padding: 6px 0; border-bottom: 1px dashed #ddd; width: 50%;">
+                        <strong style="color: #555;">Tutor:</strong> <br>
+                        <span style="font-size: 15px; color: #111; font-weight: bold;">${agendamento.dono || agendamento.cliente || 'Consumidor'}</span>
+                    </td>
+                    <td style="padding: 6px 0; border-bottom: 1px dashed #ddd; width: 50%;">
+                        <strong style="color: #555;">Pet:</strong> <br>
+                        <span style="font-size: 15px; color: #C9A96E; font-weight: bold;">🐾 ${agendamento.pet || 'Não informado'}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0 6px 0; border-bottom: 1px dashed #ddd; width: 50%;">
+                        <strong style="color: #555;">Data do Agendamento:</strong> <br>
+                        ${dataFmt} às ${horaFmt}
+                    </td>
+                    <td style="padding: 10px 0 6px 0; border-bottom: 1px dashed #ddd; width: 50%;">
+                        <strong style="color: #555;">Profissional:</strong> <br>
+                        ${func}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0 0 0; width: 50%;">
+                        <strong style="color: #555;"><i class="fas fa-sign-in-alt" style="color: #C9A96E;"></i> Entrada Real do Pet:</strong> <br>
+                        <strong style="color: #111;">${horaEntrada}</strong>
+                    </td>
+                    <td style="padding: 10px 0 0 0; width: 50%;">
+                        <strong style="color: #555;"><i class="fas fa-sign-out-alt" style="color: #28a745;"></i> Saída Real do Pet:</strong> <br>
+                        <strong style="color: #111;">${horaSaida}</strong>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="sec">Detalhes do Serviço</div>
+        
+        <table style="margin-bottom: 15px;">
+            <thead>
+                <tr>
+                    <th>Descrição do Serviço</th>
+                    <th style="text-align: right;">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 12px 8px;">
+                        <strong style="font-size: 14px;">${agendamento.servico || 'Serviço Geral'}</strong>
+                    </td>
+                    <td style="text-align: right; padding: 12px 8px; font-weight: bold; font-size: 14px;">
+                        ${valorExibicao}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-bottom: 20px; background: #fff8e6; border: 1px solid #ffeeba; padding: 12px; border-radius: 6px;">
+            <strong style="font-size: 11px; color: #7a5a00; text-transform: uppercase;">Observações do Agendamento:</strong>
+            <p style="font-size: 12.5px; color: #555; margin-top: 4px; margin-bottom: 0;">${obs}</p>
+        </div>
+
+        <div style="background: #fafaf8; padding: 15px; border-radius: 6px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span style="display: block; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Forma de Pagamento</span>
+                <strong style="color: #333; font-size: 13px;">${formaPagExibicao}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: block; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Status</span>
+                <span class="${(statusReal === 'PAGO' || statusReal === 'CONCLUÍDO') ? 'bv' : 'ba'}" style="font-size: 12px; display: inline-block;">${statusReal}</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center; color: #888; font-size: 11px; border-top: 1px solid #eee; padding-top: 15px;">
+            Documento gerado em ${new Date().toLocaleString('pt-BR')} <br>
+            <strong>🐾 Cantinho do Banho</strong> - Agradecemos a preferência!
+        </div>
+    `;
+
+    if(typeof pdfWin === 'function') {
+        pdfWin('Comprovante_Servico_' + agendamento.id, body);
+    } else {
+        alert("Função de PDF não encontrada.");
+    }
+}
+
 // ==========================================
 // VALIDADOR GLOBAL DE PACOTES
 // ==========================================
+
 function verificarPacoteValido(nomeDono, nomeServicoAgendado) {
     // 1. Acha o cliente na base global
     const cli = listaClientes.find(c => c.nome === nomeDono);
@@ -1422,6 +1574,7 @@ function verificarPacoteValido(nomeDono, nomeServicoAgendado) {
 
     return temPacoteValido;
 }
+
 // ═══════════════════════════════════════════════════
 // NOVOS PEDIDOS
 // ═══════════════════════════════════════════════════
@@ -1556,8 +1709,6 @@ async function listarServico() {
         console.error("Erro ao carregar estoque:", e);
     }
 }
-
-// ================= MODAL DE SERVIÇOS (LÓGICA REAL) =================
 
 function abrirModalServico(id = null) {
     const inputId = document.getElementById('id-servico');

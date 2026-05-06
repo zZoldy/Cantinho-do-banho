@@ -142,4 +142,17 @@ public class AtualizacaoWebSocket {
             }
         }
     }
+    
+        public static void notificarTodosVenda() {
+        for (Session s : sessoes) {
+            if (s.isOpen()) {
+                try {
+                    s.getBasicRemote().sendText("ATUALIZAR_VENDA");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
 }

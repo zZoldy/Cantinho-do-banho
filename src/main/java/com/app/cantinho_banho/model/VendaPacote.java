@@ -1,11 +1,12 @@
 package com.app.cantinho_banho.model;
 
+import java.io.Serializable;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "vendas_pacotes")
-public class VendaPacote {
+public class VendaPacote implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

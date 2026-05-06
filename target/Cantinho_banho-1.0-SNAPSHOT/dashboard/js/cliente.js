@@ -231,29 +231,57 @@ function renderPetsHistorico() {
     if (!el)
         return;
 
+    // Busca as listas globais
     const listaHistorico = typeof historico !== 'undefined' ? historico : [];
+    const listaAgenda = typeof agenda !== 'undefined' ? agenda : [];
+    const vendasPacotes = typeof listaVendasPacotes !== 'undefined' ? listaVendasPacotes : (typeof window.listaVendasPacotes !== 'undefined' ? window.listaVendasPacotes : []);
+
+    function getQtdSessoes(compra) {
+        const pacotesBD = typeof pacotesCadastrados !== 'undefined' ? pacotesCadastrados : (typeof pacotes !== 'undefined' ? pacotes : []);
+        const pctBase = pacotesBD.find(p => p.nome === compra.pacoteNome || p.id === compra.pacoteId);
+        if (pctBase && pctBase.sessoes)
+            return parseInt(pctBase.sessoes);
+
+        const match = (compra.pacoteNome || compra.descricao || '').match(/\d+/);
+        if (match)
+            return parseInt(match[0]);
+        return 4; // Padrão
+    }
 
     const petsMap = {};
 
-
-    listaHistorico.forEach(a => {
+    // 1. Agrupar Agendamentos e Histórico
+    [...listaHistorico, ...listaAgenda].forEach(a => {
         const nomePet = a.pet || 'Sem nome';
         const nomeDono = a.dono || 'Sem dono';
         const key = `${nomePet}-${nomeDono}`;
 
         if (!petsMap[key]) {
-            petsMap[key] = {
-                pet: nomePet,
-                dono: nomeDono,
-                agendamentos: []
-            };
+            petsMap[key] = {pet: nomePet, dono: nomeDono, agendamentos: []};
         }
-        petsMap[key].agendamentos.push(a);
+
+        let valorFloat = parseFloat(String(a.valor || a.preco || a.total || 0).replace(',', '.'));
+        const statusReal = (a.statusPag || a.status_pagamento || a.status || '').toUpperCase();
+
+        const isPacote = a.vendaPacote || a.pacoteNome || a.pacoteId || a.pacote ||
+                (a.formaPagamento && String(a.formaPagamento).toLowerCase().includes('pacote')) ||
+                (a.formaPag && String(a.formaPag).toLowerCase().includes('pacote')) ||
+                (valorFloat === 0 && (statusReal === 'PAGO' || statusReal === 'CONCLUÍDO' || statusReal === 'CONCLUIDO'));
+
+        petsMap[key].agendamentos.push({
+            dataRaw: a.data || a.concluidoEm || '',
+            hora: a.hora || '',
+            servico: a.servico || 'Serviço',
+            valor: isPacote ? 0 : valorFloat,
+            isPacote: isPacote,
+            sessao: a.sessaoUtilizada || a.sessao || '?',
+            pacoteNome: a.pacoteNome || 'Pacote Vinculado',
+            // CAPTURA A DATA DE COMPRA DO PACOTE SALVA NO AGENDAMENTO!
+            dataCompraPacote: a.dataVenda || a.dataCompra || a.dataVendaPacote || ''
+        });
     });
 
-    const listaPets = Object.values(petsMap).filter(p => {
-        return p.pet.toLowerCase().includes(busca) || p.dono.toLowerCase().includes(busca);
-    });
+    const listaPets = Object.values(petsMap).filter(p => p.pet.toLowerCase().includes(busca) || p.dono.toLowerCase().includes(busca));
 
     if (!listaPets.length) {
         el.innerHTML = `
@@ -265,122 +293,384 @@ function renderPetsHistorico() {
     }
 
     el.innerHTML = listaPets.map(p => {
-        p.agendamentos.sort((a, b) => {
-            const dhB = (b.data || '') + (b.hora || '');
-            const dhA = (a.data || '') + (a.hora || '');
+        const nomeDono = p.dono.toLowerCase();
+        const nomePet = p.pet.toLowerCase();
+
+        // A. Pega as compras de pacotes RECENTES/ATIVOS associadas a este pet
+        const comprasPet = vendasPacotes.filter(v => {
+            const donoVenda = (v.clienteNome || v.cliente || v.dono || '').toLowerCase();
+            const petVenda = (v.pet || v.nomePet || v.petNome || '').toLowerCase();
+            const valorReal = parseFloat(String(v.valor || v.valorTotal || v.preco || 0).replace(',', '.'));
+            return donoVenda === nomeDono && (petVenda === '' || petVenda === nomePet) && valorReal > 0;
+        }).sort((a, b) => {
+            const dtA = a.data || a.dataVenda || a.dataCompra || '';
+            const dtB = b.data || b.dataVenda || b.dataCompra || '';
+            return dtA.localeCompare(dtB);
+        });
+
+        // B. Pega as sessões usadas por este pet
+        const sessoesUsadasPet = p.agendamentos.filter(a => a.isPacote).sort((a, b) => {
+            const dtA = (a.dataRaw || '') + (a.hora || '');
+            const dtB = (b.dataRaw || '') + (b.hora || '');
+            return dtA.localeCompare(dtB);
+        });
+
+        let sessoesRestantes = [...sessoesUsadasPet];
+
+        // C. Monta os Cards de PACOTES RECENTES (Com sessões disponíveis e usadas)
+        let pacotesHtml = comprasPet.map((compra, index) => {
+            let dataCompra = compra.data || compra.dataVenda || compra.dataCompra || '';
+            if (dataCompra.includes('T'))
+                dataCompra = dataCompra.split('T')[0];
+            let dataFmt = typeof fd === 'function' ? fd(dataCompra) : dataCompra.split('-').reverse().join('/');
+
+            let nomePacote = compra.pacoteNome || compra.descricao || 'Pacote Promocional';
+            let valorReal = parseFloat(String(compra.valor || compra.valorTotal || compra.preco || 0).replace(',', '.'));
+            let valorFmt = valorReal.toFixed(2).replace('.', ',');
+            let qtdSessoes = getQtdSessoes(compra);
+
+            let sessoesDestePacote = sessoesRestantes.splice(0, qtdSessoes);
+
+            let sessoesHtml = '';
+            for (let i = 0; i < qtdSessoes; i++) {
+                if (sessoesDestePacote[i]) {
+                    let s = sessoesDestePacote[i];
+                    let dtUso = s.dataRaw || '';
+                    if (dtUso.includes('T'))
+                        dtUso = dtUso.split('T')[0];
+                    let dtUsoFmt = typeof fd === 'function' ? fd(dtUso) : dtUso.split('-').reverse().join('/');
+                    let hrUso = s.hora ? s.hora.substring(0, 5) : '';
+
+                    sessoesHtml += `
+                        <div style="font-size: 0.85rem; color: #ddd; margin-bottom:6px; display:flex; align-items:center; gap:8px; background: rgba(23, 162, 184, 0.1); padding: 8px 12px; border-radius: 4px; border-left: 2px solid #17a2b8;">
+                            <i class="fas fa-check-circle" style="color:#17a2b8; font-size:1rem;"></i> 
+                            <span><strong>Sessão ${s.sessao} utilizada:</strong> ${s.servico} em ${dtUsoFmt} ${hrUso ? 'às ' + hrUso : ''}</span>
+                        </div>`;
+                } else {
+                    sessoesHtml += `
+                        <div style="font-size: 0.85rem; color: #666; margin-bottom:6px; display:flex; align-items:center; gap:8px; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 4px; border: 1px dashed #333;">
+                            <i class="far fa-circle" style="font-size:1rem;"></i> 
+                            <span><strong>Sessão ${i + 1}:</strong> Disponível para uso</span>
+                        </div>`;
+                }
+            }
+
+            return `
+                <div style="background: #111; border: 1px solid #2a2a2a; border-left: 4px solid #28a745; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
+                        <div>
+                            <span style="color:#28a745; font-weight:800; font-size:1.05rem; display:block; margin-bottom:2px;"><i class="fas fa-box-open"></i> ${nomePacote}</span>
+                            <span style="color:#666; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;">Compra Ativa / Recente</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="color:#888; font-size:0.8rem; display:block;"><i class="far fa-calendar-alt"></i> Comprado em <strong style="color:#ddd;">${dataFmt}</strong></span>
+                            <span style="color:#28a745; font-size:0.95rem; font-weight:bold;">R$ ${valorFmt}</span>
+                        </div>
+                    </div>
+                    <div style="border-top: 1px dashed #333; padding-top: 12px;">
+                        ${sessoesHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // --- LÓGICA NOVA: AGRUPANDO OS PACOTES ANTERIORES E CONCLUÍDOS ---
+        if (sessoesRestantes.length > 0) {
+
+            // Agrupa as sessões restantes pela Chave: "Nome do Pacote + Data de Compra"
+            const pacotesAntigosObj = {};
+
+            sessoesRestantes.forEach(s => {
+                const pNome = (s.pacoteNome && s.pacoteNome !== 'Pacote Vinculado') ? s.pacoteNome : 'Pacote Anterior (Legado)';
+                const pData = s.dataCompraPacote || 'indisponivel';
+                const chaveAgrupamento = `${pNome}|${pData}`;
+
+                if (!pacotesAntigosObj[chaveAgrupamento]) {
+                    pacotesAntigosObj[chaveAgrupamento] = {
+                        nome: pNome,
+                        dataCompraOriginal: s.dataCompraPacote,
+                        sessoes: []
+                    };
+                }
+                pacotesAntigosObj[chaveAgrupamento].sessoes.push(s);
+            });
+
+            // Ordena os pacotes antigos pela data de compra
+            const pacotesAntigosArray = Object.values(pacotesAntigosObj).sort((a, b) => {
+                const dA = a.dataCompraOriginal || '';
+                const dB = b.dataCompraOriginal || '';
+                return dA.localeCompare(dB);
+            });
+
+            // Cria os sub-cards estruturados para cada pacote antigo
+            let sessoesAvulsasHtml = pacotesAntigosArray.map(pacote => {
+
+                let dataFmt = 'Data não registrada';
+                if (pacote.dataCompraOriginal && pacote.dataCompraOriginal !== 'indisponivel') {
+                    let d = pacote.dataCompraOriginal;
+                    if (d.includes('T'))
+                        d = d.split('T')[0];
+                    else if (d.includes(' '))
+                        d = d.split(' ')[0];
+                    dataFmt = typeof fd === 'function' ? fd(d) : d.split('-').reverse().join('/');
+                }
+
+                // Cria as linhas de sessão utilizadas para este pacote específico
+                const htmlSessoesDestePacote = pacote.sessoes.map(s => {
+                    let dtUso = s.dataRaw || '';
+                    if (dtUso.includes('T'))
+                        dtUso = dtUso.split('T')[0];
+                    let dtUsoFmt = typeof fd === 'function' ? fd(dtUso) : dtUso.split('-').reverse().join('/');
+                    let hrUso = s.hora ? s.hora.substring(0, 5) : '';
+
+                    return `
+                        <div style="font-size: 0.85rem; color: #ddd; margin-bottom:6px; display:flex; align-items:center; gap:8px; background: rgba(23, 162, 184, 0.1); padding: 8px 12px; border-radius: 4px; border-left: 2px solid #17a2b8;">
+                            <i class="fas fa-check-circle" style="color:#17a2b8; font-size:1rem;"></i> 
+                            <span><strong>Sessão ${s.sessao}:</strong> ${s.servico} em ${dtUsoFmt} ${hrUso ? 'às ' + hrUso : ''}</span>
+                        </div>`;
+                }).join('');
+
+                // Desenha a caixa do Pacote Antigo
+                return `
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid #333; border-left: 3px solid #17a2b8; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                        <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start;">
+                            <span style="color:#17a2b8; font-weight:700; font-size:0.95rem; display:flex; align-items:center; gap:6px;">
+                                <i class="fas fa-box"></i> ${pacote.nome}
+                            </span>
+                            <span style="color:#666; font-size:0.75rem; text-align:right;">
+                                <i class="far fa-calendar-alt"></i> Aquisição: <strong style="color:#888;">${dataFmt}</strong>
+                            </span>
+                        </div>
+                        <div style="border-top: 1px dashed #333; padding-top: 10px;">
+                            ${htmlSessoesDestePacote}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Adiciona a seção ao bloco de Pacotes HTML Global
+            pacotesHtml += `
+                <div style="background: #111; border: 1px solid #2a2a2a; border-left: 4px solid #17a2b8; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+                    <div style="margin-bottom: 12px;">
+                        <span style="color:#17a2b8; font-weight:800; font-size:1.05rem; display:block; margin-bottom:2px;"><i class="fas fa-history"></i> Histórico de Serviços com Pacote</span>
+                        <span style="color:#666; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;">Pacotes anteriores ou já concluídos</span>
+                    </div>
+                    <div style="padding-top: 6px;">
+                        ${sessoesAvulsasHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!pacotesHtml)
+            pacotesHtml = '<div style="padding:15px; background:#111; border:1px solid #222; border-radius:8px; text-align:center; color:#666; font-size:0.85rem;"><i class="fas fa-info-circle"></i> Nenhum pacote adquirido por este tutor.</div>';
+
+        // --- FIM DA LÓGICA DE PACOTES ---
+
+        // Pega os serviços AVULSOS e inverte a ordem (exibe do mais novo pro antigo)
+        let avulsosPet = p.agendamentos.filter(a => !a.isPacote).sort((a, b) => {
+            const dhA = (a.dataRaw || '') + (a.hora || '');
+            const dhB = (b.dataRaw || '') + (b.hora || '');
             return dhB.localeCompare(dhA);
         });
 
-        const historicoHtml = p.agendamentos.map(a => {
-            let dataLimpa = a.data || '';
+        let avulsosHtml = avulsosPet.map(a => {
+            let dataLimpa = a.dataRaw || '';
             if (dataLimpa.includes('T'))
                 dataLimpa = dataLimpa.split('T')[0];
-
             const dataExibicao = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
-            const horaExibicao = a.hora ? a.hora.substring(0, 5) : '--:--';
+            const horaExibicao = a.hora ? a.hora.substring(0, 5) : '';
+            const valorFmt = parseFloat(a.valor || 0).toFixed(2).replace('.', ',');
 
-            let dataVendaFmt = null;
-            if (a.dataVenda) {
-                let strData = a.dataVenda; // Ex: "2026-05-04T21:24:31..."
-                let apenasData = strData;
-                let apenasHora = "";
-
-                // Se tiver o "T", separamos a data da hora
-                if (strData.includes('T')) {
-                    const partes = strData.split('T');
-                    apenasData = partes[0];
-                    apenasHora = partes[1].substring(0, 5); // Pega só o "21:24"
-                } else if (strData.includes(' ')) {
-                    const partes = strData.split(' ');
-                    apenasData = partes[0];
-                    apenasHora = partes[1].substring(0, 5);
-                }
-
-                // Formata a data para o padrão DD/MM/YYYY
-                const dataFormatada = typeof fd === 'function' ? fd(apenasData) : apenasData.split('-').reverse().join('/');
-
-                // Junta a data com a hora (se a hora existir)
-                dataVendaFmt = apenasHora ? `${dataFormatada} às ${apenasHora}` : dataFormatada;
-            }
-            const formaPag = a.formaPag || a.forma_pagamento || "";
-            const sessao = a.sessaoUtilizada;
-
-            const isPacote = (sessao !== null && sessao !== undefined && sessao !== "") || formaPag === "Pacote";
-
-            const dotStyle = `position: absolute; left: -9px; top: 0; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #1a1a1a;`;
-
-            if (isPacote) {
-                const sessao = a.sessaoUtilizada || a.sessao || '?';
-                const nomePacote = a.pacoteNome || 'Pacote não identificado';
-
-                return `
-                    <div style="margin-bottom: 25px; position: relative; padding-left: 25px; border-left: 2px solid #17a2b8;">
-                        <div style="${dotStyle} background: #17a2b8;"></div>
-                        
-                        <div style="background: rgba(23, 162, 184, 0.05); border: 1px solid rgba(23, 162, 184, 0.2); border-radius: 8px; overflow: hidden;">
-                            <div style="background: #17a2b8; padding: 6px 15px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #fff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
-                                    <i class="fas fa-box-open"></i> USO DE PACOTE
-                                </span>
-                                <span style="background: #fff; color: #17a2b8; padding: 2px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 900;">
-                                    SESSÃO ${sessao}
-                                </span>
-                            </div>
-
-                            <div style="padding: 12px 15px;">
-                                <div style="color: #eee; font-size: 1.1rem; font-weight: 700; margin-bottom: 5px;">${nomePacote}</div>
-                                <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: #aaa;">
-                                    <span><i class="far fa-calendar-check" style="color: #17a2b8;"></i> <strong>Dia Utilizado:</strong> ${dataExibicao} às ${horaExibicao}</span>
-                                    ${dataVendaFmt ? `<span><i class="fas fa-shopping-cart" style="color: #17a2b8;"></i> <strong>Data da Compra:</strong> ${dataVendaFmt}</span>` : ''}
-                                </div>
-                                <div style="margin-top: 8px; font-size: 0.85rem; color: #17a2b8; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                                    <i class="fas fa-check"></i> Serviço: ${a.servico || '-'}
-                                </div>
-                            </div>
+            return `
+                <div style="margin-bottom: 12px; position: relative; padding-left: 20px; border-left: 2px solid #444;">
+                    <div style="position: absolute; left: -9px; top: 0; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #1a1a1a; background: #444;"></div>
+                    <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 10px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="color: #aaa; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Serviço Avulso</span>
+                            <span style="color: #C9A96E; font-weight: 800; font-size: 0.95rem;">R$ ${valorFmt}</span>
                         </div>
-                    </div>
-                `;
-            } else {
-                const valorFmt = parseFloat(a.valor || 0).toFixed(2).replace('.', ',');
-                return `
-                    <div style="margin-bottom: 25px; position: relative; padding-left: 25px; border-left: 2px solid #444;">
-                        <div style="${dotStyle} background: #444;"></div>
-                        
-                        <div style="background: #222; border: 1px solid #333; border-radius: 8px; padding: 12px 15px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="color: #aaa; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Serviço Avulso</span>
-                                <span style="color: #28a745; font-weight: 800; font-size: 1rem;">R$ ${valorFmt}</span>
-                            </div>
-                            <div style="color: #eee; font-weight: 600;">${a.servico}</div>
-                            <div style="font-size: 0.85rem; color: #888; margin-top: 5px;">
-                                <i class="far fa-calendar-alt"></i> Realizado em: ${dataExibicao} às ${horaExibicao}
-                            </div>
+                        <div style="color: #eee; font-weight: 600; font-size: 1rem;">${a.servico}</div>
+                        <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">
+                            <i class="far fa-calendar-alt"></i> Realizado em: ${dataExibicao} ${horaExibicao ? `às ${horaExibicao}` : ''}
                         </div>
-                    </div>
-                `;
-            }
-        }).join('');
-
-        return `
-            <div class="agenda-card" style="border-top: 4px solid #C9A96E; background: #1a1a1a; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px;">
-                <div style="display: flex; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 12px;">
-                    <div style="background: rgba(201, 169, 110, 0.1); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
-                        <i class="fas fa-paw" style="color: #C9A96E; font-size: 1.5rem;"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <h3 style="margin: 0; color: #eee; font-size: 1.2rem;">${p.pet}</h3>
-                        <div style="color: #aaa; font-size: 0.9rem; margin-top: 3px;"><i class="fas fa-user" style="color:#C9A96E;"></i> Tutor: ${p.dono}</div>
-                    </div>
-                    <div>
-                        <span class="badge" style="background: #222; color: #C9A96E; border: 1px solid #C9A96E;">${p.agendamentos.length} Atendimento(s)</span>
                     </div>
                 </div>
-                <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;" class="custom-scroll">
-                    ${historicoHtml}
+            `;
+        }).join('');
+
+        if (!avulsosHtml)
+            avulsosHtml = '<div style="padding:15px; background:#111; border:1px solid #222; border-radius:8px; text-align:center; color:#666; font-size:0.85rem;"><i class="fas fa-info-circle"></i> Nenhum serviço avulso registrado para este pet.</div>';
+
+        const btnPdf = `
+            <button onclick="gerarRelatorioPet('${p.pet}', '${p.dono}'); event.stopPropagation();" title="Gerar Prontuário em PDF do Pet" style="background: none; border: 1px solid rgb(51, 51, 51); color: rgb(136, 136, 136); border-radius: 6px; padding: 5px 10px; font-size: 0.72rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;" onmouseover="this.style.borderColor = '#C9A96E';this.style.color = '#C9A96E'" onmouseout="this.style.borderColor = '#333';this.style.color = '#888'">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+        `;
+
+        return `
+            <div class="agenda-card" style="border-top: 4px solid #C9A96E; background: #161616; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px;">
+                    <div style="display: flex; align-items: center;">
+                        <div style="background: rgba(201, 169, 110, 0.1); width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; border: 1px solid rgba(201, 169, 110, 0.3);">
+                            <i class="fas fa-paw" style="color: #C9A96E; font-size: 1.8rem;"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; color: #eee; font-size: 1.3rem;">${p.pet}</h3>
+                            <div style="color: #888; font-size: 0.95rem; margin-top: 4px;"><i class="fas fa-user" style="color:#C9A96E;"></i> Tutor: <strong style="color:#ccc;">${p.dono}</strong></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                        ${btnPdf}
+                    </div>
+                </div>
+                
+                <div style="max-height: 500px; overflow-y: auto; padding-right: 10px;" class="custom-scroll">
+                    <h4 style="color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-boxes" style="color: #28a745;"></i> Gestão de Pacotes
+                    </h4>
+                    ${pacotesHtml}
+
+                    <h4 style="color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 25px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-history" style="color: #C9A96E;"></i> Histórico de Serviços Avulsos
+                    </h4>
+                    ${avulsosHtml}
                 </div>
             </div>
         `;
     }).join('');
+}
+// =====================================================================
+// MÓDULO DE RELATÓRIOS EM PDF: PRONTUÁRIO DO PET
+// =====================================================================
+
+function gerarRelatorioPet(nomePet, nomeDono) {
+    // 1. Achar dados do Pet na lista de clientes
+    let petInfo = {tipo: 'Não informado', raca: 'Não informada', porte: 'Não informado', obs: ''};
+    let telefoneDono = 'Sem contato';
+
+    if (typeof listaClientes !== 'undefined') {
+        const cliente = listaClientes.find(c => c.nome.toLowerCase() === nomeDono.toLowerCase());
+        if (cliente) {
+            telefoneDono = cliente.telefone || 'Sem contato';
+            if (cliente.pets) {
+                const p = cliente.pets.find(x => x.nome.toLowerCase() === nomePet.toLowerCase());
+                if (p) {
+                    petInfo.tipo = p.tipo || 'Não informado';
+                    petInfo.raca = p.raca || 'Não informada';
+                    petInfo.porte = p.porte || 'Não informado';
+                    petInfo.obs = p.obs || '';
+                }
+            }
+        }
+    }
+
+    // 2. Filtrar Histórico EXCLUSIVO deste Pet
+    const todosServicos = (typeof historico !== 'undefined' && typeof agenda !== 'undefined') ? [...historico, ...agenda] : [];
+
+    const historicoPet = todosServicos.filter(a =>
+        (a.pet || '').toLowerCase() === nomePet.toLowerCase() &&
+                (a.dono || '').toLowerCase() === nomeDono.toLowerCase()
+    ).sort((a, b) => {
+        const dhA = (a.data || '') + (a.hora || '');
+        const dhB = (b.data || '') + (b.hora || '');
+        return dhB.localeCompare(dhA); // Mais recente primeiro
+    });
+
+    // 3. Totais (Calcula apenas serviços avulsos pagos - Corrigido o bug do Case Sensitive)
+    const totalGasto = historicoPet.filter(a => {
+        const statusReal = (a.statusPag || a.status_pagamento || a.status || '').toUpperCase();
+        return statusReal === 'PAGO' || statusReal === 'CONCLUÍDO' || statusReal === 'CONCLUIDO';
+    }).reduce((sum, a) => {
+        let valorFloat = parseFloat(String(a.valor || a.preco || a.total || 0).replace(',', '.'));
+
+        const isPacote = a.vendaPacote || a.pacoteNome || a.pacoteId || a.pacote ||
+                (a.formaPagamento && String(a.formaPagamento).toLowerCase().includes('pacote')) ||
+                (a.formaPag && String(a.formaPag).toLowerCase().includes('pacote')) ||
+                (valorFloat === 0 && (a.statusPag || '').toUpperCase() === 'PAGO');
+
+        return sum + (isPacote ? 0 : valorFloat);
+    }, 0);
+
+    // 4. Construir o HTML do PDF
+    let body = `<div class="ph"><div class="pt">🐾 Cantinho do Banho</div><div class="ps">Prontuário de Serviços do Pet · Emitido em ${new Date().toLocaleDateString('pt-BR')}</div></div>`;
+
+    // Bloco: Identificação
+    body += `<div style="background:#f8f6f2;border-radius:7px;padding:12px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12.5px; border:1px solid #e8e0d0;">
+                <div>
+                    <strong style="display:block;margin-bottom:2px; font-size:16px; color:#C9A96E;">🐾 ${nomePet}</strong>
+                    <span style="color:#555"><strong>Espécie/Tipo:</strong> ${petInfo.tipo}</span><br>
+                    <span style="color:#555"><strong>Raça:</strong> ${petInfo.raca}</span><br>
+                    <span style="color:#555"><strong>Porte:</strong> ${petInfo.porte}</span>
+                </div>
+                <div>
+                    <strong style="display:block;margin-bottom:2px; font-size:14px; color:#333;">👤 Tutor: ${nomeDono}</strong>
+                    <span style="color:#555">📱 ${telefoneDono}</span><br><br>
+                    <span style="color:#555"><strong>Total Gasto (Serviços Avulsos):</strong> <br><span style="color:#1a6a2a; font-size:14px; font-weight:bold;">R$ ${totalGasto.toFixed(2).replace('.', ',')}</span></span>
+                </div>
+             </div>`;
+
+    if (petInfo.obs) {
+        body += `<div style="background:#fff8e6;border-radius:6px;padding:9px 13px;font-size:12px;color:#7a5a00;margin-bottom:15px; border:1px solid #ffeeba;"><strong>⚠️ Observações Médicas / Comportamentais:</strong><br> ${petInfo.obs}</div>`;
+    }
+
+    // Bloco: Histórico
+    body += `<div class="sec">Histórico de Serviços (${historicoPet.length} registros)</div>`;
+
+    if (historicoPet.length > 0) {
+        body += `<table>
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Data</th>
+                            <th>Serviço Executado</th>
+                            <th>Profissional</th>
+                            <th style="text-align: right;">Valor / Origem</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+        historicoPet.forEach(a => {
+            let dataLimpa = a.data || '';
+            if (dataLimpa.includes('T'))
+                dataLimpa = dataLimpa.split('T')[0];
+
+            let dataFormatada = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
+            const horaFormatada = a.hora ? a.hora.substring(0, 5) : '';
+
+            let valorFloat = parseFloat(String(a.valor || 0).replace(',', '.'));
+
+            const isPacote = a.vendaPacote || a.pacoteNome || a.pacoteId || a.pacote ||
+                    (a.formaPag && String(a.formaPag).toLowerCase().includes('pacote')) ||
+                    (a.formaPagamento && String(a.formaPagamento).toLowerCase().includes('pacote')) ||
+                    (valorFloat === 0 && (a.statusPag || '').toUpperCase() === 'PAGO');
+
+            let valorFmt = '';
+
+            if (isPacote) {
+                // ILUSTRA O PACOTE E A SESSÃO AQUI!
+                const nomeDoPacote = a.pacoteNome || 'Pacote';
+                const sessaoUsada = a.sessaoUtilizada || a.sessao || '?';
+                valorFmt = `<span class="bb">USO DE PACOTE</span><br><span style="font-size:9px; color:#555; display:block; margin-top:4px;">${nomeDoPacote} (Sessão ${sessaoUsada})</span>`;
+            } else {
+                valorFmt = `<strong>R$ ${valorFloat.toFixed(2).replace('.', ',')}</strong>`;
+            }
+
+            const func = a.funcionario && a.funcionario !== 'null' ? a.funcionario : '—';
+
+            body += `<tr>
+                        <td>${dataFormatada}<br><span style="color:#888; font-size:10px;">${horaFormatada}</span></td>
+                        <td><strong>${a.servico}</strong></td>
+                        <td>${func}</td>
+                        <td style="text-align: right;">${valorFmt}</td>
+                     </tr>`;
+        });
+        body += `</tbody></table>`;
+    } else {
+        body += `<p style="color:#aaa;font-size:12px; text-align:center; padding: 20px 0;">Nenhum serviço registrado no histórico deste pet.</p>`;
+    }
+
+    if (typeof pdfWin === 'function')
+        pdfWin('Prontuário — ' + nomePet, body);
 }
 
 // ================= FLUXO DE CRIAR ACESSO (CLIENTE) =================

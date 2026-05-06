@@ -28,6 +28,7 @@ com\app\cantinho_banho\controller\LoginServlet.class
 com\app\cantinho_banho\controller\AgendamentoServlet.class
 com\app\cantinho_banho\controller\ListarPacotesServlet.class
 com\app\cantinho_banho\controller\CadastrarDespesaServlet.class
+com\app\cantinho_banho\controller\CadastrarBoletoServlet.class
 com\app\cantinho_banho\model\Despesa.class
 com\app\cantinho_banho\controller\CriarAcessoClienteServlet.class
 com\app\cantinho_banho\dao\DespesaDAO.class
@@ -36,12 +37,15 @@ com\app\cantinho_banho\controller\ListarEstoqueServlet.class
 com\app\cantinho_banho\controller\CadastroFuncionarioServlet.class
 com\app\cantinho_banho\dao\PetDAO.class
 com\app\cantinho_banho\dao\ProdutoDAO.class
+com\app\cantinho_banho\controller\AtualizarBoletoServlet.class
 com\app\cantinho_banho\model\Usuario.class
 com\app\cantinho_banho\controller\ExcluirFuncionarioServlet.class
+com\app\cantinho_banho\controller\ListarBoletosServlet.class
 com\app\cantinho_banho\model\VendaPacote.class
 com\app\cantinho_banho\controller\AtualizarFornecedorServlet.class
 com\app\cantinho_banho\model\Estoque.class
 com\app\cantinho_banho\dao\UsuarioDAO.class
+com\app\cantinho_banho\model\Boleto.class
 com\app\cantinho_banho\controller\ListarClientesServlet.class
 com\app\cantinho_banho\model\Servico.class
 com\app\cantinho_banho\controller\SalvarConfigEmpresaServlet.class
@@ -53,6 +57,7 @@ com\app\cantinho_banho\controller\ListarFuncionariosAdmServlet.class
 com\app\cantinho_banho\controller\AtualizarClienteServlet.class
 com\app\cantinho_banho\controller\ListarFornecedoresServlet.class
 com\app\cantinho_banho\controller\BaixarDespesaServlet.class
+com\app\cantinho_banho\dao\BoletoDAO.class
 com\app\cantinho_banho\controller\ConfirmarAgendamentoServlet.class
 com\app\cantinho_banho\controller\VincularPacoteServlet.class
 com\app\cantinho_banho\controller\CadastrarClienteServlet.class
@@ -70,6 +75,7 @@ com\app\cantinho_banho\controller\CadastrarPetServlet.class
 com\app\cantinho_banho\resources\Function.class
 com\app\cantinho_banho\dao\AgendamentoDAO.class
 com\app\cantinho_banho\controller\ExcluirAgendamentoServlet.class
+com\app\cantinho_banho\controller\ListarVendasManuaisServlet.class
 com\app\cantinho_banho\model\Endereco.class
 com\app\cantinho_banho\controller\AtualizarServicoServlet.class
 com\app\cantinho_banho\model\HorarioFuncionamento.class
@@ -77,6 +83,7 @@ com\app\cantinho_banho\controller\ListarHorariosServlet.class
 com\app\cantinho_banho\dao\ConfigEmpresaDAO.class
 com\app\cantinho_banho\controller\ExcluirFornecedorServlet.class
 com\app\cantinho_banho\controller\ExcluirPacoteServlet.class
+com\app\cantinho_banho\dao\VendaDAO.class
 com\app\cantinho_banho\model\Cliente.class
 com\app\cantinho_banho\dao\PacoteDAO.class
 com\app\cantinho_banho\dao\FuncionarioDAO.class
