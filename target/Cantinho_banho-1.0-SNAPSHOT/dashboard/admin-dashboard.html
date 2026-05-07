@@ -2709,7 +2709,6 @@
                         }
                     }
 
-
                     if (event.data === "ATUALIZAR_CONFIG_EMPRESA") {
                         await carregarDadosEmpresaConfig();
                         await carregarLimiteAgendamento();
@@ -2726,6 +2725,18 @@
                             renderPagamentos();
                         if (typeof renderConfiguracoes() === 'function')
                             renderPendentes();
+
+                    }
+
+                    if (event.data === "ATUALIZAR_BOLETOS") {
+                        try {
+                            const response = await fetch('../api/boletos/listar');
+                            const boletosDoBanco = await response.json();
+                            renderBoletos(boletosDoBanco);
+                        } catch (error) {
+                            console.error("Erro ao carregar boletos", error);
+                            renderBoletos([]);
+                        }
 
                     }
 

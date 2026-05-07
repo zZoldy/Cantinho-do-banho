@@ -40,11 +40,9 @@ public class ExcluirProdutoServlet extends HttpServlet {
             if (produto != null) {
                 produtoDAO.excluir(produto);
                 
-                // 5. Retorna sucesso para o Front-end
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().write("Produto excluído com sucesso.");
                 
-                // 6. Avisa os outros computadores para atualizarem as suas telas em tempo real
                 com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosProduto();
                 
             } else {

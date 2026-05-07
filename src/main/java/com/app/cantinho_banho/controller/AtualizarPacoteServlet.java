@@ -30,7 +30,7 @@ public class AtualizarPacoteServlet extends HttpServlet {
                 resp.getWriter().write("O Nome não pode iniciar com barra invertida.");
                 return;
             }
-            
+
             int sessoes = Integer.parseInt(req.getParameter("sessoes"));
             int validade = Integer.parseInt(req.getParameter("validade"));
             Double valor = Double.parseDouble(req.getParameter("valor"));
@@ -39,7 +39,6 @@ public class AtualizarPacoteServlet extends HttpServlet {
             PacoteDAO pacoteDAO = new PacoteDAO();
             ServicoDAO servicoDAO = new ServicoDAO();
 
-            // 1. Busca o pacote existente no banco
             Pacote pacote = pacoteDAO.buscarPorId(id);
 
             if (pacote == null) {
@@ -48,7 +47,6 @@ public class AtualizarPacoteServlet extends HttpServlet {
                 return;
             }
 
-            // 2. Busca o serviço atualizado
             Servico servico = servicoDAO.buscarPorId(servicoId);
             if (servico == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -56,18 +54,18 @@ public class AtualizarPacoteServlet extends HttpServlet {
                 return;
             }
 
-            // 3. Atualiza os dados
             pacote.setNome(nome);
             pacote.setQuantidadeSessoes(sessoes);
             pacote.setValidadeDias(validade);
             pacote.setValor(valor);
             pacote.setServico(servico);
 
-            // 4. Salva (merge fará o UPDATE)
             pacoteDAO.salvar(pacote);
 
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.getWriter().write("{\"status\": \"Pacote atualizado com sucesso\"}");
+
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosPacote();
 
         } catch (NumberFormatException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);

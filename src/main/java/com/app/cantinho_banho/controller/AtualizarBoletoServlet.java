@@ -10,6 +10,7 @@ import java.io.IOException;
 
 @WebServlet("/api/boletos/atualizar")
 public class AtualizarBoletoServlet extends HttpServlet {
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
@@ -20,6 +21,7 @@ public class AtualizarBoletoServlet extends HttpServlet {
             dao.atualizarStatus(id, status);
 
             response.setStatus(HttpServletResponse.SC_OK);
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosBoletos();
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }

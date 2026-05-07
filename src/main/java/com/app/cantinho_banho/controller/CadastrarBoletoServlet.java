@@ -11,10 +11,11 @@ import java.io.IOException;
 
 @WebServlet("/api/boletos/cadastrar")
 public class CadastrarBoletoServlet extends HttpServlet {
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
-        
+
         try {
             Boleto boleto = new Boleto();
             boleto.setDescricao(request.getParameter("descricao"));
@@ -28,6 +29,7 @@ public class CadastrarBoletoServlet extends HttpServlet {
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write("{\"mensagem\": \"Boleto cadastrado com sucesso!\"}");
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosBoletos();
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("{\"erro\": \"Erro ao salvar boleto.\"}");

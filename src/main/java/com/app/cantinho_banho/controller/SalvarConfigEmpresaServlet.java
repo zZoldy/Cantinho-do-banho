@@ -22,7 +22,6 @@ public class SalvarConfigEmpresaServlet extends HttpServlet {
             request.setCharacterEncoding("UTF-8");
             ConfigEmpresaDAO dao = new ConfigEmpresaDAO();
 
-            // Busca configuração existente ou cria uma nova
             ConfigEmpresa config = dao.obterConfiguracao();
             if (config == null) {
                 config = new ConfigEmpresa();
@@ -58,7 +57,6 @@ public class SalvarConfigEmpresaServlet extends HttpServlet {
             config.setLimitePorHorario((limiteHorarioStr != null && !limiteHorarioStr.trim().isEmpty())
                     ? Integer.parseInt(limiteHorarioStr) : 5);
 
-            // ═══ CERTIFICADO DIGITAL ═══
             config.setCertificadoSenha(request.getParameter("senhaCertificado"));
             Part filePart = request.getPart("certificado");
             if (filePart != null && filePart.getSize() > 0) {
@@ -66,7 +64,6 @@ public class SalvarConfigEmpresaServlet extends HttpServlet {
                 config.setCertificadoPfx(bytes);
             }
 
-            // PERSISTÊNCIA E NOTIFICAÇÃO
             dao.salvar(config);
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosConfigEmpresa();
 

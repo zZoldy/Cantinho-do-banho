@@ -34,6 +34,8 @@ public class AtualizarObsPetServlet extends HttpServlet {
                 pet.setObs(obs);
                 dao.salvarOuAtualizar(pet);
                 response.setStatus(HttpServletResponse.SC_OK);
+
+                com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadPet();
             } else {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             }

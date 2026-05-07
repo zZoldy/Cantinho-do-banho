@@ -18,16 +18,13 @@ public class ObterLimiteAgendamentoServlet extends HttpServlet {
 
         try {
             ConfigEmpresaDAO dao = new ConfigEmpresaDAO();
-            // Troque para getConfiguracao() se esse for o nome exato no seu DAO
             ConfigEmpresa config = dao.obterConfiguracao(); 
 
-            // Se achar a config, pega o limite. Se for null ou 0, assume 1 como segurança.
             int limite = (config != null && config.getLimitePorHorario() > 0) ? config.getLimitePorHorario() : 1;
 
             response.getWriter().write("{\"limitePorHorario\": " + limite + "}");
             
         } catch (Exception e) {
-            // Em caso de erro, não quebra a tela, devolve o limite padrão 1
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("{\"limitePorHorario\": 1}");
         }

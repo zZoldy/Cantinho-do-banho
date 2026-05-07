@@ -142,8 +142,8 @@ public class AtualizacaoWebSocket {
             }
         }
     }
-    
-        public static void notificarTodosVenda() {
+
+    public static void notificarTodosVenda() {
         for (Session s : sessoes) {
             if (s.isOpen()) {
                 try {
@@ -154,5 +154,16 @@ public class AtualizacaoWebSocket {
             }
         }
     }
-    
+
+    public static void notificarTodosBoletos() {
+        for (Session s : sessoes) {
+            if (s.isOpen()) {
+                try {
+                    s.getBasicRemote().sendText("ATUALIZAR_BOLETOS");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }

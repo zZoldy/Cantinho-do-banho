@@ -83,6 +83,8 @@ public class AtualizarClienteServlet extends HttpServlet {
                 c.setEndereco(end);
                 dao.salvar(c);
                 response.setStatus(200);
+
+                com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosCadCliente();
             }
         } catch (Exception e) {
             response.setStatus(500);

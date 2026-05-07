@@ -64,7 +64,7 @@ public class CadastrarVendaServlet extends HttpServlet {
 
             response.getWriter().write(jsonResponse.toString());
 
-            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosServico();
+            com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodosVenda();
 
         } catch (Exception e) {
             e.printStackTrace();

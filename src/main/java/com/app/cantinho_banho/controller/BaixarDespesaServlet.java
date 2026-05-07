@@ -16,7 +16,6 @@ public class BaixarDespesaServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Garantindo o retorno em JSON para o frontend
         response.setContentType("application/json;charset=UTF-8");
         
         EntityManager em = JPAUtil.getEntityManager();
@@ -30,9 +29,6 @@ public class BaixarDespesaServlet extends HttpServlet {
 
             if (despesa != null) {
                 despesa.setStatus("PAGO");
-                
-                // Opcional, mas recomendado: Registrar quando a despesa foi paga
-                // despesa.setDataPagamento(LocalDate.now()); 
                 
                 em.merge(despesa);
                 

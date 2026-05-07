@@ -133,8 +133,7 @@ public class AgendamentoServlet extends HttpServlet {
             agendamentoDAO.salvarOuAtualizar(agendamento);
 
             com.app.cantinho_banho.websocket.AtualizacaoWebSocket.notificarTodos();
-
-            // Retorno em JSON para facilitar o frontend a processar mensagens de sucesso vs erros
+            
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"status\":\"success\", \"mensagem\":\"Agendamento confirmado para: " + dataStr + " às " + horaStr + "\"}");
 
