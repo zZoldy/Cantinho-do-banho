@@ -40,7 +40,7 @@ function enviarAgendamento(e) {
     const hora = document.getElementById('hora').value; // Formato: HH:MM
 
     if (!nome || !pet || !racaPet || !portePet || !tel || !tipoPet || !servico || !data || !hora) {
-        alert("Por favor, preencha todos os campos obrigatórios.");
+        exibirMensagem('Por favor, preencha todos os campos obrigatórios.', 'info');
         return;
     }
 
@@ -92,7 +92,7 @@ function enviarAgendamento(e) {
             })
             .catch(error => {
                 console.error('Erro na requisição:', error);
-                alert("Falha ao salvar no MySQL: " + error.message);
+                exibirMensagem("Falha ao salvar no MySQL.", 'error');
             })
             .finally(() => {
                 isEnviandoAgendamento = false;

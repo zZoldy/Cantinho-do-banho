@@ -73,7 +73,7 @@ async function salvarPacoteAdmin(e) {
     const servicoId = document.getElementById('novo-pacote-servico').value;
 
     if (!servicoId) {
-        alert("⚠️ Por favor, selecione a qual serviço este pacote pertence.");
+        exibirMensagem('Por favor, selecione a qual serviço este pacote pertence.', 'info');
         return;
     }
 
@@ -100,13 +100,12 @@ async function salvarPacoteAdmin(e) {
             document.getElementById('form-novo-pacote').reset();
             carregarPacotesAdmin();
 
-            alert('Pacote "' + nome + '" criado com sucesso!');
+            exibirMensagem('Pacote "' + nome + '" criado com sucesso!', 'sucess');
         } else {
-            alert('Erro ao criar pacote. O servidor retornou uma falha.');
+            exibirMensagem('Erro ao criar pacote. O servidor retornou uma falha.', 'error');
         }
     } catch (erro) {
         console.error("Erro na requisição cadastrar pacote:", erro);
-        alert('Falha na comunicação com o servidor.');
     } finally {
         btnSubmit.innerHTML = textoOriginal;
         btnSubmit.disabled = false;
@@ -114,12 +113,11 @@ async function salvarPacoteAdmin(e) {
 }
 
 function editarPacote(id) {
-    // 1. Busca o pacote na variável global populada por carregarPacotesAdmin()
     const pacotes = window.pacotesCadastrados || [];
     const pacote = pacotes.find(p => p.id === id);
 
     if (!pacote) {
-        alert("Erro: Pacote não encontrado na memória.");
+        exibirMensagem('Erro: Pacote não encontrado.', 'error');
         return;
     }
 
@@ -184,16 +182,16 @@ async function salvarEdicaoPacote(e) {
         });
 
         if (res.ok) {
-            alert('✅ Pacote atualizado com sucesso!');
+            exibirMensagem('Pacote atualizado com sucesso!', 'sucess');
             fecharModalEditarPacote();
             carregarPacotesAdmin(); // Atualiza a lista na tela
         } else {
             const msg = await res.text();
-            alert('❌ Erro ao atualizar pacote:\n' + msg);
+            console.error('Erro ao atualizar pacote:\n' + msg);
+            exibirMensagem('Erro ao atualizar pacote.', 'error');
         }
     } catch (erro) {
         console.error("Erro ao atualizar pacote:", erro);
-        alert('Falha na comunicação com o servidor.');
     } finally {
         btnSubmit.innerHTML = textoOriginal;
         btnSubmit.disabled = false;
@@ -223,7 +221,7 @@ async function excluirPacote(id, nome, totalSessoes) {
             const palavraSeguranca = prompt(relatorio);
 
             if (palavraSeguranca !== 'EXCLUIR') {
-                alert('❌ Operação cancelada. O pacote e o saldo dos clientes estão seguros.');
+                exibirMensagem('Operação cancelada. O pacote e o saldo dos clientes estão seguros.', 'info');
                 return;
             }
 
@@ -243,17 +241,17 @@ async function excluirPacote(id, nome, totalSessoes) {
         });
 
         if (resposta.ok) {
-            alert('✅ Pacote excluído com sucesso!');
+            exibirMensagem('Pacote excluído com sucesso!', 'success');
             // 🟢 CORREÇÃO: Chama a função certa para atualizar a lista na tela
             carregarPacotesAdmin();
         } else {
             const erroMsg = await resposta.text();
-            alert(`❌ Erro no servidor:\n${erroMsg}`);
+            console.error(`❌ Erro no servidor:\n${erroMsg}`);
         }
 
     } catch (erro) {
         console.error("Erro na exclusão:", erro);
-        alert('Falha de comunicação ao tentar gerar o relatório.');
+        exibirMensagem('Falha de comunicação ao tentar gerar o relatório.', 'error');
     }
 }
 
@@ -292,9 +290,9 @@ async function confirmarVendaPacote() {
     const formaPagamento = document.getElementById('forma-pagamento-pacote')?.value;
 
     if (!pacoteId)
-        return alert("Por favor, selecione um pacote!");
+        return exibirMensagem('Por favor, selecione um pacote!', 'info');
     if (!formaPagamento)
-        return alert("Por favor, selecione a forma de pagamento!");
+        return exibirMensagem('Por favor, selecione a forma de pagamento!', 'info');
 
     const btn = document.querySelector('#modal-vender-pacote .btn-primary');
     const originalHTML = btn.innerHTML;
@@ -320,15 +318,15 @@ async function confirmarVendaPacote() {
             await listarClientesBD();
             renderClientes();
 
-            alert('Venda registrada e pacote vinculado com sucesso!');
+            exibirMensagem('Venda registrada e pacote vinculado com sucesso!', 'success');
 
         } else {
             const erro = await res.json();
-            alert('Erro: ' + (erro.erro || 'Erro ao vincular pacote.'));
+            exibirMensagem('Erro: ' + (erro.erro || 'Erro ao vincular pacote.'), 'error');
         }
     } catch (e) {
         console.error(e);
-        alert('Falha na comunicação com o servidor.');
+        exibirMensagem('Falha na comunicação com o servidor.', 'error');
     } finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;

@@ -105,7 +105,7 @@ function gerarComprovanteVenda(idVenda) {
     const venda = vendasManuais.find(v => String(v.id) === String(idVenda));
 
     if (!venda) {
-        alert("Venda não encontrada para gerar o PDF.");
+        exibirMensagem('Venda não encontrada para gerar o PDF.', 'info');
         return;
     }
 
@@ -216,7 +216,7 @@ function gerarComprovanteVenda(idVenda) {
     if (typeof pdfWin === 'function') {
         pdfWin('Recibo_Venda_' + idVenda, body);
     } else {
-        alert("Função de PDF não encontrada no sistema.");
+        exibirMensagem('Função de PDF não encontrada no sistema.', 'info');
     }
 }
 
@@ -358,7 +358,7 @@ async function salvarVenda(event) {
     const produtoId = document.getElementById('venda-produto-id')?.value;
 
     if (!produtoId || produtoId === '') {
-        alert("⚠️ Operação bloqueada: Você deve selecionar um produto válido na lista suspensa.");
+        exibirMensagem('Operação bloqueada: Você deve selecionar um produto válido na lista suspensa.', 'info');
         return;
     }
 
@@ -370,7 +370,7 @@ async function salvarVenda(event) {
     if (typeof listaEstoque !== 'undefined') {
         const produtoNoEstoque = listaEstoque.find(p => p.produto && p.produto.id === parseInt(produtoId));
         if (produtoNoEstoque && quantidade > produtoNoEstoque.quantidadeAtual) {
-            alert(`⚠️ Operação bloqueada: Estoque insuficiente!\n\nVocê está tentando vender ${quantidade} unidades, mas só existem ${produtoNoEstoque.quantidadeAtual} disponíveis no estoque.`);
+            exibirMensagem(`⚠️ Operação bloqueada: Estoque insuficiente!\n\nVocê está tentando vender ${quantidade} unidades, mas só existem ${produtoNoEstoque.quantidadeAtual} disponíveis no estoque.`, 'info');
             return;
         }
     }
@@ -396,7 +396,7 @@ async function salvarVenda(event) {
         });
 
         if (response.ok) {
-            alert("✅ Venda registrada com sucesso!");
+            exibirMensagem("Venda registrada com sucesso!", 'success');
 
             fecharModalVenda();
 
@@ -411,11 +411,12 @@ async function salvarVenda(event) {
 
         } else {
             const errorMsg = await response.text();
-            alert("Erro ao registrar venda: " + errorMsg);
+            console.error("Erro ao registrar venda: " + errorMsg);
+            exibirMensagem('Erro ao registrar venda', 'error');
         }
     } catch (e) {
         console.error("Erro de conexão:", e);
-        alert("Erro ao tentar conectar com o servidor. Verifique se o backend está rodando.");
+        exibirMensagem("Erro ao tentar conectar com o servidor. Verifique se o backend está rodando.", 'error');
     }
 }
 
@@ -618,7 +619,7 @@ async function salvarBoleto(e) {
         }
     } catch (error) {
         console.error(error);
-        alert(error.message);
+        exibirMensagem('Erro ao salvar Boleto.', 'error');
     } finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
@@ -653,7 +654,7 @@ async function baixarBoleto(id, btn) {
         }
     } catch (e) {
         console.error(e);
-        alert(e.message);
+        exibirMensagem('Erro ao atualizar lista de boleto.', 'error');
         btn.innerHTML = '<i class="fas fa-check"></i> Dar Baixa';
         btn.disabled = false;
     }
@@ -666,7 +667,8 @@ async function excluirBoleto(id) {
     try {
         const resp = await fetch(`../api/boletos/excluir?id=${id}`, {method: 'DELETE'});
         if (resp.ok) {
-            alert("Boleto excluído com sucesso!");
+            exibirMensagem("Boleto excluído com sucesso!", 'success');
+            
             try {
                 const response = await fetch('../api/boletos/listar');
                 const boletosDoBanco = await response.json();
@@ -676,7 +678,7 @@ async function excluirBoleto(id) {
                 renderBoletos([]);
             }
         } else {
-            alert("Erro ao excluir o boleto.");
+            exibirMensagem("Erro ao excluir o boleto.", 'error');
         }
     } catch (err) {
         console.error("Erro na requisição:", err);

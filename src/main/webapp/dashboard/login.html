@@ -7,11 +7,73 @@
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
         <link rel="stylesheet" href="admin.css"/>
+        <style>
+            /* ESTILOS PARA OS NOVOS ELEMENTOS E RESPONSIVIDADE */
+            .login-box {
+                position: relative;
+            }
+
+            .btn-voltar {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                color: #d4af37;
+                text-decoration: none;
+                font-family: 'Cinzel', serif;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                transition: color 0.3s;
+            }
+
+            .btn-voltar:hover {
+                color: #f1c40f;
+            }
+
+            .input-field {
+                position: relative;
+                width: 100%; /* Garante que o container não encolha no mobile */
+                display: flex;
+                align-items: center;
+            }
+
+            .input-field input {
+                width: 100%;
+                box-sizing: border-box;
+                padding-right: 45px !important; /* Cria uma "barreira" para o texto não ficar atrás do olho */
+            }
+
+            .toggle-password {
+                position: absolute;
+                right: 15px;
+                /* Centraliza verticalmente de forma exata */
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: pointer;
+                color: #888;
+                transition: color 0.3s;
+                z-index: 10;
+
+                /* Melhorias para Mobile (Área de toque maior) */
+                font-size: 1.1rem;
+                padding: 10px;
+                margin-right: -10px; /* Compensa o padding para manter alinhado visualmente */
+            }
+
+            .toggle-password:hover {
+                color: #d4af37;
+            }
+        </style>
     </head>
     <body class="login-page">
 
         <div class="login-wrapper">
             <div class="login-box">
+                <a href="../index.html" class="btn-voltar" title="Voltar para a página inicial">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+
                 <div class="login-logo">
                     <i class="fas fa-paw"></i>
                 </div>
@@ -26,6 +88,7 @@
                     <div class="input-field">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="senha" placeholder="Senha" required/>
+                        <i class="fas fa-eye toggle-password"></i>
                     </div>
                     <div id="erro-login" class="erro-msg" style="display:none">
                         <i class="fas fa-exclamation-circle"></i> Email ou senha incorretos.
@@ -45,10 +108,12 @@
                     <div class="input-field">
                         <i class="fas fa-key"></i>
                         <input type="password" id="novaSenha" placeholder="Nova Senha" required/>
+                        <i class="fas fa-eye toggle-password"></i>
                     </div>
                     <div class="input-field">
                         <i class="fas fa-check-circle"></i>
                         <input type="password" id="confirmaSenha" placeholder="Confirme a Senha" required/>
+                        <i class="fas fa-eye toggle-password"></i>
                     </div>
 
                     <div id="erro-reset" style="color: red; display: none; margin-bottom: 10px;"></div>
@@ -58,7 +123,7 @@
                     </button>
                 </form>
 
-                <p class="login-footer">© 2025 Cantinho do Banho</p>
+                <p class="login-footer">© <span id="anoAtual"></span> Cantinho do Banho — Todos os direitos reservados</p>
             </div>
         </div>
 
@@ -66,6 +131,25 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const formLogin = document.getElementById('loginForm');
                 const formReset = document.getElementById('resetForm');
+
+                // Lógica para visualizar/ocultar senha
+                const togglePasswords = document.querySelectorAll('.toggle-password');
+                togglePasswords.forEach(icon => {
+                    icon.addEventListener('click', function () {
+                        // O input fica imediatamente antes do ícone no HTML
+                        const input = this.previousElementSibling;
+
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            this.classList.remove('fa-eye');
+                            this.classList.add('fa-eye-slash');
+                        } else {
+                            input.type = 'password';
+                            this.classList.remove('fa-eye-slash');
+                            this.classList.add('fa-eye');
+                        }
+                    });
+                });
 
                 if (formLogin) {
                     formLogin.addEventListener('submit', async function (event) {
@@ -87,7 +171,6 @@
                             params.append('email', email);
                             params.append('senha', senha);
 
-
                             const resposta = await fetch('../api/login', {
                                 method: 'POST',
                                 headers: {
@@ -104,13 +187,11 @@
                                     formLogin.style.display = 'none';
                                     formReset.style.display = 'block';
 
-                                    // Muda o subtítulo da caixinha
                                     document.querySelector('.login-sub').textContent = 'Defina sua Nova Senha';
                                     btnSubmit.disabled = false;
                                     btnSubmit.innerHTML = originalContent;
 
                                 } else {
-                                    // Sucesso
                                     sessionStorage.setItem('nomeUsuario', dados.nome);
                                     sessionStorage.setItem('perfilUsuario', dados.perfil);
 
@@ -149,10 +230,14 @@
 
                         if (novaSenha !== confirmaSenha) {
                             mostrarErro("As senhas não coincidem.", 'erro-reset');
+                            btnReset.disabled = false;
+                            btnReset.innerHTML = originalContent;
                             return;
                         }
                         if (novaSenha.length < 6) {
                             mostrarErro("A senha deve ter pelo menos 6 caracteres.", 'erro-reset');
+                            btnReset.disabled = false;
+                            btnReset.innerHTML = originalContent;
                             return;
                         }
 
@@ -187,13 +272,17 @@
                     });
                 }
 
-                function mostrarErro(mensagem) {
-                    const divErro = document.getElementById('mensagemErro');
-                    divErro.textContent = mensagem;
-                    divErro.style.display = 'block';
+                function mostrarErro(mensagem, elementoId = 'mensagemErro') {
+                    const divErro = document.getElementById(elementoId);
+                    if (divErro) {
+                        divErro.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${mensagem}`;
+                        divErro.style.display = 'block';
+                }
                 }
 
             });
+
+            document.getElementById('anoAtual').textContent = new Date().getFullYear();
         </script>
     </body>
 </html>

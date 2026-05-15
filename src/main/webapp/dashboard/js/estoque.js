@@ -135,7 +135,8 @@ async function movimentarEstoque(produtoId, tipo) {
         if (res.ok) {
             carregarEstoque();
         } else {
-            alert("Erro: " + await res.text());
+            console.error('Erro: ' + await res.text());
+            exibirMensagem('Erro ao movimentar estoque.', 'error');
         }
     } catch (e) {
         console.error(e);
@@ -215,11 +216,12 @@ async function salvarProduto(e) {
 
         } else {
             const err = await response.text();
-            alert("Erro ao salvar produto: " + err);
+            console.error("Erro ao salvar produto: " + err);
+            exibirMensagem('Erro ao salvar produto.', 'error');
         }
     } catch (error) {
         console.error("Erro na requisição:", error);
-        alert("Erro de conexão ao tentar salvar o produto.");
+        exibirMensagem("Erro de conexão ao tentar salvar o produto.", 'error');
     } finally {
         isSalvandoProduto = false;
         if (btnSalvar) {
@@ -244,11 +246,11 @@ async function excluirProduto(produtoId) {
         if (res.ok) {
             carregarEstoque();
         } else {
-            alert("Não foi possível excluir: " + await res.text());
+            console.error("Não foi possível excluir: " + await res.text());
+            exibirMensagem('Não foi possível excluir', 'error');
         }
     } catch (e) {
         console.error("Erro de comunicação ao excluir produto:", e);
-        alert("Erro ao comunicar com o servidor.");
     }
 }
 
@@ -405,7 +407,7 @@ async function salvarFornecedor(e) {
 
         if (response.ok) {
             fecharModalFornecedor();
-            alert(id ? "Dados atualizados com sucesso!" : "Fornecedor guardado com sucesso!");
+            exibirMensagem(id ? 'Dados atualizados com sucesso!' : 'Fornecedor guardado com sucesso!', 'success');
 
             await carregarFornecedoresConfig();
 
@@ -413,7 +415,8 @@ async function salvarFornecedor(e) {
                 carregarFornecedoresParaModal();
             }
         } else {
-            alert("Erro: " + await response.text());
+            console.error("Erro: " + await response.text());
+            exibirMensagem(`Erro ao ${rota}.` , 'error');
         }
     } catch (error) {
         console.error("Erro na requisição:", error);
@@ -431,17 +434,17 @@ async function excluirFornecedor(id) {
 
         if (response.ok) {
             // Chama a sua função que recarrega a tabela de fornecedores
-            if (typeof carregarFornecedores === 'function') {
-                await carregarFornecedores();
+            if (typeof carregarFornecedoresParaModal() === 'function') {
+                await carregarFornecedoresParaModal();
             }
-            alert("Fornecedor removido com sucesso!");
+            exibirMensagem("Fornecedor removido com sucesso!", 'success');
         } else {
             const erroMsg = await response.text();
-            alert(erroMsg || "Erro ao excluir fornecedor.");
+            console.error(erroMsg || "Erro ao excluir fornecedor.");
+            exibirMensagem('Erro ao excluir fornecedor', 'error');
         }
     } catch (error) {
         console.error("Erro na requisição:", error);
-        alert("Erro de comunicação com o servidor.");
     }
 }
 
@@ -508,8 +511,9 @@ async function salvarDespesaManual(e) {
         if (res.ok) {
             fecharModalDespesa();
             await carregarDespesas(); // Atualiza a aba na hora!
+            exibirMensagem('Despesa cadastrada.', 'success');
         } else {
-            alert("Erro ao lançar a despesa.");
+            exibirMensagem("Erro ao lançar a despesa.", 'error');
         }
     } catch (err) {
         console.error("Erro na comunicação:", err);
@@ -614,14 +618,14 @@ async function confirmarReposicao() {
     const quantidade = parseInt(document.getElementById('reposicao-qtd').value);
 
     if (isNaN(quantidade) || quantidade <= 0) {
-        alert("⚠️ Quantidade inválida. Digite um número maior que zero.");
+        exibirMensagem('Quantidade inválida. Digite um número maior que zero.' , 'info');
         return;
     }
 
     let valorSujo = document.getElementById('reposicao-custo').value;
 
     if (!valorSujo || valorSujo.trim() === '') {
-        alert("⚠️ O Custo Total não pode ficar vazio! Digite o valor da despesa.");
+        exibirMensagem('Custo Total não pode ficar vazio! Digite o valor da despesa.', 'info');
         return;
     }
 
@@ -629,7 +633,7 @@ async function confirmarReposicao() {
     const custoTotal = parseFloat(valorLimpo);
 
     if (isNaN(custoTotal) || custoTotal <= 0) {
-        alert("⚠️ O Custo Total calculado deu Zero ou é inválido. Verifique o valor digitado.");
+        exibirMensagem('O Custo Total calculado deu Zero ou é inválido. Verifique o valor digitado.', 'info');
         return;
     }
 
@@ -666,23 +670,21 @@ async function confirmarReposicao() {
         });
 
         if (!respDespesa.ok) {
-            alert("⚠️ O estoque foi atualizado, mas ocorreu um erro ao gerar a despesa financeira. Verifique a tela de Despesas.");
+            exibirMensagem('O estoque foi atualizado, mas ocorreu um erro ao gerar a despesa financeira. Verifique a tela de Despesas.', 'info');
             return;
         }
 
-        // Tudo deu certo!
-        alert("✅ Estoque reposto e despesa gerada com sucesso!");
+        exibirMensagem('Estoque reposto e despesa gerada com sucesso!', 'success');
 
-        fecharModalReposicao(); // Fecha a tela estilizada
+        fecharModalReposicao();
 
-        // Atualiza a tabela principal de estoque
         if (typeof listarEstoque === 'function') {
             listarEstoque();
         }
 
     } catch (erro) {
         console.error("Erro na reposição:", erro);
-        alert("Erro ao tentar repor o produto: " + erro.message);
+        exibirMensagem('Erro ao tentar repor o produto.', 'error');
     }
 }
 
@@ -690,7 +692,7 @@ async function gerarRelatorioEstoque() {
     const dados = listaEstoque;
 
     if (dados.length === 0) {
-        alert("⚠️ Não há dados de estoque para gerar o relatório no momento.");
+        exibirMensagem('Não há dados de estoque para gerar o relatório no momento.', 'info');
         return;
     }
 

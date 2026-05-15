@@ -858,6 +858,73 @@
                 font-size: 1.1rem;
                 transition: color 0.3s ease;
             }
+
+            .custom-alert-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.85);
+                backdrop-filter: blur(8px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                opacity: 0;
+                transition: var(--trans);
+            }
+
+            .custom-alert-box {
+                background: var(--preto-card);
+                border: 1px solid var(--borda-forte);
+                border-radius: var(--radius);
+                padding: 30px;
+                max-width: 400px;
+                width: 90%;
+                text-align: center;
+                box-shadow: #C9A96E;
+                transform: translateY(-20px);
+                transition: var(--trans);
+            }
+
+            .custom-alert-overlay.active {
+                opacity: 1;
+            }
+            .custom-alert-overlay.active .custom-alert-box {
+                transform: translateY(0);
+            }
+
+            .custom-alert-icon {
+                font-size: 3rem;
+                color: var(--dourado);
+                margin-bottom: 20px;
+            }
+
+            .custom-alert-text {
+                font-family: 'Cormorant Garamond', serif;
+                color: var(--texto);
+                font-size: 1.2rem;
+                margin-bottom: 25px;
+            }
+
+            .custom-alert-btn {
+                background: var(--dourado);
+                color: var(--preto);
+                border: none;
+                padding: 10px 30px;
+                border-radius: var(--radius-sm);
+                font-family: 'Cinzel', serif;
+                font-weight: bold;
+                cursor: pointer;
+                transition: var(--trans);
+            }
+
+            .custom-alert-btn:hover {
+                background: var(--dourado-claro);
+                transform: scale(1.05);
+            }
+
         </style>
     </head>
     <body class="admin-page">
@@ -1247,10 +1314,12 @@
                                 <option value="12">Dezembro</option>
                             </select>
                             <select id="filtro-ano-select" class="input-select-sm" onchange="renderPagamentos()">
-                                <option value="2024">2024</option>
                                 <option value="2025">2025</option>
                                 <option value="2026" selected>2026</option>
                                 <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                                <option value="2029">2029</option>
+                                <option value="2030">2030</option>
                             </select>
                         </div>
 
@@ -2559,6 +2628,8 @@
                 const navPag = document.querySelector('[data-page="pagamentos"]');
                 const navFuc = document.querySelector('[data-page="funcionarios"]');
                 const navConf = document.querySelector('[data-page="config"]');
+                const navVendas = document.querySelector('[data-page="vendas"]');
+                const navBoletos = document.querySelector('[data-page="boletos"]');
 
                 if (navPag)
                     navPag.style.display = 'none';
@@ -2566,6 +2637,10 @@
                     navFuc.style.display = 'none';
                 if (navConf)
                     navConf.style.display = 'none';
+                if (navVendas)
+                    navVendas.style.display = 'none';
+                if (navBoletos)
+                    navBoletos.style.display = 'none';
 
                 const style = document.createElement('style');
                 style.textContent = `
@@ -2580,7 +2655,7 @@
                 window.location.href = 'login.html';
             }
             // Protege navegação por URL
-            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'config': ['Admin']};
+            const paginasRestritas = {'pagamentos': ['Admin'], 'funcionarios': ['Admin'], 'config': ['Admin'], 'vendas': ['Admin'], 'boletos': ['Admin']};
 
             function podeAcessar(page) {
                 const permitidos = paginasRestritas[page];
@@ -2596,7 +2671,7 @@
                 const protocolo = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
                 const host = window.location.host;
 
-                const urlWebSocket = `${protocolo}${host}/ws/notificacoes`;
+                const urlWebSocket = `${protocolo}${host}/Cantinho_banho-1.0-SNAPSHOT/ws/notificacoes`;
                 const ws = new WebSocket(urlWebSocket);
 
                 ws.onopen = function () {
@@ -2763,7 +2838,7 @@
             // ═══════════════════════════════════════════════════
             // NAVEGAÇÃO
             // ═══════════════════════════════════════════════════
-            const pageTitles = {dashboard: 'Dashboard', novos: 'Novos Pedidos', agenda: 'Agenda Confirmada', pendentes: 'Pendentes', finalizados: 'Finalizados', clientes: 'Clientes Cadastrados', estoques: 'Estoque', funcionarios: 'Funcionários', pagamentos: 'Pagamentos', config: 'Configurações'};
+            const pageTitles = {dashboard: 'Dashboard', novos: 'Novos Pedidos', agenda: 'Agenda Confirmada', pendentes: 'Pendentes', finalizados: 'Finalizados', clientes: 'Clientes Cadastrados', estoques: 'Estoque', funcionarios: 'Funcionários', pagamentos: 'Pagamentos', config: 'Configurações', vendas: 'Vendas', boletos: 'Boletos'};
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', e => {
                     e.preventDefault();
@@ -2773,7 +2848,7 @@
             });
             async function navigateTo(page) {
                 if (!podeAcessar(page)) {
-                    alert('Acesso restrito.');
+                    exibirMensagem('Acesso restrito', 'info');
                     return;
                 }
                 if (page === 'dashboard') {
@@ -2861,14 +2936,16 @@
                 document.getElementById('pageTitle').textContent = pageTitles[page] || page;
                 ({
                     dashboard: renderDashboard,
+                    clientes: renderClientes,
                     novos: renderNovos,
                     agenda: renderAgenda,
                     pendentes: renderPendentes,
                     retirada: renderRetirada,
                     recusados: renderRecusados,
                     finalizados: renderFinalizados,
-                    clientes: renderClientes,
                     estoques: renderEstoque,
+                    vendas: renderVendasManuias,
+                    boletos: renderBoletos,
                     funcionarios: renderFuncionarios,
                     pagamentos: renderPagamentos,
                     config: renderConfiguracoes
@@ -2926,7 +3003,7 @@
             function openWA(tel, msg) {
                 const n = cleanTel(tel);
                 if (!n) {
-                    alert('Número não encontrado!');
+                    exibirMensagem('Número não encontrado!', 'info');
                     return;
                 }
                 window.open(`https://wa.me/55${n}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -2937,7 +3014,87 @@
             function msgRecusar(a) {
                 return `😔 *Cantinho do Banho*\n\nOlá, *${a.dono}*!\n\nInfelizmente o horário de *${fd(a.data)} às ${a.hora}* não está disponível.\n\nPodemos reagendar? 🐾`;
             }
+            window.exibirMensagem = function (mensagem, tipo = 'info') {
+                const anterior = document.querySelector('.custom-alert-overlay');
+                if (anterior)
+                    anterior.remove();
 
+                const overlay = document.createElement('div');
+                overlay.className = 'custom-alert-overlay';
+
+                const icones = {
+                    success: 'fa-check-circle',
+                    error: 'fa-exclamation-triangle',
+                    info: 'fa-info-circle'
+                };
+
+                overlay.innerHTML = `
+        <div class="custom-alert-box">
+            <div class="custom-alert-icon">
+                <i class="fas ${icones[tipo] || icones.info}"></i>
+            </div>
+            <div class="custom-alert-text">${mensagem}</div>
+            <button class="custom-alert-btn">OK</button>
+        </div>
+    `;
+
+                document.body.appendChild(overlay);
+
+                // Animação de entrada
+                setTimeout(() => overlay.classList.add('active'), 10);
+
+                const fechar = () => {
+                    overlay.classList.remove('active');
+                    setTimeout(() => overlay.remove(), 300);
+                };
+
+                overlay.querySelector('.custom-alert-btn').onclick = fechar;
+                overlay.onclick = (e) => {
+                    if (e.target === overlay)
+                        fechar();
+                };
+            };
+            window.exibirConfirmacao = function (mensagem) {
+                return new Promise((resolve) => {
+                    // Remove modal anterior se existir
+                    const anterior = document.querySelector('.custom-alert-overlay');
+                    if (anterior)
+                        anterior.remove();
+
+                    const overlay = document.createElement('div');
+                    overlay.className = 'custom-alert-overlay';
+
+                    // Estrutura com dois botões
+                    overlay.innerHTML = `
+            <div class="custom-alert-box">
+                <div class="custom-alert-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="custom-alert-text">${mensagem}</div>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                    <button class="custom-alert-btn btn-cancelar" style="background: #333; color: #fff;">Cancelar</button>
+                    <button class="custom-alert-btn btn-confirmar">Confirmar</button>
+                </div>
+            </div>
+        `;
+
+                    document.body.appendChild(overlay);
+                    setTimeout(() => overlay.classList.add('active'), 10);
+
+                    // Função para fechar e devolver a resposta
+                    const fechar = (resultado) => {
+                        overlay.classList.remove('active');
+                        setTimeout(() => {
+                            overlay.remove();
+                            resolve(resultado); // Devolve true ou false
+                        }, 300);
+                    };
+
+                    // Eventos dos cliques
+                    overlay.querySelector('.btn-confirmar').onclick = () => fechar(true);
+                    overlay.querySelector('.btn-cancelar').onclick = () => fechar(false);
+                });
+            };
             // ═══════════════════════════════════════════════════
             // RENDERIZAÇÃO DO DASHBOARD PRINCIPAL
             // ═══════════════════════════════════════════════════
@@ -3329,7 +3486,7 @@
                             renderPagamentos();
 
                     } else {
-                        alert('Erro ao registrar a venda. Verifique se há estoque suficiente no servidor.');
+                        exibirMensagem('Erro ao registrar a venda. Verifique se há estoque suficiente no servidor.', 'error');
                     }
                 } catch (e) {
                     console.error("Erro ao salvar a venda:", e);
@@ -3579,11 +3736,11 @@
                         }
                         renderDashboard();
                     } else {
-                        alert('Erro ao excluir o registro no servidor.');
+                        exibirMensagem('Erro ao excluir o registro no servidor.', 'error');
                     }
                 } catch (e) {
                     console.error("Erro ao excluir histórico:", e);
-                    alert('Falha na comunicação com o servidor.');
+                    exibirMensagem('Falha na comunicação com o servidor.', 'error');
                 }
             }
 
@@ -3936,9 +4093,10 @@
                     const res = await fetch(`../api/despesas/baixar?id=${id}`, {method: 'POST'});
                     if (res.ok) {
                         await carregarDespesas();
-                        alert("Despesa marcada como paga com sucesso!");
+                        exibirMensagem('Despesa marcada como paga!', 'info');
+
                     } else {
-                        alert("Erro ao baixar despesa.");
+                        exibirMensagem('Erro ao baixar despesa.', 'error');
                     }
                 } catch (e) {
                     console.error("Erro na comunicação:", e);
@@ -3952,9 +4110,10 @@
                 try {
                     const res = await fetch(`../api/despesas/excluir?id=${id}`, {method: 'POST'});
                     if (res.ok) {
-                        await carregarDespesas(); // Recarrega os dados e atualiza a tabela
+                        await carregarDespesas();
+                        exibirMensagem('Despesa excluída com sucesso!', 'sucess');
                     } else {
-                        alert("Erro ao excluir despesa.");
+                        exibirMensagem()("Erro ao excluir despesa.", 'info');
                     }
                 } catch (e) {
                     console.error("Erro na comunicação:", e);
@@ -4074,7 +4233,7 @@
             function gerarPDFClienteSelecionado() {
                 const sel = document.getElementById('sel-rel-cli');
                 if (!sel || !sel.value) {
-                    alert('Por favor, selecione um cliente.');
+                    exibirMensagem('Por favor, selecione um cliente.', 'info');
                     return;
                 }
                 gerarRelatorioCliente(Number(sel.value) || sel.value);
@@ -4449,14 +4608,15 @@
                 try {
                     const response = await fetch('../api/config/empresa/salvar', {method: 'POST', body: formData});
                     if (response.ok) {
-                        alert("✅ Configurações atualizadas com sucesso!");
+                        exibirMensagem('Configurações da empresa atualizadas com sucesso!', 'sucess');
                         fecharModalConfigEmpresa();
                         await carregarDadosEmpresaConfig();
                     } else {
                         throw new Error(await response.text() || "Erro no servidor.");
                     }
                 } catch (erro) {
-                    alert("Falha ao salvar: " + erro.message);
+                    console.log("Falha ao salvar: " + erro.message);
+                    exibirMensagem('Falha ao salvar as Configurações da empresa', 'error');
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;

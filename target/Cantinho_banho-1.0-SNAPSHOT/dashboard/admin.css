@@ -38,6 +38,7 @@ body {
     line-height: 1.6;
 }
 
+
 /* ============================================
    LOGIN
    ============================================ */
@@ -73,6 +74,26 @@ body {
     background: linear-gradient(90deg, transparent, var(--dourado), transparent);
 }
 
+/* NOVO: Botão Voltar responsivo e no tema */
+.btn-voltar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: var(--dourado);
+    text-decoration: none;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--trans);
+    z-index: 10;
+}
+
+.btn-voltar:hover {
+    color: var(--dourado-claro);
+}
+
 .login-logo {
     width: 64px;
     height: 64px;
@@ -106,7 +127,8 @@ body {
     margin-bottom: 16px;
 }
 
-.input-field i {
+/* CORREÇÃO: Aplica a regra APENAS aos ícones da ESQUERDA (ignora o olho) */
+.input-field i:not(.toggle-password) {
     position: absolute;
     left: 14px;
     top: 50%;
@@ -114,6 +136,28 @@ body {
     color: var(--dourado);
     opacity: 0.6;
     font-size: 0.85rem;
+    pointer-events: none;
+}
+
+/* NOVO: Estilização exclusiva do ícone do OLHO (Direita) */
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--dourado);
+    opacity: 0.6;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 10px; /* Maior área de toque para os dedos no celular */
+    margin-right: -10px; /* Compensa o visual do padding */
+    transition: var(--trans);
+    z-index: 10;
+}
+
+.toggle-password:hover {
+    opacity: 1;
+    color: var(--dourado-claro);
 }
 
 .input-field input {
@@ -122,7 +166,8 @@ body {
     border: 1px solid var(--borda);
     border-radius: var(--radius-sm);
     color: var(--texto);
-    padding: 13px 14px 13px 40px;
+    /* CORREÇÃO: padding da direita mudou de 14px para 45px para afastar o texto do ícone do olho */
+    padding: 13px 45px 13px 40px;
     font-family: inherit;
     font-size: 1rem;
     transition: var(--trans);
@@ -1113,9 +1158,9 @@ textarea.form-input-admin {
     }
 
     .config-nav-container {
-        width: 100%; 
-        flex-direction: row; 
-        overflow-x: auto; 
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
         padding: 10px;
         gap: 10px;
         border-radius: 0;

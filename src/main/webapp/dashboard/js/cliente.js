@@ -756,12 +756,12 @@ async function salvarAcessoCliente(e) {
         if (typeof openWA === 'function') {
             openWA(dados.telefone, mensagem);
         } else {
-            alert(`Acesso criado! Senha gerada: ${dados.senha}`);
+            exibirMensagem(`Acesso criado! Senha gerada: ${dados.senha}`, 'success');
         }
 
     } catch (erro) {
-        console.error("Erro:", erro);
-        alert("Erro ao criar o acesso. Verifique se o Email ou CPF já existem no sistema.");
+        console.error("Erro: ", erro);
+        exibirMensagem('Erro ao criar o acesso. Verifique se o Email ou CPF já existem no sistema.', 'error');
     } finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
@@ -860,10 +860,10 @@ async function salvarNovoCliente(e) {
                 if (typeof openWA === 'function') {
                     openWA(telefone, msg);
                 } else {
-                    alert(`Cliente cadastrado! Senha do App gerada: ${dados.senha}`);
+                    exibirMensagem(`Cliente cadastrado! Senha do App gerada: ${dados.senha}`, 'success');
                 }
             } else {
-                alert("Cliente cadastrado com sucesso (Sem acesso ao App).");
+                exibirMensagem('Cliente cadastrado com sucesso (Sem acesso ao App).', 'success');
             }
 
         } else {
@@ -872,7 +872,7 @@ async function salvarNovoCliente(e) {
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Erro ao cadastrar cliente: " + erro.message);
+        exibirMensagem('Erro ao cadastrar cliente', 'error');
     } finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
@@ -903,11 +903,11 @@ async function salvarEdicaoCliente() {
         });
 
         if (response.ok) {
-            alert("✅ Cliente atualizado!");
+            exibirMensagem('Cliente atualizado!', 'success');
             fecharModalCliente();
             await carregarClientesDoBanco();
         } else {
-            alert("Erro ao salvar alterações.");
+            exibirMensagem('Erro ao salvar alterações.', 'error');
         }
     } catch (e) {
         console.error(e);
@@ -922,6 +922,7 @@ function abrirModalCliente(id) {
 
     if (!clienteSendoEditado) {
         console.error("Cliente não encontrado na listaClientes!");
+        exibirMensagem('Cliente não encontrado na lista de Clientes', 'info');
         return;
     }
 
@@ -1178,7 +1179,7 @@ async function salvarObsPet(petId, btn) {
             throw new Error('Falha no servidor');
         }
     } catch (erro) {
-        alert('Erro ao salvar a observação do pet.');
+        exibirMensagem('Erro ao salvar a observação do pet.', 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -1304,13 +1305,13 @@ async function salvarPet(event) {
         });
 
         if (response.ok) {
-            alert(petIdEdicao ? "🐾 Pet atualizado!" : "🐾 Pet cadastrado!");
+            exibirMensagem(petIdEdicao ? "🐾 Pet atualizado!" : "🐾 Pet cadastrado!", 'success');
             fecharModalPet();
             await carregarClientesDoBanco(); // Recarrega a lista
             if (clienteSendoEditado)
                 abrirModalCliente(clienteSendoEditado.id); // Atualiza os detalhes abertos
         } else {
-            alert("Erro ao salvar pet.");
+            exibirMensagem('Erro ao salvar pet.', 'error');
         }
     } catch (e) {
         console.error(e);

@@ -919,7 +919,10 @@ function navConfig(aba) {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         carregarAgendaDoBanco(false);
-        carregarVendasPacotes();
+        if (isAdm) {
+            carregarVendasPacotes();
+        }
+
     } catch (e) {
         console.error('Erro na inicialização do sistema:', e);
     }
@@ -930,7 +933,7 @@ function sugerirReagendamento(id, contato, dono, pet) {
     const inputHora = document.getElementById(`pnd-hora-${id}`).value;
 
     if (!inputData || !inputHora) {
-        alert("Por favor, preencha uma data e hora para sugerir ao cliente.");
+        exibirMensagem('Por favor, preencha uma data e hora para sugerir ao cliente.', 'info');
         return;
     }
 
@@ -1061,7 +1064,7 @@ async function confirmarPendente(id) {
 
     if (agendamentosNesteHorario >= limitePorHorario) {
         const dataBR = dataFinal.includes('-') ? dataFinal.split('-').reverse().join('/') : dataFinal;
-        alert(`⚠️ Limite de Horários Atingido!\n\nJá existem ${agendamentosNesteHorario} agendamento(s) confirmado(s) para o dia ${dataBR} às ${horaFinal}.\n\nPor favor, escolha um horário diferente antes de confirmar.`);
+        exibirMensagem(`⚠️ Limite de Horários Atingido!\n\nJá existem ${agendamentosNesteHorario} agendamento(s) confirmado(s) para o dia ${dataBR} às ${horaFinal}.\n\nPor favor, escolha um horário diferente antes de confirmar.`, 'info');
         return;
     }
 
@@ -1089,7 +1092,7 @@ async function confirmarPendente(id) {
                 window.open(dados.linkWhatsApp, '_blank');
 
             } else {
-                alert("Agendamento confirmado com sucesso!");
+                exibirMensagem("Agendamento confirmado com sucesso!", 'success');
             }
         } else {
             const errorData = await resposta.json().catch(() => ({}));
@@ -1097,13 +1100,16 @@ async function confirmarPendente(id) {
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert(erro.message || "Falha de comunicação com o servidor.");
+        exibirMensagem("Falha de comunicação com o servidor.", 'error');
     }
 }
 
 async function excluirPendente(id) {
-    if (!confirm('Tem certeza que deseja remover este agendamento permanentemente?'))
-        return;
+    const confirmado = await exibirConfirmacao('Tem certeza que deseja remover este agendamento permanentemente?');
+
+    if (!confirmado) {
+        return; // Sai da função se o usuário clicou em "Cancelar"
+    }
 
     try {
         const params = new URLSearchParams();
@@ -1118,11 +1124,11 @@ async function excluirPendente(id) {
         if (resposta.ok) {
             await carregarAgendaDoBanco(true);
         } else {
-            alert("Erro ao excluir do banco de dados.");
+            exibirMensagem("Erro ao excluir do banco de dados.", 'error');
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Falha de comunicação com o servidor.");
+        exibirMensagem("Falha de comunicação com o servidor.", 'error');
     }
 }
 
@@ -1192,7 +1198,7 @@ async function salvarAgendaManual(id, btn) {
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Erro: ", erro);
+        exibirMensagem("Erro: ", 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
         btn.style.opacity = '1';
@@ -1215,7 +1221,7 @@ async function concluirAtendimento(id, btn) {
     const obs = card.querySelector('.txt-obs').value;
 
     if (!func || func === "" || func === "null" || func === "— Pegar Serviço —") {
-        alert("⚠️ Erro: Você precisa selecionar o Funcionário Responsável antes de concluir.");
+        exibirMensagem("⚠️ Erro: Você precisa selecionar o Funcionário Responsável antes de concluir.", 'info');
         card.querySelector('.sel-func').focus();
         return;
     }
@@ -1232,30 +1238,30 @@ async function concluirAtendimento(id, btn) {
         );
 
         if (!temSaldoParaOServico) {
-            alert(`❌ Erro: O cliente ${item.dono} não possui pacote de "${item.servico}" com saldo disponível. Selecione outra forma de pagamento.`);
+            exibirMensagem(`❌ Erro: O cliente ${item.dono} não possui pacote de "${item.servico}" com saldo disponível. Selecione outra forma de pagamento.`, 'error');
             card.querySelector('.sel-forma').focus();
             return;
         }
     }
 
     if (forma !== "Pacote" && (!valorRaw || valorRaw === "0,00" || valorRaw === "")) {
-        alert("⚠️ Erro: O Valor Cobrado não pode ser zero ou vazio para pagamentos normais.");
+        exibirMensagem("⚠️ Erro: O Valor Cobrado não pode ser zero ou vazio para pagamentos normais.", 'error');
         card.querySelector('.inp-valor').focus();
         return;
     }
 
     if (!forma) {
-        alert("⚠️ Erro: Selecione a Forma de Pagamento.");
+        exibirMensagem("⚠️ Erro: Selecione a Forma de Pagamento.", 'error');
         card.querySelector('.sel-forma').focus();
         return;
     }
     if (status !== "Pago") {
-        alert("⛔ Bloqueio: Não é possível concluir um serviço com pagamento 'Pendente'. Altere para 'Pago' após receber do cliente.");
+        exibirMensagem("⛔ Bloqueio: Não é possível concluir um serviço com pagamento 'Pendente'. Altere para 'Pago' após receber do cliente.", 'error');
         card.querySelector('.sel-status').focus();
         return;
     }
     if (!entrada || !saida) {
-        alert("⚠️ Erro: Os horários de Entrada e Saída do pet são obrigatórios.");
+        exibirMensagem("⚠️ Erro: Os horários de Entrada e Saída do pet são obrigatórios.", 'error');
         if (!entrada)
             card.querySelector('.inp-entrada').focus();
         else
@@ -1263,7 +1269,9 @@ async function concluirAtendimento(id, btn) {
         return;
     }
 
-    if (!confirm(`O serviço de ${item.pet} foi finalizado? O cliente será notificado.`)) {
+    const confirmado = await exibirConfirmacao(`O serviço de ${item.pet} foi finalizado? O cliente será notificado.`);
+
+    if (!confirmado) {
         return;
     }
 
@@ -1304,14 +1312,14 @@ async function concluirAtendimento(id, btn) {
                 openWA(item.contato, msg);
 
         } else {
-            alert("Erro ao concluir o serviço.");
+            exibirMensagem("Erro ao concluir o serviço.", 'error');
             btn.innerHTML = originalHTML;
             btn.disabled = false;
             btn.style.opacity = '1';
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Erro: ", erro);
+        exibirMensagem("Erro: ", 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
         btn.style.opacity = '1';
@@ -1379,7 +1387,7 @@ async function finalizarRetirada(id, btn) {
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert("Erro ao arquivar o agendamento. Tente novamente.");
+        exibirMensagem("Erro ao arquivar o agendamento. Tente novamente.", 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -1410,30 +1418,31 @@ function aplicarMascaraMoeda(input) {
 
 function gerarComprovanteAgendamento(idAgendamento) {
     const todosServicos = (typeof historico !== 'undefined' && typeof agenda !== 'undefined') ? [...historico, ...agenda] : [];
-    
+
     const agendamento = todosServicos.find(a => String(a.id) === String(idAgendamento));
 
     if (!agendamento) {
-        alert("Agendamento não encontrado para gerar o PDF.");
+        exibirMensagem("Agendamento não encontrado para gerar o PDF.", 'info');
         return;
     }
 
     // 2. Formatação dos Dados
     let dataLimpa = agendamento.data || agendamento.concluidoEm || '';
-    if (dataLimpa.includes('T')) dataLimpa = dataLimpa.split('T')[0];
+    if (dataLimpa.includes('T'))
+        dataLimpa = dataLimpa.split('T')[0];
     const dataFmt = typeof fd === 'function' ? fd(dataLimpa) : dataLimpa.split('-').reverse().join('/');
-    
+
     const horaFmt = agendamento.hora ? agendamento.hora.substring(0, 5) : '--:--';
     const horaEntrada = agendamento.entrada_pet ? agendamento.entrada_pet.substring(0, 5) : '--:--';
     const horaSaida = agendamento.saida_pet ? agendamento.saida_pet.substring(0, 5) : '--:--';
-    
+
     let valorFloat = parseFloat(String(agendamento.valor || agendamento.preco || agendamento.total || 0).replace(',', '.'));
     const statusReal = (agendamento.statusPag || agendamento.status_pagamento || agendamento.status || 'Pendente').toUpperCase();
-    
+
     const isPacote = agendamento.vendaPacote || agendamento.pacoteNome || agendamento.pacoteId || agendamento.pacote ||
-                     (agendamento.formaPagamento && String(agendamento.formaPagamento).toLowerCase().includes('pacote')) || 
-                     (agendamento.formaPag && String(agendamento.formaPag).toLowerCase().includes('pacote')) ||
-                     (valorFloat === 0 && (statusReal === 'PAGO' || statusReal === 'CONCLUÍDO' || statusReal === 'CONCLUIDO'));
+            (agendamento.formaPagamento && String(agendamento.formaPagamento).toLowerCase().includes('pacote')) ||
+            (agendamento.formaPag && String(agendamento.formaPag).toLowerCase().includes('pacote')) ||
+            (valorFloat === 0 && (statusReal === 'PAGO' || statusReal === 'CONCLUÍDO' || statusReal === 'CONCLUIDO'));
 
     const valorExibicao = isPacote ? 'Pago via Pacote' : `R$ ${valorFloat.toFixed(2).replace('.', ',')}`;
     const func = agendamento.funcionario && String(agendamento.funcionario) !== 'null' ? agendamento.funcionario : 'Não atribuído';
@@ -1443,9 +1452,10 @@ function gerarComprovanteAgendamento(idAgendamento) {
     if (isPacote) {
         const nomeDoPacote = agendamento.pacoteNome || agendamento.pacote || 'Pacote Promocional';
         const sessaoUtilizada = agendamento.sessaoUtilizada || agendamento.sessao || '?';
-        
+
         let dataCompra = agendamento.dataVenda || agendamento.dataCompra || agendamento.dataVendaPacote || '';
-        if (dataCompra.includes('T')) dataCompra = dataCompra.split('T')[0];
+        if (dataCompra.includes('T'))
+            dataCompra = dataCompra.split('T')[0];
         let dataCompraFmt = dataCompra ? (typeof fd === 'function' ? fd(dataCompra) : dataCompra.split('-').reverse().join('/')) : 'Não identificada';
 
         formaPagExibicao = `
@@ -1544,10 +1554,10 @@ function gerarComprovanteAgendamento(idAgendamento) {
         </div>
     `;
 
-    if(typeof pdfWin === 'function') {
+    if (typeof pdfWin === 'function') {
         pdfWin('Comprovante_Servico_' + agendamento.id, body);
     } else {
-        alert("Função de PDF não encontrada.");
+        exibirMensagem("Função de PDF não encontrada.", 'info');
     }
 }
 
@@ -1602,12 +1612,15 @@ async function aceitarPedido(id, btn, dataReal, horaReal, pet) {
     const dataBR = typeof fd === 'function' ? fd(dataReal) : dataReal;
 
     if (agendamentosNesteHorario >= limitePorHorario) {
-        alert(`⚠️ Limite de Horários Atingido!\n\nJá existem ${agendamentosNesteHorario} agendamento(s) confirmado(s) para o dia ${dataBR} às ${horaReal}.\n\nPor favor, clique em "Mover p/ Pendentes" para sugerir um novo horário ao cliente.`);
+        exibirMensagem(`⚠️ Limite de Horários Atingido!\n\nJá existem ${agendamentosNesteHorario} agendamento(s) confirmado(s) para o dia ${dataBR} às ${horaReal}.\n\nPor favor, clique em "Mover p/ Pendentes" para sugerir um novo horário ao cliente.`, 'info');
         return;
     }
 
-    if (!confirm(`Deseja CONFIRMAR o agendamento de ${pet} para o dia ${dataBR} às ${horaReal}?`))
+    const confirmado = await exibirConfirmacao(`Deseja CONFIRMAR o agendamento de ${pet} para o dia ${dataBR} às ${horaReal}?`);
+
+    if (!confirmado) {
         return;
+    }
 
     const originalHTML = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> A aceitar...';
@@ -1633,7 +1646,7 @@ async function aceitarPedido(id, btn, dataReal, horaReal, pet) {
                 window.open(dados.linkWhatsApp, '_blank');
 
             } else {
-                alert("Agendamento confirmado com sucesso!");
+                exibirMensagem("Agendamento confirmado com sucesso!", 'success');
             }
 
         } else {
@@ -1641,8 +1654,8 @@ async function aceitarPedido(id, btn, dataReal, horaReal, pet) {
             throw new Error(errorData.erro || "Falha ao aceitar no servidor");
         }
     } catch (erro) {
-        console.error(erro);
-        alert(erro.message || "Erro ao confirmar o agendamento.");
+        console.error("Erro: ", erro);
+        exibirMensagem("Erro ao confirmar o agendamento.", 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -1674,8 +1687,8 @@ async function recusarPedido(id, btn) {
             throw new Error("Falha ao atualizar no servidor");
         }
     } catch (erro) {
-        console.error(erro);
-        alert("Erro ao mover o agendamento.");
+        console.error("Error: ", erro);
+        exibirMensagem("Erro ao mover o agendamento.", 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -1772,11 +1785,11 @@ async function salvarServico(e) {
             fecharModalServico();
             await carregarServicosDoBanco();
         } else {
-            alert('Erro ao processar serviço no servidor.');
+            exibirMensagem('Erro ao processar serviço no servidor.', 'error');
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert('Falha de comunicação.');
+        exibirMensagem('Falha de comunicação.', 'error');
     } finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
@@ -1804,13 +1817,13 @@ async function excluirServico(id, btn) {
         if (resposta.ok) {
             await carregarServicosDoBanco();
         } else {
-            alert("Erro ao excluir serviço.");
+            exibirMensagem("Erro ao excluir serviço.", 'error');
             btn.innerHTML = originalHTML;
             btn.disabled = false;
         }
     } catch (erro) {
         console.error("Erro:", erro);
-        alert('Falha de comunicação.');
+        exibirMensagem('Falha de comunicação.', 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -1892,8 +1905,8 @@ async function salvarHorariosFuncionamento(btn) {
             throw new Error("Falha no servidor");
         }
     } catch (erro) {
-        console.error(erro);
-        alert('Falha ao salvar horários.');
+        console.error("Erro: ", erro);
+        exibirMensagem('Falha ao salvar horários.', 'error');
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }

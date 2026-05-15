@@ -93,6 +93,9 @@ function renderFuncsCadastro() {
                   <div class="func-avatar">${f.nome.charAt(0).toUpperCase()}</div>
                   <div class="func-cad-info">
                     <div class="func-cad-nome">${f.nome}</div>
+                    <div style="font-size: 0.8rem; color: #C9A96E; margin-top: 2px; font-weight: 600;">
+                        <i class="fas fa-id-badge" style="font-size: 0.7rem; margin-right: 3px;"></i> ${f.matricula || 'Sem Matrícula'}
+                    </div>
                     <div class="func-cad-cargo">${f.perfil || '—'}</div>
                     <div class="func-cad-endereco" style="font-size: 0.75rem; color: #888; margin-top: 2px;">
                       <i class="fas fa-map-marker-alt" style="font-size: 0.65rem;"></i> 
@@ -106,6 +109,7 @@ function renderFuncsCadastro() {
                 </div>`;
     }).join('');
 }
+
 function renderPerformance() {
     const mes = document.getElementById('filtro-mes-func')?.value || mesMes;
     const el = document.getElementById('lista-performance');
@@ -242,7 +246,22 @@ function abrirModalFunc(id = null) {
 }
 
 function fecharModalFunc() {
-    document.getElementById('senhaFuncionario').value = '';
+    const camposLimpar = [
+        'nomeFuncionario', 'emailFuncionario', 'senhaFuncionario',
+        'cpfFuncionario', 'rgFuncionario', 'perfilFuncionario',
+        'func-cargo', 'salarioFunc', 'cep-func', 'logradouro-func',
+        'numero-func', 'bairro-func', 'cidade-func', 'uf-func',
+        'complemento-func'
+    ];
+
+    camposLimpar.forEach(campoId => {
+        const el = document.getElementById(campoId);
+        if (el) {
+            el.value = '';
+            el.style.borderColor = '';
+        }
+    });
+
     document.getElementById('modalFunc').classList.add('hidden');
     editFuncId = null;
 }
@@ -262,7 +281,7 @@ function mostrarOcultarFuncao() {
     const perfilSelecionado = document.getElementById('perfilFuncionario').value;
     const divFuncao = document.getElementById('divFuncao');
     const inputFuncao = document.getElementById('func-cargo');
-    const inputSalario = document.getElementById('salarioFunc')
+    const inputSalario = document.getElementById('salarioFunc');
 
     if (perfilSelecionado === 'Funcionario') {
         divFuncao.style.display = 'block';
@@ -375,7 +394,8 @@ function cadastrarUsuario(event) {
             })
             .catch(error => {
                 restaurarBotaoSalvar(btnSalvar, textoOriginalBotao);
-                alert(error.message);
+                console.error("Error: ", error.message);
+                exibirMensagem('Erro ao cadastrar funcionário.', 'error');
             });
 }
 
@@ -408,40 +428,40 @@ async function excluirFunc(id) {
 
         if (resposta.ok) {
             restaurarBotaoSalvar(btnSalvar, textoOriginalBotao);
-            alert("Funcionário excluído com sucesso!");
+            exibirMensagem('Funcionário excluído com sucesso!', 'success');
 
             // 4. Recarrega a lista de funcionários do banco para atualizar a tela e os dropdowns
             await carregarFuncionariosDoBanco(isAdm);
 
         } else {
             const msgErro = await resposta.text();
-            alert("Erro ao excluir: " + msgErro);
+            console.error("Erro ao excluir: " + msgErro);
+            exibirMensagem('Erro ao excluir funcionário', 'error');
         }
     } catch (erro) {
         console.error("Erro na requisição:", erro);
-        alert("Falha de comunicação com o servidor.");
     }
 }
 
 function validarCPF(cpf) {
     cpf = cpf.replace(/[^\d]+/g, '');
-    if (cpf == '' || cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf))
+    if (cpf === '' || cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf))
         return false;
     let add = 0;
     for (let i = 0; i < 9; i++)
         add += parseInt(cpf.charAt(i)) * (10 - i);
     let rev = 11 - (add % 11);
-    if (rev == 10 || rev == 11)
+    if (rev === 10 || rev === 11)
         rev = 0;
-    if (rev != parseInt(cpf.charAt(9)))
+    if (rev !== parseInt(cpf.charAt(9)))
         return false;
     add = 0;
     for (let i = 0; i < 10; i++)
         add += parseInt(cpf.charAt(i)) * (11 - i);
     rev = 11 - (add % 11);
-    if (rev == 10 || rev == 11)
+    if (rev === 10 || rev === 11)
         rev = 0;
-    if (rev != parseInt(cpf.charAt(10)))
+    if (rev !== parseInt(cpf.charAt(10)))
         return false;
     return true;
 }
@@ -600,4 +620,26 @@ function populateFuncSelects() {
             }
         }
     });
+}
+
+function toggleSenha() {
+    const check = document.getElementById('checkAlterarSenha');
+    const campoSenha = document.getElementById('senhaFuncionario');
+
+    if (check.checked) {
+        campoSenha.disabled = false;
+        campoSenha.placeholder = 'Digite a nova senha';
+        campoSenha.required = true;
+        campoSenha.focus();
+    } else {
+        campoSenha.disabled = true;
+        campoSenha.value = '';
+        campoSenha.placeholder = 'Senha não será alterada';
+        campoSenha.required = false;
+        campoSenha.style.borderColor = ''; // Tira a borda vermelha de erro se houver
+    }
+
+    // Dispara a validação para atualizar o botão "Salvar"
+    if (typeof validarFormulario === 'function')
+        validarFormulario();
 }
