@@ -840,8 +840,8 @@ document.getElementById('tamanho-novo-cliente').value = '';
 document.getElementById('observacoes-pet-novo-cliente').value = '';
 document.getElementById('email-novo-cliente').value = '';
 document.getElementById('pacote-novo-cliente').value = '';
-document.getElementById('quantidade-pacote-novo-cliente').value = '';
-document.getElementById('validade-pacote-novo-cliente').value = '';
+document.getElementById('data-assinatura-pacote-novo-cliente').value = '';
+document.getElementById('data-validade-pacote-novo-cliente').value = '';
 
     document.getElementById('cep-novo-cliente').value = '';
     document.getElementById('logradouro-novo-cliente').value = '';
@@ -877,6 +877,8 @@ const tamanho = document.getElementById('tamanho-novo-cliente').value;
 const observacoesPet = document.getElementById('observacoes-pet-novo-cliente').value;
 
 const pacoteId = document.getElementById('pacote-novo-cliente').value;
+const dataAssinaturaPacote = document.getElementById('data-assinatura-pacote-novo-cliente').value;
+const dataValidadePacote = document.getElementById('data-validade-pacote-novo-cliente').value;
 
 const params = new URLSearchParams();
 params.append('nome', nome);
@@ -890,6 +892,8 @@ params.append('tamanho', tamanho);
 params.append('observacoesPet', observacoesPet);
 
 params.append('pacoteId', pacoteId);
+params.append('dataAssinaturaPacote', dataAssinaturaPacote);
+params.append('dataValidadePacote', dataValidadePacote);
     try {
         const resposta = await fetch('../api/clientes/cadastrar', {
             method: 'POST',
