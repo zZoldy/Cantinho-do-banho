@@ -1685,29 +1685,67 @@
 
                         <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-top: 20px;">
                             <h4 style="color: #17a2b8; margin-top: 0; margin-bottom: 12px; font-size: 0.95rem;">
-                                <i class="fas fa-mobile-alt"></i> Acesso ao App (Opcional)
-                            </h4>
-                            <p style="font-size: 0.75rem; color: #888; margin-bottom: 12px;">Se preenchido, o sistema gerará uma senha automaticamente.</p>
+                                <i class="fas fa-id-card"></i> Dados do Cliente
+</h4>
+<i class="fas fa-id-card"></i> Dados do Cliente
+</h4>
 
-                            <div class="field" style="margin-bottom: 15px;">
-                                <label class="form-label">E-mail</label>
-                                <input type="email" id="email-novo-cliente" class="form-ctrl" placeholder="Para login do cliente">
-                            </div>
-                            <div class="field">
-                                <label class="form-label">CPF</label>
-                                <input type="text" id="cpf-novo-cliente" class="form-ctrl" placeholder="000.000.000-00" oninput="mascaraCPF(this)">
-                            </div>
-                        </div>
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">E-mail</label>
+    <input type="email" id="email-novo-cliente" class="form-ctrl" placeholder="E-mail do cliente">
+</div>
 
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" onclick="fecharModalNovoCliente()" class="btn-secundario">Cancelar</button>
-                    <button type="submit" form="form-novo-cliente" class="btn-primary" id="btn-salvar-cliente"><i class="fas fa-save"></i> Cadastrar Cliente</button>
-                </div>
-            </div>
-        </div>
+<div class="field">
+    <label class="form-label">CPF</label>
+    <input type="text" id="cpf-novo-cliente" class="form-ctrl" placeholder="000.000.000-00" oninput="mascaraCPF(this)">
+</div>
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">Nome do Pet</label>
+    <input type="text" id="pet-novo-cliente" class="form-ctrl" placeholder="Nome do pet">
+</div>
 
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">Raça</label>
+    <input type="text" id="raca-novo-cliente" class="form-ctrl" placeholder="Ex: Shih-tzu, Spitz, SRD...">
+</div>
+
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">Tamanho</label>
+    <select id="tamanho-novo-cliente" class="form-ctrl">
+        <option value="">Selecione</option>
+        <option value="Pequeno">Pequeno</option>
+        <option value="Médio">Médio</option>
+        <option value="Grande">Grande</option>
+    </select>
+</div>
+
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">Observações do Pet</label>
+    <textarea id="observacoes-pet-novo-cliente" class="form-ctrl" rows="3" placeholder="Ex: medroso, bravo, alérgico, usa focinheira, cuidados especiais..."></textarea>
+</div>
+<h4 style="margin-top: 22px;">
+    <i class="fas fa-box-open"></i> Pacote
+</h4>
+
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">Adicionar pacote ao cliente?</label>
+    <select id="pacote-novo-cliente" class="form-ctrl">
+        <option value="">Nenhum pacote</option>
+    </select>
+    <small style="display: block; color: #888; margin-top: 6px; font-size: 0.75rem;">
+        Os pacotes disponíveis são os cadastrados em Configurações &gt; Pacotes.
+    </small>
+</div>
+
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">Quantidade de serviços do pacote</label>
+    <input type="number" id="quantidade-pacote-novo-cliente" class="form-ctrl" placeholder="Ex: 4" min="1">
+</div>
+
+<div class="field" style="margin-bottom: 15px;">
+    <label class="form-label">Validade do pacote</label>
+    <input type="date" id="validade-pacote-novo-cliente" class="form-ctrl">
+</div>
         <div class="modal-overlay hidden" id="modal-detalhes-cliente">
             <div class="modal" style="max-width: 550px; border-top: 5px solid #17a2b8; background: #161616;">
                 <div class="modal-header" style="border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">

@@ -791,15 +791,57 @@ function mudarSubAbaClientes(aba) {
 }
 
 // ================= FLUXO DE NOVO CLIENTE =================
+async function carregarPacotesNoNovoCliente() {
+    const select = document.getElementById('pacote-novo-cliente');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Carregando pacotes...</option>';
+
+    try {
+        const resposta = await fetch('../api/pacotes/listar');
+
+        if (!resposta.ok) {
+            throw new Error('Erro ao buscar pacotes');
+        }
+
+        const pacotes = await resposta.json();
+
+        select.innerHTML = '<option value="">Nenhum pacote</option>';
+
+        pacotes.forEach(p => {
+            const sessoes = p.sessoes || p.quantidadeSessoes || 0;
+            const validade = p.validade || 0;
+            const valor = Number(p.valor || 0).toFixed(2);
+
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = `${p.nome} - ${sessoes} sessões - ${validade} dias - R$ ${valor}`;
+            select.appendChild(option);
+        });
+
+    } catch (erro) {
+        console.error('Erro ao carregar pacotes no cadastro do cliente:', erro);
+        select.innerHTML = '<option value="">Erro ao carregar pacotes</option>';
+    }
+}
+
 function abrirModalNovoCliente() {
     if (typeof fecharFocoCliente === 'function') {
         fecharFocoCliente();
     }
 
     document.getElementById('nome-novo-cliente').value = '';
-    document.getElementById('telefone-novo-cliente').value = '';
-    document.getElementById('email-novo-cliente').value = '';
-    document.getElementById('cpf-novo-cliente').value = '';
+document.getElementById('telefone-novo-cliente').value = '';
+document.getElementById('cpf-novo-cliente').value = '';
+
+document.getElementById('pet-novo-cliente').value = '';
+document.getElementById('raca-novo-cliente').value = '';
+document.getElementById('tamanho-novo-cliente').value = '';
+document.getElementById('observacoes-pet-novo-cliente').value = '';
+document.getElementById('email-novo-cliente').value = '';
+document.getElementById('pacote-novo-cliente').value = '';
+document.getElementById('quantidade-pacote-novo-cliente').value = '';
+document.getElementById('validade-pacote-novo-cliente').value = '';
 
     document.getElementById('cep-novo-cliente').value = '';
     document.getElementById('logradouro-novo-cliente').value = '';
@@ -807,7 +849,8 @@ function abrirModalNovoCliente() {
     document.getElementById('bairro-novo-cliente').value = '';
     document.getElementById('cidade-novo-cliente').value = '';
     document.getElementById('uf-novo-cliente').value = '';
-
+    
+carregarPacotesNoNovoCliente();
     document.getElementById('modal-novo-cliente').classList.remove('hidden');
 }
 
@@ -824,23 +867,29 @@ async function salvarNovoCliente(e) {
     btn.disabled = true;
 
     const nome = document.getElementById('nome-novo-cliente').value;
-    const telefone = document.getElementById('telefone-novo-cliente').value;
-    const email = document.getElementById('email-novo-cliente').value;
-    const cpf = document.getElementById('cpf-novo-cliente').value;
+const telefone = document.getElementById('telefone-novo-cliente').value;
+const cpf = document.getElementById('cpf-novo-cliente').value;
+const email = document.getElementById('email-novo-cliente').value;
 
-    const params = new URLSearchParams();
-    params.append('nome', nome);
-    params.append('telefone', telefone);
-    params.append('email', email);
-    params.append('cpf', cpf);
+const pet = document.getElementById('pet-novo-cliente').value;
+const raca = document.getElementById('raca-novo-cliente').value;
+const tamanho = document.getElementById('tamanho-novo-cliente').value;
+const observacoesPet = document.getElementById('observacoes-pet-novo-cliente').value;
 
-    params.append('cep', document.getElementById('cep-novo-cliente').value);
-    params.append('logradouro', document.getElementById('logradouro-novo-cliente').value);
-    params.append('numero', document.getElementById('numero-novo-cliente').value);
-    params.append('bairro', document.getElementById('bairro-novo-cliente').value);
-    params.append('cidade', document.getElementById('cidade-novo-cliente').value);
-    params.append('uf', document.getElementById('uf-novo-cliente').value);
+const pacoteId = document.getElementById('pacote-novo-cliente').value;
 
+const params = new URLSearchParams();
+params.append('nome', nome);
+params.append('telefone', telefone);
+params.append('cpf', cpf);
+params.append('email', email);
+params.append('pet', pet);
+params.append('nomePet', pet);
+params.append('raca', raca);
+params.append('tamanho', tamanho);
+params.append('observacoesPet', observacoesPet);
+
+params.append('pacoteId', pacoteId);
     try {
         const resposta = await fetch('../api/clientes/cadastrar', {
             method: 'POST',
@@ -854,17 +903,7 @@ async function salvarNovoCliente(e) {
             fecharModalNovoCliente();
             await carregarClientesDoBanco();
 
-            if (dados.senha) {
-                const msg = `🐾 *Cantinho do Banho*\n\nOlá ${nome}! O seu cadastro foi realizado com sucesso! 🎉\n\n*Seu Login:* ${email}\n*Senha temporária:* ${dados.senha}\n\nRecomendamos que altere a senha no seu primeiro acesso.\n\nBem-vindo(a) à família!`;
-
-                if (typeof openWA === 'function') {
-                    openWA(telefone, msg);
-                } else {
-                    exibirMensagem(`Cliente cadastrado! Senha do App gerada: ${dados.senha}`, 'success');
-                }
-            } else {
-                exibirMensagem('Cliente cadastrado com sucesso (Sem acesso ao App).', 'success');
-            }
+           exibirMensagem('Cliente cadastrado com sucesso.', 'success');
 
         } else {
             const erroTexto = await resposta.text();

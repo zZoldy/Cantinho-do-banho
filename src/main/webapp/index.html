@@ -602,7 +602,7 @@
                                 <div class="col-md-4 col-sm-6">
                                     <div class="input-group-custom">
                                         <i class="fas fa-calendar"></i>
-                                        <input id="data" type="date" class="form-input" required>
+                                        <input id="data" type="date" class="form-input" required onchange="validarDataAgendamento(this)">
                                     </div>
                                 </div>
 
@@ -843,4 +843,80 @@
 
         <script src="js/agendamento.js"></script>
     </body>
+    <script>
+    function mostrarAvisoAgendamento(mensagem) {
+        const avisoExistente = document.getElementById("aviso-agendamento");
+        if (avisoExistente) {
+            avisoExistente.remove();
+        }
+
+        const overlay = document.createElement("div");
+        overlay.id = "aviso-agendamento";
+        overlay.className = "custom-alert-overlay";
+        overlay.innerHTML = `
+            <div class="custom-alert-box">
+                <div class="custom-alert-icon">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+                <div class="custom-alert-text">${mensagem}</div>
+                <button type="button" class="custom-alert-btn" onclick="fecharAvisoAgendamento()">
+                    Entendi
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        setTimeout(() => {
+            overlay.classList.add("active");
+        }, 10);
+    }
+
+    function fecharAvisoAgendamento() {
+        const overlay = document.getElementById("aviso-agendamento");
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+
+    function validarDataAgendamento(input) {
+        if (!input || !input.value) return true;
+
+        const partes = input.value.split("-");
+        const ano = Number(partes[0]);
+        const mes = Number(partes[1]);
+        const dia = Number(partes[2]);
+
+        const dataSelecionada = new Date(ano, mes - 1, dia);
+        const diaSemana = dataSelecionada.getDay();
+
+        if (diaSemana === 6) {
+            mostrarAvisoAgendamento("Aos sábados não realizamos agendamentos. O atendimento é por ordem de chegada.");
+            input.value = "";
+            return false;
+        }
+
+        if (diaSemana === 0) {
+            mostrarAvisoAgendamento("Não funcionamos aos domingos. Nosso funcionamento é de segunda a sábado.");
+            input.value = "";
+            return false;
+        }
+
+        return true;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const campoData = document.getElementById("data");
+        const formulario = campoData ? campoData.closest("form") : null;
+
+        if (formulario) {
+            formulario.addEventListener("submit", function (event) {
+                if (!validarDataAgendamento(campoData)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }, true);
+        }
+    });
+</script>
 </html>
