@@ -346,13 +346,46 @@ function renderPetsHistorico() {
                             <i class="fas fa-check-circle" style="color:#17a2b8; font-size:1rem;"></i> 
                             <span><strong>Sessão ${s.sessao} utilizada:</strong> ${s.servico} em ${dtUsoFmt} ${hrUso ? 'às ' + hrUso : ''}</span>
                         </div>`;
-                } else {
-                    sessoesHtml += `
-                        <div style="font-size: 0.85rem; color: #666; margin-bottom:6px; display:flex; align-items:center; gap:8px; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 4px; border: 1px dashed #333;">
-                            <i class="far fa-circle" style="font-size:1rem;"></i> 
-                            <span><strong>Sessão ${i + 1}:</strong> Disponível para uso</span>
-                        </div>`;
-                }
+               } else {
+    const sessaoNumero = i + 1;
+    const pacoteId = compra.pacoteId || compra.id || '';
+    const petId = p.id || p.petId || '';
+
+    sessoesHtml += `
+        <div style="font-size: 0.85rem; color: #ddd; margin-bottom:8px; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 6px; border: 1px dashed #333;">
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
+                <input 
+                    type="checkbox" 
+                    class="check-servico-pacote"
+                    data-pet-id="${petId}"
+                    data-pacote-id="${pacoteId}"
+                    data-sessao="${sessaoNumero}"
+                    onchange="alternarServicoPacote(this)"
+                >
+                <span><strong>Sessão ${sessaoNumero}:</strong> Marcar serviço realizado</span>
+            </label>
+
+            <div class="dados-servico-pacote" style="margin-left: 24px; display:none;">
+                <label style="display:block; color:#aaa; font-size:0.75rem; margin-bottom:4px;">
+                    Data em que o serviço foi realizado
+                </label>
+
+                <input 
+                    type="date" 
+                    class="data-servico-pacote"
+                    style="background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:4px; padding:6px 8px; margin-right:8px;"
+                >
+
+                <button 
+                    type="button"
+                    onclick="salvarServicoRealizadoPacote(this)"
+                    style="background:#28a745; color:#fff; border:none; border-radius:4px; padding:6px 10px; cursor:pointer; font-size:0.8rem;"
+                >
+                    <i class="fas fa-save"></i> Salvar
+                </button>
+            </div>
+        </div>`;
+}
             }
 
             return `
@@ -769,28 +802,99 @@ async function salvarAcessoCliente(e) {
 }
 
 function mudarSubAbaClientes(aba) {
-    document.getElementById('btn-sub-cadastrados').classList.remove('active');
-    document.getElementById('btn-sub-nao-cadastrados').classList.remove('active');
-    document.getElementById('btn-sub-pets').classList.remove('active');
+    const btnCadastrados = document.getElementById('btn-sub-cadastrados');
+    const btnPets = document.getElementById('btn-sub-pets');
 
-    document.getElementById('container-clientes-cadastrados').classList.add('hidden');
-    document.getElementById('container-clientes-nao-cadastrados').classList.add('hidden');
-    document.getElementById('container-pets-historico').classList.add('hidden');
+    const containerCadastrados = document.getElementById('container-clientes-cadastrados');
+    const containerPets = document.getElementById('container-pets-historico');
 
-    if (aba === 'cadastrados') {
-        document.getElementById('btn-sub-cadastrados').classList.add('active');
-        document.getElementById('container-clientes-cadastrados').classList.remove('hidden');
-    } else if (aba === 'nao-cadastrados') {
-        document.getElementById('btn-sub-nao-cadastrados').classList.add('active');
-        document.getElementById('container-clientes-nao-cadastrados').classList.remove('hidden');
-    } else if (aba === 'pets') {
-        document.getElementById('btn-sub-pets').classList.add('active');
-        document.getElementById('container-pets-historico').classList.remove('hidden');
-        renderPetsHistorico();
+    if (btnCadastrados) btnCadastrados.classList.remove('active');
+    if (btnPets) btnPets.classList.remove('active');
+
+    if (containerCadastrados) containerCadastrados.classList.add('hidden');
+    if (containerPets) containerPets.classList.add('hidden');
+
+    if (aba === 'pets') {
+        if (btnPets) btnPets.classList.add('active');
+        if (containerPets) containerPets.classList.remove('hidden');
+
+        if (typeof renderPetsHistorico === 'function') {
+            renderPetsHistorico();
+        }
+    } else {
+        if (btnCadastrados) btnCadastrados.classList.add('active');
+        if (containerCadastrados) containerCadastrados.classList.remove('hidden');
     }
 }
 
 // ================= FLUXO DE NOVO CLIENTE =================
+
+function adicionarPetNovoCliente() {
+    const listaPets = document.getElementById('lista-pets-novo-cliente');
+    if (!listaPets) return;
+
+    const totalPets = listaPets.querySelectorAll('.pet-form-novo-cliente').length + 1;
+
+    const novoPet = document.createElement('div');
+    novoPet.className = 'pet-form-novo-cliente';
+    novoPet.setAttribute('data-pet-index', totalPets);
+    novoPet.style.cssText = 'border: 1px dashed #333; border-radius: 8px; padding: 12px; margin-bottom: 12px;';
+
+    novoPet.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <h5 style="color: #ccc; margin: 0; font-size: 0.85rem;">
+                Pet ${totalPets}
+            </h5>
+
+            <button type="button" onclick="removerPetNovoCliente(this)" class="btn-secundario" style="padding: 5px 10px; font-size: 0.75rem;">
+                <i class="fas fa-trash"></i> Remover
+            </button>
+        </div>
+
+        <div class="field" style="margin-bottom: 15px;">
+            <label class="form-label">Nome do Pet</label>
+            <input type="text" class="form-ctrl pet-nome-novo-cliente" placeholder="Nome do pet">
+        </div>
+
+        <div class="field" style="margin-bottom: 15px;">
+            <label class="form-label">Raça</label>
+            <input type="text" class="form-ctrl pet-raca-novo-cliente" placeholder="Ex: Shih-tzu, Spitz, SRD...">
+        </div>
+
+        <div class="field" style="margin-bottom: 15px;">
+            <label class="form-label">Tamanho</label>
+            <select class="form-ctrl pet-tamanho-novo-cliente">
+                <option value="">Selecione</option>
+                <option value="Pequeno">Pequeno</option>
+                <option value="Médio">Médio</option>
+                <option value="Grande">Grande</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="form-label">Observações do Pet</label>
+            <textarea class="form-ctrl pet-observacoes-novo-cliente" rows="3" placeholder="Ex: medroso, bravo, alérgico, usa focinheira, cuidados especiais..."></textarea>
+        </div>
+    `;
+
+    listaPets.appendChild(novoPet);
+}
+
+function removerPetNovoCliente(botao) {
+    const cardPet = botao.closest('.pet-form-novo-cliente');
+    if (cardPet) {
+        cardPet.remove();
+    }
+
+    const listaPets = document.getElementById('lista-pets-novo-cliente');
+    if (!listaPets) return;
+
+    listaPets.querySelectorAll('.pet-form-novo-cliente').forEach((card, index) => {
+        const titulo = card.querySelector('h5');
+        if (titulo) titulo.textContent = `Pet ${index + 1}`;
+        card.setAttribute('data-pet-index', index + 1);
+    });
+}
 async function carregarPacotesNoNovoCliente() {
     const select = document.getElementById('pacote-novo-cliente');
     if (!select) return;
@@ -871,10 +975,21 @@ const telefone = document.getElementById('telefone-novo-cliente').value;
 const cpf = document.getElementById('cpf-novo-cliente').value;
 const email = document.getElementById('email-novo-cliente').value;
 
-const pet = document.getElementById('pet-novo-cliente').value;
-const raca = document.getElementById('raca-novo-cliente').value;
-const tamanho = document.getElementById('tamanho-novo-cliente').value;
-const observacoesPet = document.getElementById('observacoes-pet-novo-cliente').value;
+const pets = Array.from(document.querySelectorAll('.pet-form-novo-cliente')).map((card) => {
+    return {
+        nome: card.querySelector('.pet-nome-novo-cliente')?.value || '',
+        raca: card.querySelector('.pet-raca-novo-cliente')?.value || '',
+        tamanho: card.querySelector('.pet-tamanho-novo-cliente')?.value || '',
+        observacoes: card.querySelector('.pet-observacoes-novo-cliente')?.value || ''
+    };
+}).filter(pet => pet.nome || pet.raca || pet.tamanho || pet.observacoes);
+
+const primeiroPet = pets[0] || {
+    nome: '',
+    raca: '',
+    tamanho: '',
+    observacoes: ''
+};
 
 const pacoteId = document.getElementById('pacote-novo-cliente').value;
 const dataAssinaturaPacote = document.getElementById('data-assinatura-pacote-novo-cliente').value;
@@ -885,11 +1000,12 @@ params.append('nome', nome);
 params.append('telefone', telefone);
 params.append('cpf', cpf);
 params.append('email', email);
-params.append('pet', pet);
-params.append('nomePet', pet);
-params.append('raca', raca);
-params.append('tamanho', tamanho);
-params.append('observacoesPet', observacoesPet);
+params.append('pet', primeiroPet.nome);
+params.append('nomePet', primeiroPet.nome);
+params.append('raca', primeiroPet.raca);
+params.append('tamanho', primeiroPet.tamanho);
+params.append('observacoesPet', primeiroPet.observacoes);
+params.append('pets', JSON.stringify(pets));
 
 params.append('pacoteId', pacoteId);
 params.append('dataAssinaturaPacote', dataAssinaturaPacote);
@@ -1383,4 +1499,86 @@ function preencherModalPet(clienteId, petId) {
     document.getElementById('pet-cliente-id').value = clienteId;
 
     document.getElementById('modal-pet').classList.remove('hidden');
+}
+function alternarServicoPacote(checkbox) {
+    const container = checkbox.closest('div');
+    if (!container) return;
+
+    const dadosServico = container.querySelector('.dados-servico-pacote');
+    if (!dadosServico) return;
+
+    if (checkbox.checked) {
+        dadosServico.style.display = 'block';
+    } else {
+        dadosServico.style.display = 'none';
+
+        const inputData = dadosServico.querySelector('.data-servico-pacote');
+        if (inputData) {
+            inputData.value = '';
+        }
+    }
+}
+
+async function salvarServicoRealizadoPacote(botao) {
+    const bloco = botao.closest('.dados-servico-pacote');
+    if (!bloco) return;
+
+    const containerSessao = bloco.parentElement;
+    const checkbox = containerSessao.querySelector('.check-servico-pacote');
+    const inputData = bloco.querySelector('.data-servico-pacote');
+
+    if (!checkbox || !inputData) {
+        exibirMensagem('Erro ao localizar os dados da sessão do pacote.', 'error');
+        return;
+    }
+
+    const petId = checkbox.dataset.petId || '';
+    const pacoteId = checkbox.dataset.pacoteId || '';
+    const sessao = checkbox.dataset.sessao || '';
+    const dataServico = inputData.value;
+
+    if (!dataServico) {
+        exibirMensagem('Informe a data em que o serviço foi realizado.', 'info');
+        return;
+    }
+
+    const params = new URLSearchParams();
+    params.append('petId', petId);
+    params.append('pacoteId', pacoteId);
+    params.append('sessao', sessao);
+    params.append('dataServico', dataServico);
+
+    const textoOriginal = botao.innerHTML;
+    botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    botao.disabled = true;
+
+    try {
+        const resposta = await fetch('../api/pacotes/registrar-servico', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params
+        });
+
+        if (resposta.ok) {
+            exibirMensagem('Serviço do pacote registrado com sucesso!', 'success');
+
+            if (typeof carregarClientesDoBanco === 'function') {
+                await carregarClientesDoBanco();
+            }
+
+            if (typeof renderPetsHistorico === 'function') {
+                renderPetsHistorico();
+            }
+        } else {
+            const erroTexto = await resposta.text();
+            console.error('Erro ao registrar serviço do pacote:', erroTexto);
+            exibirMensagem('Não foi possível registrar o serviço do pacote.', 'error');
+        }
+    } catch (erro) {
+        console.error('Erro ao registrar serviço do pacote:', erro);
+        exibirMensagem('Erro de conexão ao registrar serviço do pacote.', 'error');
+    } finally {
+        botao.innerHTML = textoOriginal;
+        botao.disabled = false;
+    }
 }

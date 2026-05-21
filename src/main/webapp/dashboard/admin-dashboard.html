@@ -1169,17 +1169,14 @@
                 </div>
 
                 <div class="sub-nav-container" style="margin-bottom: 20px; border-bottom: 1px solid #252525; display: flex; gap: 15px;">
-                    <button class="sub-nav-link active" id="btn-sub-cadastrados" onclick="mudarSubAbaClientes('cadastrados')">
-                        <i class="fas fa-user-check"></i> Cadastrados
-                    </button>
-                    <button class="sub-nav-link" id="btn-sub-nao-cadastrados" onclick="mudarSubAbaClientes('nao-cadastrados')">
-                        <i class="fas fa-user-slash"></i> Sem Cadastro
-                    </button>
-                    <button class="sub-nav-link" id="btn-sub-pets" onclick="mudarSubAbaClientes('pets')">
-                        <i class="fas fa-paw"></i> Pets & Histórico
-                    </button>
-                </div>
+    <button class="sub-nav-link active" id="btn-sub-cadastrados" onclick="mudarSubAbaClientes('cadastrados')">
+        <i class="fas fa-user-check"></i> Clientes Cadastrados
+    </button>
 
+    <button class="sub-nav-link" id="btn-sub-pets" onclick="mudarSubAbaClientes('pets')">
+        <i class="fas fa-paw"></i> Pets & Histórico
+    </button>
+</div>
                 <div class="filtros-bar-sm">
                     <input type="text" id="busca-clientes" placeholder="🔍 Buscar cliente ou telefone..." oninput="renderClientes()"/>
                 </div>
@@ -1704,36 +1701,50 @@
     </div>
 
     <!-- CARD 2: DADOS DO PET -->
-    <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;">
-        <h4 style="color: #17a2b8; margin-top: 0; margin-bottom: 15px; font-size: 0.95rem;">
+<div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
+        <h4 style="color: #17a2b8; margin: 0; font-size: 0.95rem;">
             <i class="fas fa-paw"></i> Dados do Pet
         </h4>
 
-        <div class="field" style="margin-bottom: 15px;">
-            <label class="form-label">Nome do Pet</label>
-            <input type="text" id="pet-novo-cliente" class="form-ctrl" placeholder="Nome do pet">
-        </div>
+        <button type="button" onclick="adicionarPetNovoCliente()" class="btn-primary" style="background: #17a2b8; border: none; padding: 6px 12px; font-size: 0.8rem;">
+            <i class="fas fa-plus"></i> Pet
+        </button>
+    </div>
 
-        <div class="field" style="margin-bottom: 15px;">
-            <label class="form-label">Raça</label>
-            <input type="text" id="raca-novo-cliente" class="form-ctrl" placeholder="Ex: Shih-tzu, Spitz, SRD...">
-        </div>
+    <div id="lista-pets-novo-cliente">
+        <div class="pet-form-novo-cliente" data-pet-index="1" style="border: 1px dashed #333; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <h5 style="color: #ccc; margin-top: 0; margin-bottom: 12px; font-size: 0.85rem;">
+                Pet 1
+            </h5>
 
-        <div class="field" style="margin-bottom: 15px;">
-            <label class="form-label">Tamanho</label>
-            <select id="tamanho-novo-cliente" class="form-ctrl">
-                <option value="">Selecione</option>
-                <option value="Pequeno">Pequeno</option>
-                <option value="Médio">Médio</option>
-                <option value="Grande">Grande</option>
-            </select>
-        </div>
+            <div class="field" style="margin-bottom: 15px;">
+                <label class="form-label">Nome do Pet</label>
+                <input type="text" id="pet-novo-cliente" class="form-ctrl pet-nome-novo-cliente" placeholder="Nome do pet">
+            </div>
 
-        <div class="field">
-            <label class="form-label">Observações do Pet</label>
-            <textarea id="observacoes-pet-novo-cliente" class="form-ctrl" rows="3" placeholder="Ex: medroso, bravo, alérgico, usa focinheira, cuidados especiais..."></textarea>
+            <div class="field" style="margin-bottom: 15px;">
+                <label class="form-label">Raça</label>
+                <input type="text" id="raca-novo-cliente" class="form-ctrl pet-raca-novo-cliente" placeholder="Ex: Shih-tzu, Spitz, SRD...">
+            </div>
+
+            <div class="field" style="margin-bottom: 15px;">
+                <label class="form-label">Tamanho</label>
+                <select id="tamanho-novo-cliente" class="form-ctrl pet-tamanho-novo-cliente">
+                    <option value="">Selecione</option>
+                    <option value="Pequeno">Pequeno</option>
+                    <option value="Médio">Médio</option>
+                    <option value="Grande">Grande</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label class="form-label">Observações do Pet</label>
+                <textarea id="observacoes-pet-novo-cliente" class="form-ctrl pet-observacoes-novo-cliente" rows="3" placeholder="Ex: medroso, bravo, alérgico, usa focinheira, cuidados especiais..."></textarea>
+            </div>
         </div>
     </div>
+</div>
 
     <!-- CARD 3: PACOTES -->
     <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333;">
@@ -1766,15 +1777,15 @@
                     </form>
                 </div>
 
-                <div class="modal-footer">
-                    <button onclick="fecharModalAcesso()" class="btn-secundario">Cancelar</button>
-                    <button type="submit" form="form-acesso" id="btn-gerar-acesso" class="btn-primary" style="background: #17a2b8; border-color: #17a2b8;">
-                        <i class="fas fa-magic"></i> Gerar Senha
-                    </button>
-                </div>
+               <div class="modal-footer">
+    <button type="button" onclick="fecharModalAcesso()" class="btn-secundario">
+        Cancelar
+    </button>
 
-            </div>
-        </div>
+    <button type="submit" form="form-acesso" id="btn-gerar-acesso" class="btn-primary" style="background: #17a2b8; border-color: #17a2b8;">
+        <i class="fas fa-save"></i> Cadastrar
+    </button>
+</div>
 
         <!-- ═══ MODAL PET ═══ -->
         <div class="modal-overlay hidden" id="modal-pet">
