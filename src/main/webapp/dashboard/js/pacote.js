@@ -143,14 +143,30 @@ function editarPacote(id) {
     }
 
     // 4. Exibe o modal
-    document.getElementById('modal-editar-pacote').classList.remove('hidden');
+    const modal = document.getElementById('modal-editar-pacote');
+
+if (!modal) {
+    alert('Modal de editar pacote não encontrado.');
+    return;
+}
+
+document.body.appendChild(modal);
+modal.classList.remove('hidden');
 }
 
 function fecharModalEditarPacote() {
-    document.getElementById('modal-editar-pacote').classList.add('hidden');
-    document.getElementById('form-editar-pacote').reset();
-}
+    const modal = document.getElementById('modal-editar-pacote');
 
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+
+    const form = document.getElementById('form-editar-pacote');
+
+    if (form) {
+        form.reset();
+    }
+}
 async function salvarEdicaoPacote(e) {
     e.preventDefault(); // Impede recarregamento da página
 

@@ -103,18 +103,43 @@ function renderEstoque() {
 
 function abrirModalProduto() {
     const modal = document.getElementById('modal-produto');
-    if (modal) {
-        modal.classList.remove('hidden');
 
+    if (!modal) {
+        alert('Erro: modal de produto não encontrado.');
+        console.error('modal-produto não encontrado no HTML');
+        return;
+    }
+
+    document.body.appendChild(modal);
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.zIndex = '999999';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+
+    if (typeof carregarFornecedoresParaModal === 'function') {
         carregarFornecedoresParaModal();
     }
 }
-
 function fecharModalProduto() {
     const modal = document.getElementById('modal-produto');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.getElementById('form-produto').reset();
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add('hidden');
+    modal.style.setProperty('display', 'none', 'important');
+
+    const form = document.getElementById('form-produto');
+    if (form) {
+        form.reset();
     }
 }
 
@@ -320,23 +345,33 @@ async function carregarFornecedoresConfig() {
 
 function abrirModalFornecedor() {
     const modal = document.getElementById('modal-fornecedor');
-    if (modal)
-        modal.classList.remove('hidden');
+
+    if (!modal) {
+        alert('Modal de fornecedor não encontrado.');
+        return;
+    }
+
+    document.body.appendChild(modal);
+    modal.classList.remove('hidden');
 }
 
 function fecharModalFornecedor() {
     const modal = document.getElementById('modal-fornecedor');
+
     if (modal) {
         modal.classList.add('hidden');
-        document.getElementById('form-fornecedor').reset();
+    }
 
-        // Limpa o ID escondido para não afetar futuros cadastros
-        const idField = document.getElementById('forn-id');
-        if (idField)
-            idField.value = '';
+    const form = document.getElementById('form-fornecedor');
+    if (form) {
+        form.reset();
+    }
+
+    const idField = document.getElementById('forn-id');
+    if (idField) {
+        idField.value = '';
     }
 }
-
 function prepararNovoFornecedor() {
     fecharModalFornecedor();
     document.querySelector('#modal-fornecedor h3').innerHTML = '<i class="fas fa-truck" style="color:#C9A96E; margin-right: 8px;"></i> Novo Fornecedor';

@@ -243,6 +243,15 @@ function abrirModalFunc(id = null) {
         validarFormulario();
     }
     document.getElementById('modalFunc').classList.remove('hidden');
+    const modal = document.getElementById('modalFunc');
+
+if (!modal) {
+    alert('Modal de funcionário não encontrado.');
+    return;
+}
+
+document.body.appendChild(modal);
+modal.classList.remove('hidden');
 }
 
 function fecharModalFunc() {
@@ -264,6 +273,11 @@ function fecharModalFunc() {
 
     document.getElementById('modalFunc').classList.add('hidden');
     editFuncId = null;
+    const modal = document.getElementById('modalFunc');
+
+if (modal) {
+    modal.classList.add('hidden');
+}
 }
 
 function fecharModalInfoFunc() {

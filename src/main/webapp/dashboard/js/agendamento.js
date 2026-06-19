@@ -1724,6 +1724,15 @@ async function listarServico() {
 }
 
 function abrirModalServico(id = null) {
+    const modal = document.getElementById('modal-servico');
+
+if (!modal) {
+    alert('Modal de serviço não encontrado.');
+    return;
+}
+
+document.body.appendChild(modal);
+modal.classList.remove('hidden');
     const inputId = document.getElementById('id-servico');
     const inputNome = document.getElementById('nome-servico');
     const inputValor = document.getElementById('serv-valor');
@@ -1750,9 +1759,12 @@ function abrirModalServico(id = null) {
 }
 
 function fecharModalServico() {
-    document.getElementById('modal-servico').classList.add('hidden');
-}
+    const modal = document.getElementById('modal-servico');
 
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
 async function salvarServico(e) {
     e.preventDefault();
 

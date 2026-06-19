@@ -1776,15 +1776,14 @@
     </div>
 
 </form>
-                    </form>
                 </div>
 
-               <div class="modal-footer">
-    <button type="button" onclick="fecharModalAcesso()" class="btn-secundario">
+              <div class="modal-footer">
+    <button type="button" onclick="fecharModalNovoCliente()" class="btn-secundario">
         Cancelar
     </button>
 
-    <button type="submit" form="form-acesso" id="btn-gerar-acesso" class="btn-primary" style="background: #17a2b8; border-color: #17a2b8;">
+    <button type="submit" form="form-novo-cliente" id="btn-salvar-cliente" class="btn-primary">
         <i class="fas fa-save"></i> Cadastrar
     </button>
 </div>
@@ -4173,6 +4172,15 @@
             // RELATÓRIO DE PACOTES
             // ═══════════════════════════════════════════════════
             function abrirRelatorio() {
+                const modal = document.getElementById('modalRelatorio');
+
+if (!modal) {
+    alert('Modal de relatório não encontrado.');
+    return;
+}
+
+document.body.appendChild(modal);
+modal.classList.remove('hidden');
                 document.getElementById('modalRelatorio').classList.remove('hidden');
                 const el = document.getElementById('relatorio-body');
                 if (!el)
@@ -4542,13 +4550,26 @@
             }
 
             function abrirModalConfigEmpresa() {
-                document.getElementById('modal-config-empresa').classList.remove('hidden');
-                preencherCamposModalEmpresa(dadosEmpresaAtual);
-            }
+    const modal = document.getElementById('modal-config-empresa');
+
+    if (!modal) {
+        alert('Modal de configurar empresa não encontrado.');
+        return;
+    }
+
+    document.body.appendChild(modal);
+    modal.classList.remove('hidden');
+
+    preencherCamposModalEmpresa(dadosEmpresaAtual);
+}
 
             function fecharModalConfigEmpresa() {
-                document.getElementById('modal-config-empresa').classList.add('hidden');
-            }
+    const modal = document.getElementById('modal-config-empresa');
+
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
 
             async function salvarDadosEmpresa(event) {
                 event.preventDefault();
