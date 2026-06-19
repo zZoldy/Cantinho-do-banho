@@ -648,6 +648,7 @@
                 flex:1;
                 color:#ccc
             }
+       
             .servico-nome-text.done{
                 text-decoration:line-through;
                 color:#555
@@ -1628,6 +1629,7 @@
         </div>
 
         <!-- ═══ MODAL CLIENTE ═══ -->
+        
         <div class="modal-overlay hidden" id="modal-novo-cliente">
             <div class="modal modal-sm" style="border-top: 5px solid #C9A96E;">
                 <div class="modal-header">
@@ -2911,13 +2913,13 @@
                     recusados: renderRecusados,
                     finalizados: renderFinalizados,
                     estoques: renderEstoque,
-                    vendas: renderVendasManuias,
+                    vendas: renderVendasManuais,
                     boletos: renderBoletos,
                     funcionarios: renderFuncionarios,
                     pagamentos: renderPagamentos,
                     config: renderConfiguracoes
                 })[page]?.();
-            }
+            } 
             function toggleSidebar() {
                 document.getElementById('sidebar').classList.toggle('open');
                 document.getElementById('overlay').classList.toggle('hidden');
