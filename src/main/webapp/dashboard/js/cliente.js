@@ -52,8 +52,7 @@ function renderClientes() {
         return (c.nome + ' ' + textoPets + ' ' + telefoneBusca).toLowerCase().includes(busca);
     });
 
-    const cadastrados = lista.filter(c => c.temUsuario === true);
-    const naoCadastrados = lista.filter(c => c.temUsuario === false);
+   const cadastrados = lista;
 
     const elCad = document.getElementById('lista-clientes-cadastrados');
     const elNao = document.getElementById('lista-clientes-nao-cadastrados');
@@ -79,17 +78,11 @@ function renderClientes() {
         const pendServ = Math.max(0, totalServ - usadoServ);
         const pct = totalServ ? Math.round((usadoServ / totalServ) * 100) : 0;
 
-        const badgeVinculo = c.temUsuario
-                ? `<span class="badge" style="background-color: #e8f8e8; color: #28a745; border: 1px solid #28a745; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;"><i class="fas fa-check-circle"></i> Com Acesso</span>`
-                : `<span class="badge" style="background-color: #fcebeb; color: #dc3545; border: 1px solid #dc3545; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;"><i class="fas fa-exclamation-circle"></i> Sem Acesso</span>`;
+       const badgeVinculo = '';
+       
+        const btnAcesso = '';
 
-        const btnAcesso = !c.temUsuario
-                ? `<button onclick="event.stopPropagation(); abrirModalCriarUsuario(${c.id}, '${c.nome}')" class="btn-primary" style="background: #17a2b8; border-color: #17a2b8; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(23,162,184,0.2);"><i class="fas fa-key"></i> Criar Acesso</button>`
-                : '';
-
-        const btnVenderPacote = c.temUsuario
-                ? `<button onclick="event.stopPropagation(); abrirModalVenderPacote(${c.id}, '${c.nome}')" class="btn-secundario" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"><i class="fas fa-box-open"></i> Vender Pacote</button>`
-                : '';
+        const btnVenderPacote = `<button onclick="event.stopPropagation(); abrirModalVenderPacote(${c.id}, '${c.nome}')" class="btn-secundario" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"><i class="fas fa-box-open"></i> Vender Pacote</button>`;
 
         const nomesDosPets = (c.pets && c.pets.length > 0)
                 ? c.pets.map((p, index) => {
@@ -118,54 +111,43 @@ function renderClientes() {
                 ? `<a href="https://wa.me/55${cleanTel(c.telefone)}" target="_blank" onclick="event.stopPropagation()" style="color:#25d366; text-decoration: none; font-weight: 500; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"><i class="fab fa-whatsapp" style="font-size: 1.1rem; margin-right: 4px;"></i> ${telefoneFormatado}</a>`
                 : `<span style="color: #999;"><i class="fas fa-phone-slash"></i> Sem telefone</span>`;
 
-        let blocoDestaqueHtml = '';
+let blocoDestaqueHtml = `<div style="margin-bottom: 15px; font-size: 0.9rem; color: #777; padding: 10px; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px;">
+    <i class="fas fa-box" style="color:#ccc; margin-right: 5px;"></i> 
+    <strong>Pacote:</strong> Sem pacote ativo
+</div>`;
 
-        if (c.temUsuario) {
-            blocoDestaqueHtml = `<div style="margin-bottom: 15px; font-size: 0.9rem; color: #777; padding: 10px; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px;"><i class="fas fa-box" style="color:#ccc; margin-right: 5px;"></i> <strong>Pacote:</strong> Sem pacote ativo</div>`;
-
-            if (c.pacotes && c.pacotes.length > 0) {
-                blocoDestaqueHtml = c.pacotes.map(pac => {
-                    const pendServ = pac.sessoesRestantes || 0;
-                    const totalServ = pac.sessoesTotais || 0;
-                    const usadoServ = totalServ - pendServ;
-                    const pct = totalServ > 0 ? Math.round((usadoServ / totalServ) * 100) : 0;
-
-                    return `
-                    <div style="background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
-                        <div style="font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 600; color: #444;"><i class="fas fa-box-open" style="color: #C9A96E; margin-right: 5px;"></i> ${pac.pacoteNome || pac.servicoNome}</span>
-                            <span style="font-weight:bold; background: ${pendServ > 0 ? '#fff3cd' : '#d4edda'}; color: ${pendServ > 0 ? '#856404' : '#155724'}; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem;">
-                                ${pendServ > 0 ? pendServ + ' restantes' : '<i class="fas fa-check"></i> Concluído'}
-                            </span>
-                        </div>
-                        <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 6px; overflow: hidden;">
-                            <div style="width: ${pct}%; background-color: ${pct === 100 ? '#28a745' : '#C9A96E'}; height: 100%; border-radius: 10px; transition: width 0.5s ease;"></div>
-                        </div>
-                        <div style="font-size: 0.75rem; color: #888; display: flex; justify-content: space-between;">
-                            <span>${usadoServ} de ${totalServ} utilizados</span>
-                            ${pac.validade ? `<span style="color: #dc3545;"><i class="far fa-calendar-times"></i> Vence: ${fd(pac.validade)}</span>` : ''}
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-        } else {
-            blocoDestaqueHtml = `
-            <div style="background: #fffbf0; border: 1px solid #f0e0b8; border-radius: 6px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px;">
-                <div style="background: #e0a800; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 4px rgba(224,168,0,0.3);">
-                    <i class="fas fa-exclamation-triangle" style="color: #fff; font-size: 1.1rem;"></i>
-                </div>
-                <div>
-                    <div style="font-size: 0.7rem; color: #888; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Atenção</div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: #444; margin-top: 2px; line-height: 1.3;">
-                        Cliente temporário. Crie o acesso para habilitar pacotes e unificar o histórico.
-                    </div>
-                </div>
-            </div>`;
-        }
+if (c.pacotes && c.pacotes.length > 0) {
+    blocoDestaqueHtml = c.pacotes.map(pac => {
+        const pendServ = pac.sessoesRestantes || 0;
+        const totalServ = pac.sessoesTotais || 0;
+        const usadoServ = totalServ - pendServ;
+        const pct = totalServ > 0 ? Math.round((usadoServ / totalServ) * 100) : 0;
 
         return `
-        <div class="cliente-card cartao-expansivel" onclick="abrirModalCliente(${c.id})" style="border: none; border-left: 5px solid #C9A96E; padding: 20px; border-radius: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; height: 100%;">
-            
+        <div style="background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+            <div style="font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; color: #444;">
+                    <i class="fas fa-box-open" style="color: #C9A96E; margin-right: 5px;"></i> 
+                    ${pac.pacoteNome || pac.servicoNome || 'Pacote'}
+                </span>
+                <span style="font-weight:bold; background: ${pendServ > 0 ? '#fff3cd' : '#d4edda'}; color: ${pendServ > 0 ? '#856404' : '#155724'}; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem;">
+                    ${pendServ > 0 ? pendServ + ' restantes' : '<i class="fas fa-check"></i> Concluído'}
+                </span>
+            </div>
+
+            <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 6px; overflow: hidden;">
+                <div style="width: ${pct}%; background-color: ${pct === 100 ? '#28a745' : '#C9A96E'}; height: 100%; border-radius: 10px; transition: width 0.5s ease;"></div>
+            </div>
+
+            <div style="font-size: 0.75rem; color: #888; display: flex; justify-content: space-between;">
+                <span>${usadoServ} de ${totalServ} utilizados</span>
+                ${pac.validade ? `<span style="color: #dc3545;"><i class="far fa-calendar-times"></i> Vence: ${fd(pac.validade)}</span>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+        return `
+<div class="cliente-card cartao-expansivel" style="border: none; border-left: 5px solid #C9A96E; padding: 20px; border-radius: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; height: 100%;">            
             <div class="ac-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                 <div>
                     <h3 style="margin: 0 0 5px 0; color: #2c3e50; font-size: 1.25rem; font-weight: 700;">
@@ -193,11 +175,26 @@ function renderClientes() {
                 ${blocoDestaqueHtml}
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: auto; border-top: 1px solid #f1f1f1; padding-top: 15px;">
-                ${btnVenderPacote}
-                ${btnAcesso}
-            </div>
-            
+           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: auto; border-top: 1px solid #f1f1f1; padding-top: 15px; flex-wrap: wrap;">
+
+
+    <button type="button" onclick="event.preventDefault(); event.stopPropagation(); editarClienteDoCard(${c.id});"
+            style="background: #C9A96E; color: #111; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <i class="fas fa-pen"></i> Editar
+    </button>
+
+    <button type="button" onclick="event.preventDefault(); event.stopPropagation(); gerarPdfCliente(${c.id});"
+            style="background: #6f42c1; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <i class="fas fa-file-pdf"></i> PDF
+    </button>
+
+    <button type="button" onclick="event.preventDefault(); event.stopPropagation(); excluirCliente(${c.id});"
+            style="background: #dc3545; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <i class="fas fa-trash"></i> Excluir
+    </button>
+
+    ${btnVenderPacote}
+</div>
         </div>`;
     };
 
@@ -209,17 +206,6 @@ function renderClientes() {
         } else {
             aplicarEstiloGrid(elCad);
             elCad.innerHTML = cadastrados.map(gerarCard).join('');
-        }
-    }
-
-    // Renderiza a aba de Não Cadastrados
-    if (elNao) {
-        if (!naoCadastrados.length) {
-            elNao.style.display = 'block';
-            elNao.innerHTML = `<div class="empty-state" style="padding: 40px; text-align: center; color: #888; background: #fff; border-radius: 8px; border: 1px dashed #ccc;"><i class="fas fa-user-slash" style="font-size: 2.5rem; color: #C9A96E; margin-bottom: 15px;"></i><p style="font-size: 1.1rem;">Nenhum cliente pendente de cadastro.</p></div>`;
-        } else {
-            aplicarEstiloGrid(elNao);
-            elNao.innerHTML = naoCadastrados.map(gerarCard).join('');
         }
     }
 }
@@ -1029,10 +1015,10 @@ params.append('dataValidadePacote', dataValidadePacote);
             const erroTexto = await resposta.text();
             throw new Error(erroTexto || 'Erro desconhecido ao salvar.');
         }
-    } catch (erro) {
-        console.error("Erro:", erro);
-        exibirMensagem('Erro ao cadastrar cliente', 'error');
-    } finally {
+   } catch (erro) {
+    console.error("Erro:", erro);
+    exibirMensagem('Erro ao cadastrar cliente: ' + erro.message, 'error');
+} finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -1090,7 +1076,7 @@ function abrirModalCliente(id) {
     const footer = document.getElementById('footer-edicao-cliente');
     const btnCadastrarPet = document.querySelector('button[onclick="abrirModalNovoPetParaCliente()"]');
 
-    const temCadastro = clienteSendoEditado.temUsuario === true;
+    const temCadastro = true;
 
     // --- CONTROLE DE PERMISSÕES DOS BOTÕES DO CABEÇALHO ---
     if (footer)
@@ -1228,11 +1214,21 @@ function abrirModalCliente(id) {
             ${htmlPets}
         </div>
     `;
+    const modalCliente = document.getElementById('modal-detalhes-cliente');
 
-    if (btnEdicao)
-        btnEdicao.onclick = () => alternarParaEdicao();
+    if (!modalCliente) {
+        alert('Modal de detalhes do cliente não encontrado.');
+        return;
+    }
 
-    document.getElementById('modal-detalhes-cliente').classList.remove('hidden');
+    document.body.appendChild(modalCliente);
+
+    const footerEdicao = document.getElementById('footer-edicao-cliente');
+    if (footerEdicao) {
+        footerEdicao.classList.add('hidden');
+    }
+
+    modalCliente.classList.remove('hidden');
 }
 
 function alternarParaEdicao() {
@@ -1303,9 +1299,13 @@ function cancelarEdicao() {
 }
 
 function fecharModalCliente() {
-    document.getElementById('modal-detalhes-cliente').classList.add('hidden');
-}
+    const modal = document.getElementById('modal-detalhes-cliente');
 
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
 async function salvarObsPet(petId, btn) {
     const obs = document.getElementById(`obs-pet-${petId}`).value;
     const originalHTML = btn.innerHTML;
@@ -1581,4 +1581,463 @@ async function salvarServicoRealizadoPacote(botao) {
         botao.innerHTML = textoOriginal;
         botao.disabled = false;
     }
+    }
+function editarClienteDoCard(id) {
+    clienteSendoEditado = listaClientes.find(c => c.id === id);
+
+    if (!clienteSendoEditado) {
+        exibirMensagem('Cliente não encontrado.', 'error');
+        return;
+    }
+
+    let modalCliente = document.getElementById('modal-detalhes-cliente');
+
+    if (!modalCliente) {
+        modalCliente = document.createElement('div');
+        modalCliente.id = 'modal-detalhes-cliente';
+modalCliente.className = 'hidden';
+
+        modalCliente.innerHTML = `
+<div id="caixa-editar-cliente" style="background: #1a1a1a; border-radius: 10px; padding: 22px; color: #fff; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #333; padding-bottom: 12px;">
+                    <h3 style="margin: 0; color: #C9A96E;">
+                        <i class="fas fa-user-edit"></i> Editar Cliente
+                    </h3>
+
+                    <button type="button" onclick="fecharModalCliente()" style="background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer;">
+                        &times;
+                    </button>
+                </div>
+
+                <div id="conteudo-modal-cliente"></div>
+
+                <div id="footer-edicao-cliente" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid #333; padding-top: 15px;">
+                    <button type="button" onclick="fecharModalCliente()" style="background: #6c757d; color: white; border: none; padding: 9px 14px; border-radius: 6px; cursor: pointer;">
+                        Cancelar
+                    </button>
+
+                    <button type="button" id="btn-confirmar-edicao" onclick="salvarEdicaoCliente()" style="background: #C9A96E; color: #111; border: none; padding: 9px 14px; border-radius: 6px; cursor: pointer; font-weight: 700;">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+document.body.appendChild(modalCliente);
+
+modalCliente.classList.remove('hidden');
+
+modalCliente.style.setProperty('position', 'fixed', 'important');
+modalCliente.style.setProperty('top', '0', 'important');
+modalCliente.style.setProperty('left', '0', 'important');
+modalCliente.style.setProperty('right', '0', 'important');
+modalCliente.style.setProperty('bottom', '0', 'important');
+modalCliente.style.setProperty('width', '100vw', 'important');
+modalCliente.style.setProperty('height', '100vh', 'important');
+modalCliente.style.setProperty('background', 'rgba(0,0,0,0.75)', 'important');
+modalCliente.style.setProperty('z-index', '999999', 'important');
+modalCliente.style.setProperty('display', 'block', 'important');
+modalCliente.style.setProperty('padding', '0', 'important');
+modalCliente.style.setProperty('margin', '0', 'important');
+modalCliente.style.setProperty('overflow', 'hidden', 'important');
+
+const caixaModal = document.getElementById('caixa-editar-cliente');
+
+if (caixaModal) {
+    caixaModal.style.setProperty('position', 'fixed', 'important');
+    caixaModal.style.setProperty('top', '50%', 'important');
+    caixaModal.style.setProperty('left', '50%', 'important');
+    caixaModal.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+
+caixaModal.style.setProperty('width', '600px', 'important');
+    caixaModal.style.setProperty('max-width', '90vw', 'important');
+    caixaModal.style.setProperty('max-height', '82vh', 'important');
+
+    caixaModal.style.setProperty('overflow-y', 'auto', 'important');
+    caixaModal.style.setProperty('margin', '0', 'important');
+    caixaModal.style.setProperty('padding', '22px', 'important');
+    caixaModal.style.setProperty('box-sizing', 'border-box', 'important');
+    
+}    const container = document.getElementById('conteudo-modal-cliente');
+    if (!container) {
+        alert('Conteúdo do modal de cliente não encontrado.');
+        return;
+    }
+    const petsCliente = clienteSendoEditado.pets || [];
+    const pacotesCliente = clienteSendoEditado.pacotes || [];
+
+    const petsHtmlEdicao = petsCliente.length > 0
+        ? petsCliente.map(p => `
+            <div style="background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin-bottom:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="field">
+                        <label class="form-label">Nome do Pet</label>
+                        <input type="text" class="form-ctrl" value="${p.nome || ''}" readonly>
+                    </div>
+
+                    <div class="field">
+                        <label class="form-label">Tipo</label>
+                        <input type="text" class="form-ctrl" value="${p.tipo || ''}" readonly>
+                    </div>
+
+                    <div class="field">
+                        <label class="form-label">Raça</label>
+                        <input type="text" class="form-ctrl" value="${p.raca || ''}" readonly>
+                    </div>
+
+                    <div class="field">
+                        <label class="form-label">Porte</label>
+                        <input type="text" class="form-ctrl" value="${p.porte || ''}" readonly>
+                    </div>
+                </div>
+
+                <div class="field" style="margin-top:10px;">
+                    <label class="form-label">Observações do Pet</label>
+                    <textarea class="form-ctrl" rows="2" readonly>${p.obs || ''}</textarea>
+                </div>
+            </div>
+        `).join('')
+        : `<div style="color:#888; padding:12px; border:1px dashed #333; border-radius:8px;">Nenhum pet cadastrado.</div>`;
+
+       const petPrincipalId = petsCliente.length > 0 ? petsCliente[0].id : '';
+
+    const pacotesHtmlEdicao = pacotesCliente.length > 0
+        ? pacotesCliente.map(pac => {
+            const pacoteId = pac.id || pac.pacoteId || pac.vendaPacoteId || '';
+            const nomePacote = pac.pacoteNome || pac.servicoNome || pac.nome || 'Pacote';
+
+            const total = Number(pac.sessoesTotais || pac.totalSessoes || pac.sessoes || 0);
+            const restantes = Number(pac.sessoesRestantes || 0);
+            const usadas = Math.max(0, total - restantes);
+
+            let sessoesHtml = '';
+
+            for (let i = 1; i <= total; i++) {
+                if (i <= usadas) {
+                    sessoesHtml += `
+                        <div style="display:flex; align-items:center; gap:8px; background:rgba(40,167,69,0.12); border:1px solid rgba(40,167,69,0.35); padding:9px 10px; border-radius:6px; margin-bottom:8px;">
+                            <i class="fas fa-check-circle" style="color:#28a745;"></i>
+                            <span style="color:#ddd; font-size:0.86rem;">
+                                Sessão ${i} já utilizada
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    sessoesHtml += `
+                        <div style="background:#0f0f0f; border:1px dashed #333; padding:10px; border-radius:6px; margin-bottom:8px;">
+                            <label style="display:flex; align-items:center; gap:8px; color:#ddd; cursor:pointer; font-size:0.88rem;">
+                                <input 
+                                    type="checkbox"
+                                    class="check-servico-pacote"
+                                    data-pet-id="${petPrincipalId}"
+                                    data-pacote-id="${pacoteId}"
+                                    data-sessao="${i}"
+                                    onchange="alternarServicoPacote(this)"
+                                >
+                                <span>Marcar sessão ${i} como realizada</span>
+                            </label>
+
+                            <div class="dados-servico-pacote" style="display:none; margin-top:10px; margin-left:24px;">
+                                <label style="display:block; color:#aaa; font-size:0.75rem; margin-bottom:5px;">
+                                    Data do serviço realizado
+                                </label>
+
+                                <input 
+                                    type="date"
+                                    class="data-servico-pacote"
+                                    style="background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:5px; padding:7px 8px; margin-right:8px;"
+                                >
+
+                                <button 
+                                    type="button"
+                                    onclick="salvarServicoRealizadoPacote(this)"
+                                    style="background:#28a745; color:white; border:none; border-radius:5px; padding:7px 11px; cursor:pointer; font-size:0.8rem; font-weight:600;"
+                                >
+                                    <i class="fas fa-save"></i> Salvar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            return `
+                <div style="background:#111; border:1px solid #333; border-radius:8px; padding:13px; margin-bottom:12px;">
+                    <strong style="color:#C9A96E; display:block; margin-bottom:8px;">
+                        <i class="fas fa-box-open"></i> ${nomePacote}
+                    </strong>
+
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; font-size:0.85rem; color:#ccc; margin-bottom:12px;">
+                        <div>
+                            <span style="color:#888;">Total:</span><br>
+                            <strong>${total || '-'}</strong>
+                        </div>
+
+                        <div>
+                            <span style="color:#888;">Restantes:</span><br>
+                            <strong>${restantes}</strong>
+                        </div>
+
+                        <div>
+                            <span style="color:#888;">Validade:</span><br>
+                            <strong>${pac.validade ? fd(pac.validade) : '-'}</strong>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid #2a2a2a; padding-top:10px;">
+                        ${total > 0 ? sessoesHtml : `<div style="color:#888;">Esse pacote não tem quantidade de sessões informada.</div>`}
+                    </div>
+                </div>
+            `;
+        }).join('')
+        : `<div style="color:#888; padding:12px; border:1px dashed #333; border-radius:8px;">Nenhum pacote ativo.</div>`;
+container.innerHTML = `
+    <div id="edit-mode">
+            <h4 style="color:#C9A96E; margin:0 0 15px 0;">
+                Dados do Cliente
+            </h4>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+                <div class="field">
+                    <label class="form-label">Nome Completo</label>
+                    <input type="text" id="nome-edit" class="form-ctrl" value="${clienteSendoEditado.nome || ''}">
+                </div>
+
+                <div class="field">
+                    <label class="form-label">WhatsApp</label>
+                    <input type="text" id="telefone-edit" class="form-ctrl" value="${clienteSendoEditado.telefone || ''}" oninput="mascaraTelefone(this)">
+                </div>
+
+                <div class="field">
+                    <label class="form-label">CPF</label>
+                    <input type="text" class="form-ctrl" value="${clienteSendoEditado.cpf || clienteSendoEditado.usuario?.cpf || ''}" readonly>
+                </div>
+
+                <div class="field">
+                    <label class="form-label">E-mail</label>
+                    <input type="text" class="form-ctrl" value="${clienteSendoEditado.email || clienteSendoEditado.usuario?.email || ''}" readonly>
+                </div>
+            </div>
+
+            <div style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom:18px;">
+                <h4 style="color: #C9A96E; margin-top: 0; margin-bottom: 12px; font-size: 0.95rem;">
+                    Editar Endereço
+                </h4>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="field">
+                        <label class="form-label">CEP</label>
+                        <input type="text" id="cep-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.cep || ''}" onblur="buscarCEP(this.value, 'edit')">
+                    </div>
+
+                    <div class="field">
+                        <label class="form-label">Número</label>
+                        <input type="text" id="numero-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.numero || ''}">
+                    </div>
+                </div>
+
+                <div class="field" style="margin-bottom: 10px;">
+                    <label class="form-label">Rua / Logradouro</label>
+                    <input type="text" id="logradouro-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.logradouro || ''}">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 70px; gap: 10px;">
+                    <div class="field">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" id="bairro-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.bairro || ''}">
+                    </div>
+
+                    <div class="field">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" id="cidade-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.cidade || ''}">
+                    </div>
+
+                    <div class="field">
+                        <label class="form-label">UF</label>
+                        <input type="text" id="uf-edit" class="form-ctrl" value="${clienteSendoEditado.endereco?.uf || ''}">
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="color:#C9A96E; margin:0 0 12px 0;">
+                Pets do Cliente
+            </h4>
+
+            <div style="margin-bottom:18px;">
+                ${petsHtmlEdicao}
+            </div>
+
+            <h4 style="color:#C9A96E; margin:0 0 12px 0;">
+                Pacotes do Cliente
+            </h4>
+
+            <div style="margin-bottom:10px;">
+                ${pacotesHtmlEdicao}
+            </div>
+
+        </div>
+    `;
+    
+modalCliente.style.setProperty('display', 'block', 'important');
+modalCliente.classList.remove('hidden');
+}
+function excluirCliente(id) {
+    const cliente = listaClientes.find(c => c.id === id);
+
+    if (!cliente) {
+        exibirMensagem('Cliente não encontrado.', 'error');
+        return;
+    }
+
+    const confirmar = confirm(`Tem certeza que deseja excluir o cliente ${cliente.nome}?`);
+
+    if (!confirmar) {
+        return;
+    }
+
+    exibirMensagem('A exclusão ainda precisa ser conectada ao banco de dados.', 'info');
+}
+
+function gerarPdfCliente(id) {
+    const cliente = listaClientes.find(c => c.id === id);
+
+    if (!cliente) {
+        exibirMensagem('Cliente não encontrado para gerar PDF.', 'error');
+        return;
+    }
+
+    let petsHtml = '';
+
+    if (cliente.pets && cliente.pets.length > 0) {
+        petsHtml = cliente.pets.map(p => `
+            <tr>
+                <td>${p.nome || '-'}</td>
+                <td>${p.tipo || '-'}</td>
+                <td>${p.raca || '-'}</td>
+                <td>${p.porte || '-'}</td>
+                <td>${p.obs || '-'}</td>
+            </tr>
+        `).join('');
+    } else {
+        petsHtml = `
+            <tr>
+                <td colspan="5">Nenhum pet cadastrado.</td>
+            </tr>
+        `;
+    }
+
+    let pacotesHtml = '';
+
+    if (cliente.pacotes && cliente.pacotes.length > 0) {
+        pacotesHtml = cliente.pacotes.map(pac => `
+            <tr>
+                <td>${pac.pacoteNome || pac.servicoNome || 'Pacote'}</td>
+                <td>${pac.sessoesTotais || '-'}</td>
+                <td>${pac.sessoesRestantes || '-'}</td>
+                <td>${pac.validade || '-'}</td>
+            </tr>
+        `).join('');
+    } else {
+        pacotesHtml = `
+            <tr>
+                <td colspan="4">Nenhum pacote ativo.</td>
+            </tr>
+        `;
+    }
+
+    const html = `
+        <html>
+        <head>
+            <title>Ficha do Cliente - ${cliente.nome}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 30px;
+                    color: #222;
+                }
+
+                h1 {
+                    color: #C9A96E;
+                    border-bottom: 2px solid #C9A96E;
+                    padding-bottom: 10px;
+                }
+
+                h2 {
+                    margin-top: 30px;
+                    color: #333;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 10px;
+                }
+
+                th, td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                    font-size: 13px;
+                }
+
+                th {
+                    background: #f5f5f5;
+                }
+
+                .info {
+                    margin-bottom: 8px;
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Ficha do Cliente</h1>
+
+            <div class="info"><strong>Nome:</strong> ${cliente.nome || '-'}</div>
+            <div class="info"><strong>Telefone:</strong> ${cliente.telefone || '-'}</div>
+
+            <h2>Pets</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Raça</th>
+                        <th>Porte</th>
+                        <th>Observações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${petsHtml}
+                </tbody>
+            </table>
+
+            <h2>Pacotes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pacote</th>
+                        <th>Total de sessões</th>
+                        <th>Sessões restantes</th>
+                        <th>Validade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${pacotesHtml}
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `;
+
+    const janela = window.open('', '_blank');
+
+    if (!janela) {
+        exibirMensagem('O navegador bloqueou a abertura do PDF.', 'error');
+        return;
+    }
+
+    janela.document.write(html);
+    janela.document.close();
+    janela.print();
 }
